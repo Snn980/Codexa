@@ -1,0 +1,194 @@
+# .github/workflows/ci.yml — Mobile AI IDE CI Pipeline
+#
+# DÜZELTME #5 — WASM artifact kullanılmıyor + env geçirilmiyor:
+#
+#   ❌ test job:
+#      - wasm-assets artifact indiriliyordu ama test adımında kullanılmıyordu
+#      - LLAMA_WASM_SHA256 env değişkeni npm test adımına geçirilmiyordu
+#      - assets/ dizini oluşturulmadan artifact indiriliyordu → path hatası
+#
+#   ✅ Düzeltmeler:
+#      - wasm-assets → assets/ dizinine indirilir (doğru path)
+#      - npm test adımına LLAMA_WASM_SHA256 env eklendi
+#      - typecheck job WASM gerektirmez → gereksiz artifact download kaldırıldı
+
+name: CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+
+env:
+  NODE_VERSION: "20"
+  LLAMA_WASM_SHA256: ${{ vars.LLAMA_WASM_SHA256 }}
+
+jobs:
+  # ─── 1. Kurulum & WASM ──────────────────────────────────────────────────────
+  setup:
+    name: Setup & WASM
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
+      - name: npm install
+        run: npm ci --legacy-peer-deps
+
+      - name: Cache llama.wasm
+        id: wasm-cache
+        uses: actions/cache@v4
+        with:
+          path: assets/llama.wasm
+          key: llama-wasm-${{ hashFiles('node_modules/llama-cpp-wasm/package.json') }}
+          restore-keys: llama-wasm-
+
+      - name: Setup llama.wasm
+        if: steps.wasm-cache.outputs.cache-hit != 'true'
+        run: node ci/setup-wasm.js
+        env:
+          LLAMA_WASM_SHA256: ${{ env.LLAMA_WASM_SHA256 }}
+
+      - name: Verify llama.wasm
+        run: node ci/setup-wasm.js --verify
+        env:
+          LLAMA_WASM_SHA256: ${{ env.LLAMA_WASM_SHA256 }}
+
+      - name: Upload node_modules
+        uses: actions/upload-artifact@v4
+        with:
+          name: node-modules
+          path: node_modules
+          retention-days: 1
+
+      - name: Upload WASM asset
+        uses: actions/upload-artifact@v4
+        with:
+          name: wasm-assets
+          path: assets/llama.wasm
+          retention-days: 1
+
+  # ─── 2. Test ────────────────────────────────────────────────────────────────
+  test:
+    name: Jest Tests
+    runs-on: ubuntu-latest
+    needs: setup
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Download node_modules
+        uses: actions/download-artifact@v4
+        with:
+          name: node-modules
+          path: node_modules
+
+      # ✅ DÜZELTME #5a: assets/ dizini oluştur, artifact buraya indirilir
+      - name: Prepare assets directory
+        run: mkdir -p assets
+
+      - name: Download WASM asset
+        uses: actions/download-artifact@v4
+        with:
+          name: wasm-assets
+          path: assets  # ✅ doğru path — eskisi "path: ." idi, llama.wasm kök dizine düşüyordu
+
+      # ✅ DÜZELTME #5b: LLAMA_WASM_SHA256 test adımına env olarak geçirildi
+      - name: Run tests
+        run: npm test -- --ci --coverage --forceExit
+        env:
+          CI: true
+          LLAMA_WASM_SHA256: ${{ env.LLAMA_WASM_SHA256 }}  # ✅ eklendi
+
+  # ─── 3. TypeScript ───────────────────────────────────────────────────────────
+  typecheck:
+    name: TypeScript
+    runs-on: ubuntu-latest
+    needs: setup
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Download node_modules
+        uses: actions/download-artifact@v4
+        with:
+          name: node-modules
+          path: node_modules
+
+      # ✅ DÜZELTME #5c: typecheck WASM binary gerektirmez — wasm-assets download kaldırıldı
+      # (tsc sadece tip kontrolü yapar, assets/llama.wasm'a erişmez)
+
+      - name: tsc --noEmit
+        run: npx tsc --noEmit
+
+  # ─── 4. EAS Build iOS ────────────────────────────────────────────────────────
+  build-ios:
+    name: EAS Build iOS
+    runs-on: macos-latest
+    needs: [test, typecheck]
+    if: github.ref == 'refs/heads/main'
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
+      - run: npm ci --legacy-peer-deps
+
+      - name: Setup llama.wasm
+        run: node ci/setup-wasm.js
+        env:
+          LLAMA_WASM_SHA256: ${{ env.LLAMA_WASM_SHA256 }}
+
+      - uses: expo/expo-github-action@v8
+        with:
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+
+      - run: eas build --platform ios --non-interactive --profile preview
+
+  # ─── 5. EAS Build Android ───────────────────────────────────────────────────
+  build-android:
+    name: EAS Build Android
+    runs-on: ubuntu-latest
+    needs: [test, typecheck]
+    if: github.ref == 'refs/heads/main'
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
+      - run: npm ci --legacy-peer-deps
+
+      - name: Setup llama.wasm
+        run: node ci/setup-wasm.js
+        env:
+          LLAMA_WASM_SHA256: ${{ env.LLAMA_WASM_SHA256 }}
+
+      - uses: expo/expo-github-action@v8
+        with:
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+
+      - run: eas build --platform android --non-interactive --profile preview

@@ -1,0 +1,111 @@
+{
+  "expo": {
+    "name": "Codexa",
+    "slug": "codexa",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "dark",
+    "icon": "./assets/icon.png",
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#0a0e1a"
+    },
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "com.codexa.app",
+      "deploymentTarget": "15.1",
+      "infoPlist": {
+        "BGTaskSchedulerPermittedIdentifiers": [
+          "com.codexa.model.processing"
+        ],
+        "NSCameraUsageDescription": "Kod tarama ve belge yükleme için kamera erişimi gereklidir.",
+        "NSMicrophoneUsageDescription": "Sesli komut ve ses girişi için mikrofon erişimi gereklidir.",
+        "NSPhotoLibraryUsageDescription": "Model dosyalarını fotoğraf kütüphanesinden yüklemek için erişim gereklidir.",
+        "NSPhotoLibraryAddUsageDescription": "Çıktıları fotoğraf kütüphanesine kaydetmek için erişim gereklidir."
+      },
+      "entitlements": {
+        "com.apple.developer.background-task": true
+      },
+      "privacyManifests": {
+        "NSPrivacyAccessedAPITypes": [
+          {
+            "NSPrivacyAccessedAPIType": "NSPrivacyAccessedAPICategoryFileTimestamp",
+            "NSPrivacyAccessedAPITypeReasons": ["C617.1"]
+          },
+          {
+            "NSPrivacyAccessedAPIType": "NSPrivacyAccessedAPICategoryUserDefaults",
+            "NSPrivacyAccessedAPITypeReasons": ["CA92.1"]
+          }
+        ]
+      }
+    },
+    "android": {
+      "package": "com.codexa.app",
+      "versionCode": 1,
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#0a0e1a"
+      },
+      "permissions": [
+        "CAMERA",
+        "RECORD_AUDIO",
+        "READ_MEDIA_IMAGES",
+        "READ_MEDIA_VIDEO",
+        "POST_NOTIFICATIONS",
+        "INTERNET",
+        "ACCESS_NETWORK_STATE",
+        "RECEIVE_BOOT_COMPLETED",
+        "VIBRATE",
+        "READ_EXTERNAL_STORAGE"
+      ],
+      "softwareKeyboardLayoutMode": "resize"
+    },
+    "plugins": [
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "compileSdkVersion": 35,
+            "targetSdkVersion": 35,
+            "minSdkVersion": 24,
+            "buildToolsVersion": "35.0.0",
+            "ndkVersion": "28.0.12433566",
+            "edgeToEdgeEnabled": true,
+            "enableProguardInReleaseBuilds": true,
+            "enableShrinkResourcesInReleaseBuilds": true
+          },
+          "ios": {
+            "deploymentTarget": "15.1",
+            "useFrameworks": "static"
+          }
+        }
+      ],
+      ["expo-task-manager"],
+      ["expo-background-task"],
+      [
+        "react-native-permissions",
+        {
+          "iosPermissions": [
+            "Camera",
+            "Microphone",
+            "PhotoLibrary",
+            "PhotoLibraryAddOnly",
+            "Notifications"
+          ]
+        }
+      ]
+    ],
+    "experiments": {
+      "typedRoutes": true
+    },
+    "extra": {
+      "eas": {
+        "projectId": "PLACEHOLDER_REPLACE_WITH_EAS_PROJECT_ID"
+      }
+    }
+  }
+}
