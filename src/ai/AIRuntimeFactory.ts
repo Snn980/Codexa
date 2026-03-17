@@ -38,7 +38,8 @@ import { ok, err }                  from "../core/Result";
 /**
  * llama.wasm asset'inin Metro URI'si.
  * Uygulama bundle'ında `assets/llama.wasm` olarak yer alır.
- * CI: `cp node_modules/llama-cpp-wasm/llama.wasm assets/`
+ * llama.rn native — WASM asset kopyalama gerekmez.
+ * Model dosyaları (GGUF) expo-file-system ile indirilir/yönetilir.
  */
 const LLAMA_WASM_ASSET_URI = "../../assets/llama.wasm";
 

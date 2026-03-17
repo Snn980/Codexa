@@ -1,272 +1,302 @@
 /**
- * ai/LlamaCppWasm.ts — llama.cpp WASM bağlaması (T-NEW-1 KAPANDI)
+ * ai/LlamaCppWasm.ts — llama.rn native binding adapter
  *
- * § 11 : Expo asset WASM load pattern
+ * REFACTOR: llama-cpp-wasm (WASM, npm'de yok) → llama.rn (Native C++ binding)
  *
- * Mimari:
- *   ExpoLlamaCppLoader
- *     └─ WasmBootstrap.load(assetUri)
- *          └─ llama.cpp emscripten Module
- *               └─ ILlamaCppBinding (OfflineRuntime'a inject)
+ * Neden llama.rn?
+ *   • llama-cpp-wasm npm'de mevcut değil / bulunamıyor
+ *   • llama.rn: aynı llama.cpp C++ çekirdeği, native JSI bridge
+ *   • GGUF model formatı korunur — model migration gerekmez
+ *   • iOS: Metal GPU (Apple7+), Android: OpenCL (Adreno 700+) / HTP
+ *   • Expo config plugin desteği (app.json entegrasyonu)
+ *   • Aktif bakım: mybigday/llama.rn, npm 0.11.2
  *
- * Platform stratejisi:
- *   Web (Expo Go / Metro web)  → OPFS + SharedArrayBuffer (WASM thread support)
- *   iOS / Android              → expo-file-system local path, single-thread WASM
+ * Önceki WASM API → llama.rn API eşlemesi:
+ *   load_model()      → initLlama({ model: path, ... })
+ *   create_context()  → initLlama() döner (context = handle)
+ *   get_next_token()  → context.completion({ prompt }, onToken)
+ *   free_context()    → context.release()
+ *   FS_writeFile()    → kullanılmıyor (native file system)
  *
- * llama.cpp WASM paketleme:
- *   `llama-cpp-wasm` npm paketi (community fork) veya doğrudan
- *   llama.cpp emscripten build çıktısı (llama.wasm + llama.js glue).
- *   Bu dosya her iki yöntemi de destekleyen `ILlamaModule` arayüzü üzerinden çalışır.
- *
- * T-NEW-1 durumu:
- *   - ILlamaModule arayüzü + WasmBootstrap: TAMAMLANDI
- *   - ExpoLlamaCppLoader.loadBinding(): TAMAMLANDI
- *   - Gerçek llama.wasm dosyası: proje assets klasörüne eklenmeli (CI adımı)
- *   - `llama-cpp-wasm` paket kurulumu: `npm install llama-cpp-wasm` (devDep)
+ * § 1  Result<T>
+ * § 11 Expo asset load — WASM değil GGUF file path
  */
 
 import type { ILlamaCppBinding, ILlamaCppLoader } from "./OfflineRuntime";
 import { getChatTemplate } from "./ChatTemplate";
 import type { AIModelId } from "./AIModels";
 
-// ─── llama.cpp emscripten Module arayüzü ─────────────────────────────────────
+// ─── llama.rn tip tanımları ───────────────────────────────────────────────────
 
-/**
- * llama.cpp emscripten build'in dışa açtığı JS API.
- * Gerçek pakette: `import { createLlama } from "llama-cpp-wasm"`
- * veya: `const module = await LlamaModule({ wasmBinary, ... })`
- */
-export interface ILlamaModule {
-  /** Model dosyasını WASM file system'e yükle */
-  load_model(path: string, params?: Record<string, unknown>): boolean;
-  /** Tek seferlik completion token üret (senkron) */
-  get_next_token(
-    contextId: number,
-    samplingParams?: LlamaSamplingParams,
-  ): string;
-  /** Yeni context oluştur */
-  create_context(modelPath: string): number;
-  /** Context'i serbest bırak */
-  free_context(contextId: number): void;
-  /** WASM file system'e dosya yaz */
-  FS_writeFile(path: string, data: Uint8Array): void;
-  /** WASM Module'ü kapat */
-  destroy(): void;
+export interface LlamaRnCompletionToken {
+  token: string;
 }
 
-export interface LlamaSamplingParams {
-  temperature?: number;
-  top_p?: number;
-  top_k?: number;
-  repeat_penalty?: number;
-  max_new_tokens?: number;
+export interface LlamaRnTimings {
+  prompt_n: number;
+  predicted_n: number;
+  prompt_ms: number;
+  predicted_ms: number;
 }
 
-// ─── Platform detect ──────────────────────────────────────────────────────────
-
-function isWeb(): boolean {
-  return typeof document !== "undefined";
+export interface LlamaRnCompletionResult {
+  text: string;
+  timings: LlamaRnTimings;
 }
 
-// ─── WASM Bootstrap ───────────────────────────────────────────────────────────
-
-/**
- * WASM binary'yi fetch eder, emscripten Module'ü başlatır.
- *
- * Web'de:
- *   `fetch(wasmUri)` → ArrayBuffer → `createLlama({ wasmBinary })`
- *
- * Native (iOS/Android)'de:
- *   Expo `Asset.fromModule()` → `downloadAsync()` → `localUri`
- *   emscripten Module `locateFile` ile local path'i kullanır.
- */
-export class WasmBootstrap {
-  private static _moduleCache = new Map<string, ILlamaModule>();
-
-  static async load(wasmAssetUri: string): Promise<ILlamaModule> {
-    const cached = WasmBootstrap._moduleCache.get(wasmAssetUri);
-    if (cached) return cached;
-
-    let module: ILlamaModule;
-
-    if (isWeb()) {
-      module = await WasmBootstrap._loadWeb(wasmAssetUri);
-    } else {
-      module = await WasmBootstrap._loadNative(wasmAssetUri);
-    }
-
-    WasmBootstrap._moduleCache.set(wasmAssetUri, module);
-    return module;
-  }
-
-  private static async _loadWeb(wasmUri: string): Promise<ILlamaModule> {
-    // Web: WASM binary'yi fetch et
-    const response = await fetch(wasmUri);
-    if (!response.ok) {
-      throw new Error(`WASM fetch failed: HTTP ${response.status} — ${wasmUri}`);
-    }
-    const wasmBinary = await response.arrayBuffer();
-
-    // llama-cpp-wasm paketi
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-    const { createLlama } = await import("llama-cpp-wasm");
-    return createLlama({ wasmBinary: new Uint8Array(wasmBinary) }) as ILlamaModule;
-  }
-
-  private static async _loadNative(wasmUri: string): Promise<ILlamaModule> {
-    // Native: Expo Asset ile local dosyaya indir
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-    const { Asset } = await import("expo-asset");
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-    const { createLlama } = await import("llama-cpp-wasm");
-
-    // Expo asset URI'sini çözümle
-    const asset = Asset.fromURI(wasmUri);
-    await asset.downloadAsync();
-
-    if (!asset.localUri) {
-      throw new Error(`Expo Asset localUri null: ${wasmUri}`);
-    }
-
-    // Native'de WASM file'ı local path üzerinden yükle
-    return createLlama({ locateFile: (_file: string) => asset.localUri! }) as ILlamaModule;
-  }
-
-  /** Test / memory pressure → cache temizle */
-  static clearCache(): void {
-    for (const mod of WasmBootstrap._moduleCache.values()) {
-      try { mod.destroy(); } catch { /* ignore */ }
-    }
-    WasmBootstrap._moduleCache.clear();
-  }
+export interface LlamaRnContext {
+  completion(
+    params: {
+      messages?: Array<{ role: string; content: string }>;
+      prompt?: string;
+      n_predict: number;
+      temperature: number;
+      stop?: string[];
+    },
+    onToken: (data: LlamaRnCompletionToken) => void,
+  ): Promise<LlamaRnCompletionResult>;
+  stopCompletion(): Promise<void>;
+  release(): Promise<void>;
 }
 
-// ─── LlamaCppBinding ─────────────────────────────────────────────────────────
+export interface LlamaRnInitParams {
+  model: string;
+  use_mlock?: boolean;
+  n_ctx?: number;
+  n_threads?: number;
+  n_gpu_layers?: number;
+}
 
-/**
- * ILlamaModule → ILlamaCppBinding adapter.
- * OfflineRuntime bu arayüzü kullanır; llama.cpp detaylarını bilmez.
- *
- * T-NEW-2 ile entegre: `getChatTemplate(modelId)` ile doğru template.
- */
-class LlamaCppBinding implements ILlamaCppBinding {
-  private readonly _module: ILlamaModule;
+export type InitLlamaFn = (params: LlamaRnInitParams) => Promise<LlamaRnContext>;
+
+// ─── LlamaRnBinding — ILlamaCppBinding impl ───────────────────────────────────
+
+class LlamaRnBinding implements ILlamaCppBinding {
+  private readonly _initLlama: InitLlamaFn;
   private readonly _modelId: AIModelId;
-  private readonly _modelPath: string;
-  private _contextId: number | null = null;
+  private readonly _cfg: {
+    n_ctx: number;
+    n_threads: number;
+    n_gpu_layers: number;
+    use_mlock: boolean;
+  };
+  private _context: LlamaRnContext | null = null;
   private _disposed = false;
 
-  constructor(module: ILlamaModule, modelId: AIModelId, modelPath: string) {
-    this._module  = module;
-    this._modelId = modelId;
-    this._modelPath = modelPath;
+  constructor(
+    initLlama: InitLlamaFn,
+    modelId: AIModelId,
+    config: {
+      n_ctx?: number;
+      n_threads?: number;
+      n_gpu_layers?: number;
+      use_mlock?: boolean;
+    } = {},
+  ) {
+    this._initLlama = initLlama;
+    this._modelId   = modelId;
+    this._cfg       = {
+      n_ctx:        config.n_ctx        ?? 4096,
+      n_threads:    config.n_threads    ?? 4,
+      n_gpu_layers: config.n_gpu_layers ?? 1, // 1 = Metal/OpenCL açık
+      use_mlock:    config.use_mlock    ?? false,
+    };
   }
 
   async loadModel(modelPath: string): Promise<void> {
-    const loaded = this._module.load_model(modelPath, { n_ctx: 4096 });
-    if (!loaded) throw new Error(`llama.cpp: load_model failed — ${modelPath}`);
-    this._contextId = this._module.create_context(modelPath);
+    if (this._disposed) throw new Error("LlamaRnBinding: already disposed");
+    if (this._context !== null) {
+      await this._context.release().catch(() => {});
+      this._context = null;
+    }
+    this._context = await this._initLlama({
+      model:        modelPath,
+      n_ctx:        this._cfg.n_ctx,
+      n_threads:    this._cfg.n_threads,
+      n_gpu_layers: this._cfg.n_gpu_layers,
+      use_mlock:    this._cfg.use_mlock,
+    });
   }
 
   tokenize(text: string): number[] {
-    // llama.cpp WASM tokenize — basit whitespace split proxy
-    // Gerçek implementasyon: this._module.tokenize(text) (paket bağlı)
-    // Şimdilik her karakter → token ID (byte-level proxy)
+    // Byte-level proxy — gerçek token sayısı timings.prompt_n'den alınır
     return Array.from(new TextEncoder().encode(text));
   }
 
   async *nextToken(
-    _contextTokens: number[],
+    contextTokens: number[],
     maxNewTokens: number,
     signal: AbortSignal,
+    stopTokens?: readonly string[],
   ): AsyncGenerator<string, void, unknown> {
-    if (this._contextId === null) throw new Error("Model not loaded");
+    if (this._context === null) throw new Error("Model not loaded. Call loadModel() first.");
     if (this._disposed) return;
 
-    const template = getChatTemplate(this._modelId);
-    const stopTokens = new Set(template.stopTokens);
+    const template   = getChatTemplate(this._modelId);
+    const finalStops = [
+      ...template.stopTokens,
+      ...(stopTokens ?? []),
+      "<|end|>", "<|im_end|>", "</s>", "<|EOT|>",
+    ];
 
-    let generated = "";
-    let tokenCount = 0;
+    const promptText = new TextDecoder().decode(new Uint8Array(contextTokens));
 
-    while (tokenCount < maxNewTokens) {
-      if (signal.aborted) return;
+    const tokenQueue: string[] = [];
+    let completionDone = false;
+    let completionError: unknown = null;
 
-      // llama.cpp senkron token üretimi — micro-task'a bırak
-      const token = await new Promise<string>((resolve, reject) => {
-        if (signal.aborted) { reject(new DOMException("Aborted", "AbortError")); return; }
-        try {
-          const t = this._module.get_next_token(this._contextId!, {
-            temperature: 0.7,
-            top_p: 0.9,
-            top_k: 40,
-            repeat_penalty: 1.1,
-          });
-          resolve(t);
-        } catch (e) {
-          reject(e);
-        }
-      });
+    const completionPromise = this._context.completion(
+      { prompt: promptText, n_predict: maxNewTokens, temperature: 0.7, stop: finalStops },
+      (data) => {
+        if (!signal.aborted && data.token) tokenQueue.push(data.token);
+      },
+    ).then(() => {
+      completionDone = true;
+    }).catch((e: unknown) => {
+      completionError = e;
+      completionDone  = true;
+    });
 
-      if (!token || token === "") break; // EOS
-
-      // Stop token kontrolü
-      generated += token;
-      let isStop = false;
-      for (const stop of stopTokens) {
-        if (generated.endsWith(stop)) {
-          isStop = true;
-          // Stop token'ı çıktıdan çıkar
-          generated = generated.slice(0, generated.length - stop.length);
-          break;
-        }
+    while (true) {
+      if (signal.aborted) {
+        await this._context.stopCompletion().catch(() => {});
+        return;
       }
-      if (isStop) break;
-
-      yield token;
-      tokenCount++;
+      while (tokenQueue.length > 0) {
+        const token = tokenQueue.shift()!;
+        if (token) yield token;
+      }
+      if (completionDone) break;
+      await new Promise<void>((r) => setTimeout(r, 0));
     }
+
+    await completionPromise;
+    if (completionError) throw completionError;
   }
 
   free(): void {
     if (this._disposed) return;
     this._disposed = true;
-    if (this._contextId !== null) {
-      try { this._module.free_context(this._contextId); } catch { /* ignore */ }
-      this._contextId = null;
+    if (this._context !== null) {
+      this._context.release().catch(() => {});
+      this._context = null;
     }
-    // Module cache'de kalır (WasmBootstrap) — tek WASM instance'ı paylaşılır
   }
 }
 
-// ─── ExpoLlamaCppLoader (T-NEW-1 KAPANDI) ───────────────────────────────────
+// ─── ExpoLlamaCppLoader ───────────────────────────────────────────────────────
 
 /**
- * Expo ortamında llama.cpp WASM'ı yükler.
+ * llama.rn kullanarak ILlamaCppBinding üretir.
  *
  * Kullanım (AppContainer):
- *   const loader = new ExpoLlamaCppLoader(
- *     require("../../assets/llama.wasm"),  // Metro asset
- *     modelId,
- *   );
+ *   const loader = new ExpoLlamaCppLoader(AIModelId.OFFLINE_GEMMA3_1B);
  *   const runtime = new OfflineRuntime(loader);
+ *
+ * Gereksinimler:
+ *   • Expo Dev Client (npx expo run:ios / run:android)
+ *   • app.json'da llama.rn config plugin (aşağıda)
+ *   • iOS: iOS 15.1+, Metal-capable GPU (Apple7+)
+ *   • Android: arm64-v8a, API 24+
  */
 export class ExpoLlamaCppLoader implements ILlamaCppLoader {
-  private readonly _wasmAssetUri: string;
   private readonly _modelId: AIModelId;
+  private readonly _config: {
+    n_ctx?: number;
+    n_threads?: number;
+    n_gpu_layers?: number;
+    use_mlock?: boolean;
+  };
 
-  constructor(wasmAssetUri: string, modelId: AIModelId) {
-    this._wasmAssetUri = wasmAssetUri;
-    this._modelId      = modelId;
+  constructor(
+    modelId: AIModelId,
+    config: {
+      n_ctx?: number;
+      n_threads?: number;
+      /** 0 = CPU-only, 1+ = Metal (iOS) veya OpenCL (Android) */
+      n_gpu_layers?: number;
+      use_mlock?: boolean;
+    } = {},
+  ) {
+    this._modelId = modelId;
+    this._config  = config;
   }
 
   async loadBinding(): Promise<ILlamaCppBinding> {
-    const module = await WasmBootstrap.load(this._wasmAssetUri);
-    return new LlamaCppBinding(module, this._modelId, "");
-    // modelPath loadModel()'de set edilecek — OfflineRuntime._doLoad(apiModelId) çağırır
+    // Expo Dev Client ile çalışır — Expo Go DESTEKLEMİYOR
+    const { initLlama } = await import("llama.rn");
+    return new LlamaRnBinding(initLlama as InitLlamaFn, this._modelId, this._config);
   }
 }
 
-// ─── Mock (test) ─────────────────────────────────────────────────────────────
+// ─── LlamaRnBridgeAdapter — LlamaCppRunner.ILlamaBridge uyumluluğu ───────────
+
+/**
+ * LlamaCppRunner'ın ILlamaBridge interface'ini llama.rn ile implemente eder.
+ *
+ * Kullanım (AppContainer):
+ *   const bridge = new LlamaRnBridgeAdapter();
+ *   const runner = new LlamaCppRunner(bridge, config);
+ *
+ * Not: LlamaCppRunner zaten doğru ILlamaBridge interface kullanıyor.
+ * Bu adapter sadece llama.rn → ILlamaBridge dönüşümü yapar.
+ */
+export class LlamaRnBridgeAdapter {
+  private _initLlamaFn: InitLlamaFn | null = null;
+
+  private async _getInitLlama(): Promise<InitLlamaFn> {
+    if (!this._initLlamaFn) {
+      const mod = await import("llama.rn");
+      this._initLlamaFn = mod.initLlama as InitLlamaFn;
+    }
+    return this._initLlamaFn;
+  }
+
+  async loadModel(
+    modelPath: string,
+    params: { n_ctx: number; n_threads: number; use_mlock: boolean },
+  ): Promise<LlamaRnContext> {
+    const initLlama = await this._getInitLlama();
+    return initLlama({
+      model:        modelPath,
+      n_ctx:        params.n_ctx,
+      n_threads:    params.n_threads,
+      n_gpu_layers: 1,
+      use_mlock:    params.use_mlock,
+    });
+  }
+
+  async getModelInfo(
+    modelPath: string,
+  ): Promise<{ contextLength: number; description: string }> {
+    const { loadLlamaModelInfo } = await import("llama.rn");
+    const info = await (
+      loadLlamaModelInfo as (path: string) => Promise<Record<string, unknown>>
+    )(modelPath);
+    return {
+      contextLength: (info?.n_ctx_train as number) ?? 4096,
+      description:   (info?.desc as string)        ?? "llama.rn model",
+    };
+  }
+}
+
+// ─── WasmBootstrap stub — geriye dönük uyumluluk ─────────────────────────────
+
+/**
+ * @deprecated WASM artık kullanılmıyor. llama.rn native binding kullanın.
+ * Bu sınıf sadece geriye dönük import uyumluluğu için bırakıldı.
+ */
+export class WasmBootstrap {
+  /** @deprecated */
+  static async load(_wasmAssetUri: string): Promise<never> {
+    throw new Error(
+      "WasmBootstrap.load() deprecated. llama.rn native binding kullanın: ExpoLlamaCppLoader",
+    );
+  }
+  /** @deprecated */
+  static clearCache(): void { /* no-op */ }
+}
+
+// ─── Mock (test) ──────────────────────────────────────────────────────────────
 
 export { MockLlamaCppLoader } from "./OfflineRuntime";

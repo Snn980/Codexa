@@ -1,5 +1,5 @@
 /**
- * metro.config.js — Worker thread bundle yapılandırması
+ * metro.config.js — Worker thread bundle yapılandırması (llama.rn native)
  *
  * SDK 55 / Metro 0.82
  *
@@ -38,19 +38,20 @@ config.resolver = {
   ],
 };
 
-// ─── WASM + binary asset uzantıları ──────────────────────────────────────────
+// ─── Binary asset uzantıları ─────────────────────────────────────────────────
+// llama.rn native — WASM kaldırıldı, GGUF model asset desteği korundu
 
 config.resolver.assetExts = [
   ...config.resolver.assetExts,
-  "wasm",   // llama.wasm + tree-sitter WASM
-  "gguf",   // opsiyonel: küçük test modeli
+  "gguf",   // GGUF model dosyaları (llama.rn)
+  "bin",    // Tokenizer ve yardımcı binary dosyalar
 ];
 
 // ─── Source extensions ───────────────────────────────────────────────────────
 
 config.resolver.sourceExts = [
   ...config.resolver.sourceExts,
-  "cjs",    // llama-cpp-wasm CommonJS glue
+  // "cjs" kaldırıldı — llama-cpp-wasm CJS glue artık gerekli değil
 ];
 
 module.exports = config;
