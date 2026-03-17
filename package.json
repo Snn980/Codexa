@@ -59,7 +59,7 @@
 "jest-expo": "~55.0.0",
 "babel-jest": "^30.0.0",
 
-"@testing-library/react-native": "^14.0.0",
+"@testing-library/react-native": "^13.3.3",
 
 "detox": "^20.27.0",
 "@types/detox": "^18.1.0",
