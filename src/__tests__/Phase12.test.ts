@@ -25,7 +25,7 @@ jest.mock("react-native", () => ({
   Platform: { OS: "ios" },
 }));
 
-import { renderHook, act } from "@testing-library/react-hooks";
+import { renderHook, act, waitFor } from "@testing-library/react-native";
 import { useOTAUpdate }    from "../hooks/useOTAUpdate";
 import { useModelSelector } from "../hooks/useModelSelector";
 import { AIModelId }       from "../ai/AIModels";
@@ -95,19 +95,19 @@ describe("useOTAUpdate", () => {
   describe("ilk mount check", () => {
     it("mount'ta checkNow çağrılır", async () => {
       const container = makeContainer([]);
-      const { waitForNextUpdate } = renderHook(() =>
+      const { result: _r } = renderHook(() =>
         useOTAUpdate({ container, intervalMs: 0 }),
       );
-      await waitForNextUpdate();
+      await waitFor(() => expect(container.checkForModelUpdates).toHaveBeenCalledTimes(1));
       expect(container.checkForModelUpdates).toHaveBeenCalledTimes(1);
     });
 
     it("container null dönerse (dev) → updatableModels boş kalır", async () => {
       const container = makeContainer(null);
-      const { result, waitForNextUpdate } = renderHook(() =>
+      const { result } = renderHook(() =>
         useOTAUpdate({ container, intervalMs: 0 }),
       );
-      await waitForNextUpdate();
+      await waitFor(() => expect(result.current.updatableModels.size).toBe(0));
       expect(result.current.updatableModels.size).toBe(0);
       expect(result.current.lastError).toBeNull();
     });
@@ -116,10 +116,10 @@ describe("useOTAUpdate", () => {
       const container = makeContainer([
         makeOTAResult(AIModelId.OFFLINE_GEMMA3_1B, "update-available"),
       ]);
-      const { result, waitForNextUpdate } = renderHook(() =>
+      const { result } = renderHook(() =>
         useOTAUpdate({ container, intervalMs: 0 }),
       );
-      await waitForNextUpdate();
+      await waitFor(() => expect(result.current.updatableModels.has(AIModelId.OFFLINE_GEMMA3_1B)).toBe(true));
       expect(result.current.updatableModels.has(AIModelId.OFFLINE_GEMMA3_1B)).toBe(true);
     });
 
@@ -127,10 +127,10 @@ describe("useOTAUpdate", () => {
       const container = makeContainer([
         makeOTAResult(AIModelId.OFFLINE_GEMMA3_1B, "up-to-date"),
       ]);
-      const { result, waitForNextUpdate } = renderHook(() =>
+      const { result } = renderHook(() =>
         useOTAUpdate({ container, intervalMs: 0 }),
       );
-      await waitForNextUpdate();
+      await waitFor(() => expect(result.current.updatableModels.has(AIModelId.OFFLINE_GEMMA3_1B)).toBe(false));
       expect(result.current.updatableModels.has(AIModelId.OFFLINE_GEMMA3_1B)).toBe(false);
     });
 
@@ -138,10 +138,10 @@ describe("useOTAUpdate", () => {
       const container = makeContainer([
         makeOTAResult(AIModelId.OFFLINE_GEMMA3_1B, "not-installed"),
       ]);
-      const { result, waitForNextUpdate } = renderHook(() =>
+      const { result } = renderHook(() =>
         useOTAUpdate({ container, intervalMs: 0 }),
       );
-      await waitForNextUpdate();
+      await waitFor(() => expect(result.current.updatableModels.has(AIModelId.OFFLINE_GEMMA3_1B)).toBe(false));
       expect(result.current.updatableModels.has(AIModelId.OFFLINE_GEMMA3_1B)).toBe(false);
     });
 
@@ -151,10 +151,10 @@ describe("useOTAUpdate", () => {
         makeOTAResult(AIModelId.OFFLINE_PHI4_MINI, "up-to-date"),
         makeOTAResult(AIModelId.OFFLINE_GEMMA3_4B, "not-installed"),
       ]);
-      const { result, waitForNextUpdate } = renderHook(() =>
+      const { result } = renderHook(() =>
         useOTAUpdate({ container, intervalMs: 0 }),
       );
-      await waitForNextUpdate();
+      await waitFor(() => expect(result.current.updatableModels.has(AIModelId.OFFLINE_GEMMA3_1B)).toBe(true));
       expect(result.current.updatableModels.has(AIModelId.OFFLINE_GEMMA3_1B)).toBe(true);
       expect(result.current.updatableModels.has(AIModelId.OFFLINE_PHI4_MINI)).toBe(false);
       expect(result.current.updatableModels.has(AIModelId.OFFLINE_GEMMA3_4B)).toBe(false);
@@ -169,7 +169,7 @@ describe("useOTAUpdate", () => {
         checkForModelUpdates: jest.fn(() => new Promise<any>((r) => { resolve = () => r({ ok: true, data: [] }); })),
       } as any;
 
-      const { result, waitForNextUpdate } = renderHook(() =>
+      const { result } = renderHook(() =>
         useOTAUpdate({ container, intervalMs: 0 }),
       );
 
@@ -177,8 +177,7 @@ describe("useOTAUpdate", () => {
       expect(result.current.checking).toBe(true);
 
       await act(async () => { resolve(); });
-      await waitForNextUpdate();
-
+      await waitFor(() => expect(result.current.checking).toBe(false));
       expect(result.current.checking).toBe(false);
     });
   });
@@ -191,10 +190,10 @@ describe("useOTAUpdate", () => {
           ok: false, code: "MANIFEST_FETCH_FAILED", message: "Network hatası",
         })),
       } as any;
-      const { result, waitForNextUpdate } = renderHook(() =>
+      const { result } = renderHook(() =>
         useOTAUpdate({ container, intervalMs: 0 }),
       );
-      await waitForNextUpdate();
+      await waitFor(() => expect(result.current.lastError).toBe("Network hatası"));
       expect(result.current.lastError).toBe("Network hatası");
     });
 
@@ -203,10 +202,10 @@ describe("useOTAUpdate", () => {
         isReady: true,
         checkForModelUpdates: jest.fn(async () => { throw new Error("Unexpected"); }),
       } as any;
-      const { result, waitForNextUpdate } = renderHook(() =>
+      const { result } = renderHook(() =>
         useOTAUpdate({ container, intervalMs: 0 }),
       );
-      await waitForNextUpdate();
+      await waitFor(() => expect(result.current.lastError).toContain("Unexpected"));
       expect(result.current.lastError).toContain("Unexpected");
     });
   });
@@ -214,10 +213,10 @@ describe("useOTAUpdate", () => {
   describe("checkNow manuel", () => {
     it("checkNow() çağrılınca container.checkForModelUpdates tekrar tetiklenir", async () => {
       const container = makeContainer([]);
-      const { result, waitForNextUpdate } = renderHook(() =>
+      const { result } = renderHook(() =>
         useOTAUpdate({ container, intervalMs: 0 }),
       );
-      await waitForNextUpdate();
+      await waitFor(() => expect(result.current).toBeDefined());
       const before = container.checkForModelUpdates.mock.calls.length;
 
       await act(async () => { await result.current.checkNow(); });
@@ -230,10 +229,10 @@ describe("useOTAUpdate", () => {
     it("update-available model → entry döner", async () => {
       const expected = makeOTAResult(AIModelId.OFFLINE_GEMMA3_1B, "update-available");
       const container = makeContainer([expected]);
-      const { result, waitForNextUpdate } = renderHook(() =>
+      const { result } = renderHook(() =>
         useOTAUpdate({ container, intervalMs: 0 }),
       );
-      await waitForNextUpdate();
+      await waitFor(() => expect(result.current).toBeDefined());
       const entry = result.current.getUpdateEntry(AIModelId.OFFLINE_GEMMA3_1B);
       expect(entry).toBeDefined();
       expect(entry?.latestVersion).toBe("2.0.0");
@@ -241,10 +240,10 @@ describe("useOTAUpdate", () => {
 
     it("bilinmeyen model → undefined", async () => {
       const container = makeContainer([]);
-      const { result, waitForNextUpdate } = renderHook(() =>
+      const { result } = renderHook(() =>
         useOTAUpdate({ container, intervalMs: 0 }),
       );
-      await waitForNextUpdate();
+      await waitFor(() => expect(result.current.getUpdateEntry(AIModelId.OFFLINE_GEMMA3_1B)).toBeUndefined());
       expect(result.current.getUpdateEntry(AIModelId.OFFLINE_GEMMA3_1B)).toBeUndefined();
     });
   });
@@ -253,19 +252,19 @@ describe("useOTAUpdate", () => {
     it("check sonrası lastCheckedAt dolar", async () => {
       const before    = Date.now();
       const container = makeContainer([]);
-      const { result, waitForNextUpdate } = renderHook(() =>
+      const { result } = renderHook(() =>
         useOTAUpdate({ container, intervalMs: 0 }),
       );
-      await waitForNextUpdate();
+      await waitFor(() => expect(result.current.lastCheckedAt).toBeGreaterThanOrEqual(before));
       expect(result.current.lastCheckedAt).toBeGreaterThanOrEqual(before);
     });
 
     it("container null dönerse lastCheckedAt değişmez", async () => {
       const container = makeContainer(null);
-      const { result, waitForNextUpdate } = renderHook(() =>
+      const { result } = renderHook(() =>
         useOTAUpdate({ container, intervalMs: 0 }),
       );
-      await waitForNextUpdate();
+      await waitFor(() => expect(result.current.lastCheckedAt).toBeNull());
       expect(result.current.lastCheckedAt).toBeNull();
     });
   });
@@ -441,11 +440,10 @@ describe("Patch: 7 düzeltme", () => {
         checkForModelUpdates: jest.fn(async () => { throw new Error("fail"); }),
       } as any;
 
-      const { result, waitForNextUpdate } = renderHook(() =>
+      const { result } = renderHook(() =>
         useOTAUpdate({ container, intervalMs: 0 }),
       );
-      await waitForNextUpdate();
-
+      await waitFor(() => expect(result.current.checking).toBe(false));
       expect(result.current.checking).toBe(false);
       expect(result.current.lastError).toContain("fail");
     });
@@ -474,10 +472,10 @@ describe("Patch: 7 düzeltme", () => {
         })),
       } as any;
 
-      const { result, waitForNextUpdate } = renderHook(() =>
+      const { result } = renderHook(() =>
         useOTAUpdate({ container, intervalMs: 0 }),
       );
-      await waitForNextUpdate();
+      await waitFor(() => expect(result.current.updatableModels.has(AIModelId.OFFLINE_GEMMA3_1B)).toBe(true));
       expect(result.current.updatableModels.has(AIModelId.OFFLINE_GEMMA3_1B)).toBe(true);
 
       // İndirme tamamlandı
@@ -513,10 +511,10 @@ describe("Patch: 7 düzeltme", () => {
         })),
       } as any;
 
-      const { result, waitForNextUpdate } = renderHook(() =>
+      const { result } = renderHook(() =>
         useOTAUpdate({ container, intervalMs: 0 }),
       );
-      await waitForNextUpdate();
+      await waitFor(() => expect(result.current).toBeDefined());
 
       act(() => {
         mockEventBus.emit("model:download:complete", { modelId: AIModelId.OFFLINE_GEMMA3_1B });

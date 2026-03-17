@@ -33,7 +33,7 @@ jest.mock('@sentry/react-native', () => ({
 
 // ─── Imports ──────────────────────────────────────────────────────────────────
 
-import { renderHook, act } from '@testing-library/react-hooks';
+import { renderHook, act, waitFor } from '@testing-library/react-native';
 
 // ─── Mock Helpers ─────────────────────────────────────────────────────────────
 
