@@ -1,47 +1,54 @@
 /**
  * workers/ai.offline.worker.ts — Offline AI Worker thread entry
  *
- * DÜZELTME #1a — Yanlış import:
- *   ❌ from "../ai/LlamaCppWasm"  → 2-param constructor, T-P9-2 sonrası modelId gereksiz
- *   ✅ from "../ai/OfflineRuntime" → 1-param, OfflineRuntime'ın kendi loader stub'ı
+ * REFACTOR: llama-cpp-wasm → llama.rn native binding
  *
- * DÜZELTME #1b — 2. parametre hatalı:
- *   ❌ new ExpoLlamaCppLoader(WASM_ASSET_URI, AIModelId.OFFLINE_GEMMA3_1B)
- *      OfflineRuntime multi-model; loader'a modelId bağlamak Gemma3-4B/Phi-4'ü kırar.
- *   ✅ new ExpoLlamaCppLoader(WASM_ASSET_URI)
+ * Değişiklikler:
+ *   ❌ require("../../assets/llama.wasm")   — WASM asset artık yok
+ *   ❌ ExpoLlamaCppLoader(WASM_ASSET_URI)   — eski WASM imzası
+ *   ✅ ExpoLlamaCppLoader(modelId, config)  — llama.rn native imzası
+ *   ✅ Varsayılan model: OFFLINE_GEMMA3_1B  — runtime'da setModelPath() ile override edilir
+ *
+ * Mimari:
+ *   Worker thread
+ *     └─ OfflineRuntime(ExpoLlamaCppLoader)
+ *          └─ LlamaCppWasm.ExpoLlamaCppLoader → initLlama() (llama.rn)
+ *               └─ LlamaRnContext (Metal / OpenCL)
+ *
+ * Gereksinim: Expo Dev Client — Expo Go bu worker'ı yükleyemez.
  *
  * § 5  : REQUEST / STREAM / RESPONSE / CANCEL protokolü
- * § 11 : Expo WASM load
  */
 
-// ✅ Doğru import — OfflineRuntime kendi ExpoLlamaCppLoader ve MockLlamaCppLoader'ı export eder
-import { bootstrapWorker }                          from "../ai/AIWorker";
-import { OfflineRuntime, ExpoLlamaCppLoader,
-         MockLlamaCppLoader }                       from "../ai/OfflineRuntime";
-// ❌ KALDIRILDI: import { AIModelId } from "../ai/AIModels"  (artık gerekmez)
-// ❌ KALDIRILDI: import { ExpoLlamaCppLoader } from "../ai/LlamaCppWasm"
+import { bootstrapWorker }      from "../ai/AIWorker";
+import { OfflineRuntime,
+         MockLlamaCppLoader }   from "../ai/OfflineRuntime";
+import { ExpoLlamaCppLoader }   from "../ai/LlamaCppWasm";
+import { AIModelId }            from "../ai/AIModels";
 
 declare const self: DedicatedWorkerGlobalScope;
-
-// ─── WASM asset URI ───────────────────────────────────────────────────────────
-
-const WASM_ASSET_URI: string = (() => {
-  try {
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-    return require("../../assets/llama.wasm");
-  } catch {
-    return "__mock__";
-  }
-})();
 
 // ─── Runtime ─────────────────────────────────────────────────────────────────
 
 function createRuntime(): OfflineRuntime {
-  if (WASM_ASSET_URI === "__mock__") {
+  // Jest / CI: __DEV__ tanımsız → mock runtime
+  const isNative = (() => { try { return typeof __DEV__ !== "undefined"; } catch { return false; } })();
+
+  if (!isNative) {
     return new OfflineRuntime(new MockLlamaCppLoader());
   }
-  // ✅ Tek parametre — modelId OfflineRuntime._ensureLoaded(modelId, apiModelId)'de
-  return new OfflineRuntime(new ExpoLlamaCppLoader(WASM_ASSET_URI));
+
+  // llama.rn native loader
+  // Varsayılan model: GEMMA3_1B — modelPath worker başladıktan sonra
+  // AIWorkerBridge üzerinden gelen LOAD mesajıyla set edilir.
+  const loader = new ExpoLlamaCppLoader(AIModelId.OFFLINE_GEMMA3_1B, {
+    n_ctx:        4096,
+    n_threads:    4,
+    n_gpu_layers: 1,  // Metal (iOS) / OpenCL (Android) — CPU-only için 0 yap
+    use_mlock:    false,
+  });
+
+  return new OfflineRuntime(loader);
 }
 
 // ─── Bootstrap ────────────────────────────────────────────────────────────────

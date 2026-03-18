@@ -182,22 +182,21 @@ describe("ChatTemplate (T-NEW-2)", () => {
 // 2. WasmBootstrap — T-NEW-1
 // ═══════════════════════════════════════════════════════════════════════════════
 
-describe("WasmBootstrap (T-NEW-1)", () => {
-  afterEach(() => { WasmBootstrap.clearCache(); });
-
-  it("clearCache çalışır — hata atmaz", () => {
+// WasmBootstrap artık deprecated stub — llama.rn native kullanılıyor
+describe("WasmBootstrap (deprecated stub)", () => {
+  it("clearCache no-op — hata atmaz", () => {
     expect(() => WasmBootstrap.clearCache()).not.toThrow();
   });
 
-  it("load — WASM URI hatalıysa fırlatır", async () => {
-    // fetch mock yok → network bağlantısı yok → fırlatır
+  it("load — deprecated, her zaman fırlatır", async () => {
     await expect(
-      WasmBootstrap.load("https://invalid.test/llama.wasm"),
+      WasmBootstrap.load("any-uri"),
     ).rejects.toBeDefined();
   });
 
-  it("ExpoLlamaCppLoader — loadBinding throws (T-NEW-1 stub değil gerçek path)", async () => {
-    const loader = new ExpoLlamaCppLoader("invalid://wasm", AIModelId.OFFLINE_GEMMA3_1B);
+  it("ExpoLlamaCppLoader — modelId ile oluşturulur, native env dışında rejects", async () => {
+    // Test ortamında (Node/Jest) llama.rn native modülü yok → rejects beklenir
+    const loader = new ExpoLlamaCppLoader(AIModelId.OFFLINE_GEMMA3_1B);
     await expect(loader.loadBinding()).rejects.toBeDefined();
   });
 

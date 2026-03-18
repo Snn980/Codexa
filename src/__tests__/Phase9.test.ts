@@ -347,18 +347,18 @@ describe("#3 Cloud Worker — SET_KEY protokolü `key` alanı", () => {
 // ═══════════════════════════════════════════════════════════════════════════════
 
 describe("#1 ai.offline.worker.ts — import + constructor düzeltmesi", () => {
-  it("ExpoLlamaCppLoader OfflineRuntime'dan export edilir (1 param)", () => {
+  it("ExpoLlamaCppLoader OfflineRuntime'dan export edilir (modelId param)", () => {
     const { ExpoLlamaCppLoader } = require("../ai/OfflineRuntime");
     expect(typeof ExpoLlamaCppLoader).toBe("function");
-    // 1 parametre ile oluşturulabilmeli
-    const loader = new ExpoLlamaCppLoader("some-uri");
+    // modelId ile oluşturulabilmeli (llama.rn imzası)
+    const loader = new ExpoLlamaCppLoader(AIModelId.OFFLINE_GEMMA3_1B);
     expect(loader).toBeDefined();
   });
 
-  it("ExpoLlamaCppLoader 2. param olmadan oluşturulur — AIModelId gerekmez", () => {
+  it("ExpoLlamaCppLoader config olmadan oluşturulur — defaults geçerli", () => {
     const { ExpoLlamaCppLoader } = require("../ai/OfflineRuntime");
-    // ✅ 2. param yok → TypeError atmamalı
-    expect(() => new ExpoLlamaCppLoader("uri")).not.toThrow();
+    // ✅ config parametresi opsiyonel → TypeError atmamalı
+    expect(() => new ExpoLlamaCppLoader(AIModelId.OFFLINE_GEMMA3_1B)).not.toThrow();
   });
 
   it("OfflineRuntime multi-model — her model için ayrı LoadState", async () => {

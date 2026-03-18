@@ -33,21 +33,16 @@ import type { IAPIKeyStoreExtended } from "../security/APIKeyStore";
 import type { Result }              from "../core/Result";
 import { ok, err }                  from "../core/Result";
 
-// ─── WASM asset URI ───────────────────────────────────────────────────────────
-
-/**
- * llama.wasm asset'inin Metro URI'si.
- * Uygulama bundle'ında `assets/llama.wasm` olarak yer alır.
- * llama.rn native — WASM asset kopyalama gerekmez.
- * Model dosyaları (GGUF) expo-file-system ile indirilir/yönetilir.
- */
-const LLAMA_WASM_ASSET_URI = "../../assets/llama.wasm";
-
 // ─── Fabrika fonksiyonları ────────────────────────────────────────────────────
 
 /**
  * Offline runtime oluştur.
- * modelId: hangi GGUF modeli için loader hazırlanacak.
+ *
+ * llama.rn native binding — WASM kaldırıldı.
+ * GGUF dosya path'i LlamaCppRunner.setModelPath() ile runtime'da inject edilir.
+ *
+ * Gereksinim: Expo Dev Client (npx expo run:ios / run:android)
+ *             Expo Go desteklemez — native modül.
  */
 export async function createOfflineRuntime(
   modelId: AIModelId,
@@ -55,19 +50,19 @@ export async function createOfflineRuntime(
   try {
     let loader: ILlamaCppLoader;
 
-    if (isNativeOrWeb()) {
-      // Gerçek WASM loader (T-NEW-1)
-      const { ExpoLlamaCppLoader } = await import("./LlamaCppWasm");
-      loader = new ExpoLlamaCppLoader(LLAMA_WASM_ASSET_URI, modelId);
+    if (isNativeEnv()) {
+      // llama.rn native loader — iOS Metal / Android OpenCL
+      const { ExpoLlamaCppLoader } = await import("./OfflineRuntime");
+      loader = new ExpoLlamaCppLoader(modelId, { n_gpu_layers: 1 });
     } else {
-      // Test ortamı
+      // Test / CI ortamı — native modül yok
       const { MockLlamaCppLoader } = await import("./OfflineRuntime");
       loader = new MockLlamaCppLoader();
     }
 
     return ok(new OfflineRuntime(loader));
   } catch (e) {
-    return err("RUNTIME_WASM_INIT_FAILED", String(e));
+    return err("RUNTIME_LLAMA_INIT_FAILED", String(e));
   }
 }
 
@@ -129,9 +124,14 @@ function createNativeWorkerFactory(
 
 // ─── Platform detect ──────────────────────────────────────────────────────────
 
-function isNativeOrWeb(): boolean {
-  // Jest ortamında false döner → MockLlamaCppLoader kullanılır
-  return typeof __DEV__ !== "undefined" || typeof navigator !== "undefined";
+function isNativeEnv(): boolean {
+  // Jest / Node ortamında false döner → MockLlamaCppLoader kullanılır
+  // React Native / Expo ortamında __DEV__ global tanımlı olur
+  try {
+    return typeof __DEV__ !== "undefined";
+  } catch {
+    return false;
+  }
 }
 
 // ─── AIRuntimeManager (AppContainer için) ────────────────────────────────────

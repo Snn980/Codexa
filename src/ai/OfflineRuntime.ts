@@ -62,15 +62,38 @@ export interface ILlamaCppLoader {
   loadBinding(): Promise<ILlamaCppBinding>;
 }
 
-// ─── ExpoLlamaCppLoader stub ──────────────────────────────────────────────────
+// ─── ExpoLlamaCppLoader ───────────────────────────────────────────────────────
+// llama.rn native binding — WASM artık kullanılmıyor.
+// Gerçek implementasyon LlamaCppWasm.ts'te; bu sınıf ona delege eder.
 
 export class ExpoLlamaCppLoader implements ILlamaCppLoader {
-  private readonly _wasmAssetUri: string;
-  /** ✅ DÜZELTME #1b: Tek parametre — modelId yok */
-  constructor(wasmAssetUri: string) { this._wasmAssetUri = wasmAssetUri; }
+  private readonly _modelId: AIModelId;
+  private readonly _config: {
+    n_ctx?: number;
+    n_threads?: number;
+    n_gpu_layers?: number;
+    use_mlock?: boolean;
+  };
+
+  constructor(
+    modelId: AIModelId,
+    config: {
+      n_ctx?: number;
+      n_threads?: number;
+      /** 0 = CPU-only, 1+ = Metal (iOS) / OpenCL (Android) */
+      n_gpu_layers?: number;
+      use_mlock?: boolean;
+    } = {},
+  ) {
+    this._modelId = modelId;
+    this._config  = config;
+  }
+
   async loadBinding(): Promise<ILlamaCppBinding> {
-    // Gerçek impl: LlamaCppWasm.WasmBootstrap.load(this._wasmAssetUri)
-    throw new Error(`T-NEW-1 → LlamaCppWasm.ts: uri=${this._wasmAssetUri}`);
+    // llama.rn — Expo Dev Client gerektirir (Expo Go desteklemez)
+    const { ExpoLlamaCppLoader: LlamaRnLoader } = await import("./LlamaCppWasm");
+    const inner = new LlamaRnLoader(this._modelId, this._config);
+    return inner.loadBinding();
   }
 }
 
