@@ -192,6 +192,7 @@ export class DependencyIndex {
         byKind,
       };
     }, ErrorCode.INDEX_FAILED, `getSummary failed for ${fileId}`);
+  }
   // TODO: İleride Tarjan’s Strongly Connected Components algoritması ile değiştir
   private _findCycleSets(nodes: UUID[]): UUID[][] {
     const visited = new Set<UUID>();
