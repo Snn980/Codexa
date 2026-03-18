@@ -17,7 +17,6 @@
     "ios": {
       "supportsTablet": false,
       "bundleIdentifier": "com.codexa.app",
-      "deploymentTarget": "15.1",
       "infoPlist": {
         "BGTaskSchedulerPermittedIdentifiers": [
           "com.codexa.model.processing"
