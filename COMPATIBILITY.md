@@ -1,7 +1,7 @@
 # Platform Uyumluluk Matrisi — Mobile AI IDE
 
 **Son güncelleme:** Mart 2026  
-**Stack:** Expo SDK 52 / React Native 0.74 / Hermes  
+**Stack:** Expo SDK 55 / React Native 0.83.2 / Hermes  
 **Kural referansı:** Decisions.md § 78
 
 ---
@@ -18,7 +18,7 @@
 | Android 11 | 30 | %13.7 | ✅ | ⚠️ BackgroundFetch güvenilir değil; foreground indirme önerilir |
 | Android 10 | 29 | %7.8 | ✅ | minSdk 24 kapsar, checkMultiple normal çalışır |
 | Android 7–9 | 24–28 | %12 | ✅ | minSdkVersion = 24 alt sınır |
-| Android 6 ve altı | ≤23 | — | ❌ | RN 0.74 minSdk 23 gerektirir; Expo SDK 52 minSdk 24 önerir |
+| Android 6 ve altı | ≤23 | — | ❌ | RN 0.83 minSdk 23 gerektirir; Expo SDK 55 minSdk 24 önerir |
 
 **Kaynak:** Google Android Distribution Dashboard (Aralık 2025), AppBrain Mart 2026, TelemetryDeck Şubat 2026
 
@@ -43,7 +43,7 @@ durumlarını temizler.
 | iOS 17 | %3 | ✅ | deploymentTarget 15.1 kapsar |
 | iOS 16 | %2 | ✅ | deploymentTarget 15.1 kapsar |
 | iOS 15 | %1 | ✅ | **deploymentTarget minimum sınırı = 15.1** |
-| iOS 14 ve altı | — | ❌ | DROPPED — Expo SDK 52 minimum |
+| iOS 14 ve altı | — | ❌ | DROPPED — Expo SDK 55 minimum |
 
 **Kaynak:** TelemetryDeck Şubat 2026, iosref.com Mart 2026
 
@@ -123,7 +123,7 @@ BackHandler.addEventListener('hardwareBackPress', handler);
 
 ## Background Task
 
-### Mevcut Durum (Expo SDK 52)
+### Mevcut Durum (Expo SDK 55)
 
 | Platform | Çözüm | Güvenilirlik |
 |---|---|---|
