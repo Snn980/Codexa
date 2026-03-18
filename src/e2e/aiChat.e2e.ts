@@ -273,7 +273,7 @@ describe('AIChatScreen — E2E', () => {
         .withTimeout(WAIT_TIMEOUT);
     });
 
-    it('Chat tab'a geri dönülür', async () => {
+    it(`Chat tab'a geri dönülür`, async () => {
       await element(by.id('tab-editor')).tap();
       await element(by.id('tab-chat')).tap();
       await waitFor(msgList()).toBeVisible().withTimeout(WAIT_TIMEOUT);
