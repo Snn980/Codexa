@@ -29,11 +29,11 @@ import {
 import type { TSTree, TSNode } from "../language/TreeSitterAdapter";
 
 // T-5
-import { ScopeAnalyzer, ScopeKind, ScopeErrorCode } from "../language/ScopeAnalyzer";
+import { ScopeAnalyzer, ScopeKind, ScopeErrorCode } from "../language-services/ScopeAnalyzer";
 
 // T-6
-import { DependencyIndex, DepIndexErrorCode } from "../indexer/DependencyIndex";
-import type { Dependency, ILevelDb as DepLevelDb } from "../indexer/DependencyIndex";
+import { DependencyIndex, DepIndexErrorCode } from "../language-services/graph/DependencyIndex";
+import type { Dependency, ILevelDb as DepLevelDb } from "../language-services/graph/DependencyIndex";
 
 // T-3
 import { StorageInitializer, StorageDIErrorCode } from "../language/StorageDI";
@@ -250,11 +250,10 @@ describe("T-4: TreeSitterAdapter — WASM lazy load", () => {
   });
 
   it("loader throw → WASM_LOAD_FAILED", async () => {
-    const failLoader: typeof loader = {
+    const failLoader = {
       loadParser: async () => { throw new Error("WASM missing"); },
     } as never;
-    const loader = failLoader;
-    const adapter = new TreeSitterAdapter(loader);
+    const adapter = new TreeSitterAdapter(failLoader);
     const result  = await adapter.parse("x");
     expect(result.ok).toBe(false);
     expect(result.error?.code).toBe(TreeSitterErrorCode.WASM_LOAD_FAILED);

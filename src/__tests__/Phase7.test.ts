@@ -16,6 +16,7 @@ import { AIWorkerBridge, createMockWorkerFactory } from "../ai/AIWorkerBridge";
 import { AISessionRepository } from "../storage/AISessionRepository";
 import {
   extractCursorContext,
+  detectLanguage,
   detectLanguageFromFilename,
   getOverlayPosition,
   createMockEditorState,

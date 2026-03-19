@@ -363,7 +363,7 @@ describe("ExpoModelStorage (T-NEW-3 / native)", () => {
     await storage.appendChunk("model.gguf", chunk);
     // _files'ta partial key oluştu mu?
     const keys = Array.from((fs as any)._files.keys());
-    expect(keys.some((k) => k.includes("model.gguf"))).toBe(true);
+    expect(keys.some((k: unknown) => (k as string).includes("model.gguf"))).toBe(true);
   });
 
   it("finalizeDownload — partial'ı rename eder", async () => {
