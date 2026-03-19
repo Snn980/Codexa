@@ -62,8 +62,8 @@ function makeMockContainer() {
     orchestrator:    { run: jest.fn() },
     eventBus:        { on: jest.fn(() => jest.fn()), emit: jest.fn() },
     downloadManager: {
-      getState:        jest.fn(() => ({
-        modelId: 'gemma3-1b-it-q4', status: 'idle',
+      getState:        jest.fn((_id?: string) => ({
+        modelId: _id ?? 'gemma3-1b-it-q4', status: 'idle',
         receivedMB: 0, totalMB: 0, percent: 0,
       })),
       startDownload:  jest.fn(),

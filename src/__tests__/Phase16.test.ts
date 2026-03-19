@@ -109,7 +109,7 @@ function makeMockSentry() {
 function makeMockWorkerClient(completionText = 'completion result') {
   return {
     streamChat:         jest.fn(),
-    requestCompletion:  jest.fn(async (_payload: unknown, _signal?: unknown) => ({
+    requestCompletion:  jest.fn(async (_payload: Record<string, unknown>, _signal?: AbortSignal) => ({
       ok: true,
       data: completionText,
     })),
@@ -371,7 +371,7 @@ describe('T-P16-3: AIChatScreen Orchestrator Migration', () => {
   });
 
   test('status === analyzing → "Analiz ediliyor…" gösterilir', () => {
-    const status = 'analyzing';
+    const status: 'analyzing' | 'streaming' | null = 'analyzing';
     const label =
       status === 'analyzing'  ? 'Analiz ediliyor…' :
       status === 'streaming'  ? 'Yanıt üretiliyor…' :
@@ -380,7 +380,7 @@ describe('T-P16-3: AIChatScreen Orchestrator Migration', () => {
   });
 
   test('status === streaming → "Yanıt üretiliyor…" gösterilir', () => {
-    const status = 'streaming';
+    const status: 'analyzing' | 'streaming' | null = 'streaming';
     const label =
       status === 'analyzing' ? 'Analiz ediliyor…' :
       status === 'streaming' ? 'Yanıt üretiliyor…' :
@@ -458,7 +458,8 @@ describe('T-P16-4: TerminalScreen / useTerminalRuntime', () => {
     const eventBus = makeMockEventBus();
     const run      = jest.fn();
 
-    eventBus.on('terminal:run' as never, ({ entryFile }: { entryFile?: string }) => {
+    eventBus.on('terminal:run' as never, (payload: unknown) => {
+      const { entryFile } = payload as { entryFile?: string };
       run(entryFile);
     });
 

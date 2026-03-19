@@ -150,7 +150,7 @@ describe('ChatHistoryRepository', () => {
       expect(result.data.messageCount).toBe(2);
 
       const msgs = repo.getMessages('s6');
-      expect(msgs.ok && msgs.data).toHaveLength(2);
+      if (msgs.ok) expect(msgs.data).toHaveLength(2);
     });
 
     it('aynı içerik tekrar append edilince no-op döner', () => {

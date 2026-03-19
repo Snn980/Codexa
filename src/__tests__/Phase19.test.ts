@@ -49,8 +49,8 @@ function makeDownloadState(
     modelId,
     status,
     percent,
-    bytesDownloaded: 0,
-    totalBytes:      0,
+    receivedMB: 0,
+    totalMB:    0,
   };
 }
 
@@ -114,16 +114,16 @@ describe('T-P19-1: ModelDownloadScreen', () => {
   test('queued model → aktif listede görünür', () => {
     const modelId = AI_MODELS[0].id;
     const container = makeMockContainer({
-      downloadStates: { [modelId]: makeDownloadState(modelId, 'queued') },
+      downloadStates: { [modelId]: makeDownloadState(modelId, 'checking') },
     });
     const s = container.downloadManager.getState(modelId);
-    expect(s.status).toBe('queued');
+    expect(s.status).toBe('checking');
   });
 
   test('failed model → aktif listede görünür (idle/complete değil)', () => {
     const modelId = AI_MODELS[0].id;
     const container = makeMockContainer({
-      downloadStates: { [modelId]: makeDownloadState(modelId, 'failed') },
+      downloadStates: { [modelId]: makeDownloadState(modelId, 'error') },
     });
     const s = container.downloadManager.getState(modelId);
     expect(s.status !== 'idle' && s.status !== 'complete').toBe(true);
@@ -177,10 +177,10 @@ describe('T-P19-1: ModelDownloadScreen', () => {
   test('§ 45 semaphore: 3 eş zamanlı indirme → 4. queued olur', () => {
     // Semaphore mantığı test edilir (ModelDownloadManager içinde)
     const statuses: DownloadState['status'][] = [
-      'downloading', 'downloading', 'downloading', 'queued',
+      'downloading', 'downloading', 'downloading', 'checking',
     ];
     const active = statuses.filter(s => s === 'downloading');
-    const queued = statuses.filter(s => s === 'queued');
+    const queued = statuses.filter(s => s === 'checking');
     expect(active).toHaveLength(3);
     expect(queued).toHaveLength(1);
   });
