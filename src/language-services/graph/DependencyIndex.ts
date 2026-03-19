@@ -109,7 +109,66 @@ export class DependencyIndex {
     }
   }
 
-  // ── writeDeps — LevelDB'ye forward + reverse dep yazar ───────
+  // ── getForwardDeps ────────────────────────────────────────────
+
+  async getForwardDeps(fromFileId: string): Promise<Dependency[]> {
+    if (!this._db) return [];
+    const raw = await this._db.get(`dep_fwd:${fromFileId}`);
+    return raw ? JSON.parse(raw) : [];
+  }
+
+  // ── getReverseDeps ────────────────────────────────────────────
+
+  async getReverseDeps(toFileId: string): Promise<string[]> {
+    if (!this._db) return [];
+    const raw = await this._db.get(`dep_rev:${toFileId}`);
+    return raw ? JSON.parse(raw) : [];
+  }
+
+  // ── buildTopoRebuildPlan ──────────────────────────────────────
+
+  async buildTopoRebuildPlan(
+    triggeredBy: string,
+  ): Promise<Result<{ order: string[]; cycleMembers: Set<string> }>> {
+    if (!this._db || !this._bus) {
+      return ok({ order: [triggeredBy], cycleMembers: new Set() });
+    }
+    try {
+      const visited   = new Set<string>();
+      const order:    string[] = [];
+      const cycleMembers = new Set<string>();
+      const inStack   = new Set<string>();
+
+      const dfs = async (fileId: string): Promise<void> => {
+        if (inStack.has(fileId)) { cycleMembers.add(fileId); return; }
+        if (visited.has(fileId)) return;
+        inStack.add(fileId);
+        // Reverse deps (kimin bu dosyayı import ettiği)
+        const revDeps = await this.getReverseDeps(fileId);
+        for (const dep of revDeps) await dfs(dep);
+        inStack.delete(fileId);
+        visited.add(fileId);
+        order.push(fileId);
+      };
+
+      // triggered node önce
+      order.push(triggeredBy);
+      visited.add(triggeredBy);
+      const revDeps = await this.getReverseDeps(triggeredBy);
+      for (const dep of revDeps) await dfs(dep);
+
+      if (cycleMembers.size > 0) {
+        this._bus.emit("index:cycle", { triggeredBy, cycleMembers: Array.from(cycleMembers) });
+      }
+      this._bus.emit("index:plan", { triggeredBy, order, cycleCount: cycleMembers.size });
+
+      return ok({ order, cycleMembers });
+    } catch (e) {
+      return err(ErrorCode.DEP_RESOLVE_FAILED, String(e));
+    }
+  }
+
+
 
   async writeDeps(
     fromFileId: string,

@@ -371,7 +371,7 @@ describe('T-P16-3: AIChatScreen Orchestrator Migration', () => {
   });
 
   test('status === analyzing → "Analiz ediliyor…" gösterilir', () => {
-    const status: 'analyzing' | 'streaming' | null = 'analyzing';
+    const status = ('analyzing') as string;
     const label =
       status === 'analyzing'  ? 'Analiz ediliyor…' :
       status === 'streaming'  ? 'Yanıt üretiliyor…' :
@@ -380,7 +380,7 @@ describe('T-P16-3: AIChatScreen Orchestrator Migration', () => {
   });
 
   test('status === streaming → "Yanıt üretiliyor…" gösterilir', () => {
-    const status: 'analyzing' | 'streaming' | null = 'streaming';
+    const status = ('streaming') as string;
     const label =
       status === 'analyzing' ? 'Analiz ediliyor…' :
       status === 'streaming' ? 'Yanıt üretiliyor…' :
