@@ -14,6 +14,7 @@ export interface EngineRunOptions {
   userPrompt: string;
   model?:     string;
   budget?:    BudgetOverride & { model?: string; maxTokens?: number; reserveForOutput?: number };
+  history?:   Array<{ role: "user" | "assistant"; content: string }>;
 }
 
 export interface PipelineStats {
@@ -22,6 +23,7 @@ export interface PipelineStats {
   tokensUsed:      number;
   tokensAvailable: number;
   contextHash:     number;
+  cacheHit:        boolean;
 }
 
 export interface EngineRunResult {
@@ -58,6 +60,7 @@ export type EngineResult =
 
 export class ContextEngine {
   private readonly _deps: ContextEngineDeps;
+  private _lastHash = 0;
 
   constructor(deps: ContextEngineDeps) {
     this._deps = deps;
@@ -71,7 +74,10 @@ export class ContextEngine {
 
     // Permission check
     if (!permissionGate.isAllowed(opts.variant)) {
-      const state = permissionGate.getStatus().state;
+      const status = permissionGate.getStatus();
+      const state = typeof status === "object" && "state" in status
+        ? (status as { state: string }).state
+        : String(status);
       return {
         ok:    false,
         error: { code: "AI_PERMISSION_DENIED", message: `Permission denied: current state is ${state}` },
@@ -93,11 +99,19 @@ export class ContextEngine {
     const ranked       = await ranker.rank(collected, sanitizedSnapshot);
     const budgetOvr    = opts.budget;
     const limitResult  = limiter.limit(ranked, opts.variant, modelKey, budgetOvr);
-    const prompt       = builder.build(limitResult.items, opts.userPrompt, opts.variant);
+    const prompt = builder.build(limitResult.items, this._sanitizePrompt(opts.userPrompt), opts.variant);
 
     const contextHash = fnv1a(
       limitResult.items.map((i) => i.id + i.content.slice(0, 50)).join("|"),
     );
+
+    const cacheHit = this._lastHash === contextHash;
+    this._lastHash = contextHash;
+
+    // Inject history before user message (cloud multi-turn)
+    if (opts.history?.length) {
+      prompt.messages = [...opts.history, ...prompt.messages];
+    }
 
     return {
       ok: true,
@@ -109,23 +123,43 @@ export class ContextEngine {
           tokensUsed:      limitResult.tokensUsed,
           tokensAvailable: limitResult.tokensAvailable,
           contextHash,
+          cacheHit,
         },
       },
     };
   }
 
   private _sanitize(snapshot: EditorSnapshot): EditorSnapshot {
-    // Strip jailbreak injections from activeContent
     const sanitized = snapshot.activeContent
       .replace(/ignore previous instructions?/gi, "[REDACTED]")
-      .replace(/you are now/gi, "[REDACTED]");
+      .replace(/disregard prior instructions?/gi, "[REDACTED]")
+      .replace(/you are now\b/gi, "[REDACTED]")
+      .replace(/act as\b/gi, "[REDACTED]")
+      .replace(/pretend to be\b/gi, "[REDACTED]")
+      .replace(/<s>/gi, "[REDACTED]")
+      .replace(/\u0000/g, "")
+      .replace(/[\u202A-\u202E\u2066-\u2069]/g, "");
 
-    // Filter .env/.secret tabs
     const openTabs = (snapshot.openTabs ?? []).filter((t) => {
-      const label = t.label ?? "";
-      return !label.endsWith(".env") && !label.endsWith(".secret");
+      const label = (t.label ?? "").toLowerCase();
+      return !label.endsWith(".env") &&
+             !label.endsWith(".secret") &&
+             !label.endsWith(".pem") &&
+             !label.includes(".env.");
     });
 
     return { ...snapshot, activeContent: sanitized, openTabs };
+  }
+
+  private _sanitizePrompt(userPrompt: string): string {
+    return userPrompt
+      .replace(/ignore previous instructions?/gi, "[REDACTED]")
+      .replace(/disregard prior instructions?/gi, "[REDACTED]")
+      .replace(/you are now\b/gi, "[REDACTED]")
+      .replace(/act as\b/gi, "[REDACTED]")
+      .replace(/pretend to be\b/gi, "[REDACTED]")
+      .replace(/<s>/gi, "[REDACTED]")
+      .replace(/\u0000/g, "")
+      .replace(/[\u202A-\u202E\u2066-\u2069]/g, "");
   }
 }

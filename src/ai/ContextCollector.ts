@@ -13,6 +13,8 @@ export interface DiagnosticEntry {
   col:      number;
   message:  string;
   severity: "error" | "warning" | "info";
+  label?:   string;
+  source?:  string;
 }
 
 export interface ISymbolIndexReader {
