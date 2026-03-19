@@ -14,7 +14,7 @@
 const mockSend   = jest.fn();
 const mockCancel = jest.fn();
 
-jest.mock('../../hooks/useAIOrchestrator', () => ({
+jest.mock('@/hooks/useAIOrchestrator', () => ({
   useAIOrchestrator: jest.fn(() => ({
     messages:   [],
     status:     'idle' as const,
@@ -43,7 +43,7 @@ jest.mock('react-native', () => ({
 
 // ─── Imports ──────────────────────────────────────────────────────────────────
 
-import { useAIOrchestrator } from '../../hooks/useAIOrchestrator';
+import { useAIOrchestrator } from '@/hooks/useAIOrchestrator';
 
 // ─── Mock AppContainer ────────────────────────────────────────────────────────
 
@@ -184,7 +184,7 @@ describe('T-P16-3d: _shared atom bileşenler', () => {
 
   test('ChatBubble — assistant role → bubbleAI stili', () => {
     const msg = { id: 'm2', role: 'assistant' as const, content: 'Nasılsın?', timestamp: Date.now() };
-    expect(msg.role === 'user').toBe(false);
+    expect(msg.role).not.toBe('user');
   });
 
   test('EscalationChip — metin doğru', () => {
