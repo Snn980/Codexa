@@ -160,7 +160,7 @@ export default function App(): React.ReactElement {
           (prev === "background" || prev === "inactive") &&
           nextState === "active"
         ) {
-          eventBus.emit("app:foreground" as never, {} as never);
+          eventBus.emit("app:foreground", {});
         }
 
         // Arka plana geçiş — debounce'daki bekleyen kayıtları flush et
@@ -168,7 +168,7 @@ export default function App(): React.ReactElement {
           prev === "active" &&
           (nextState === "background" || nextState === "inactive")
         ) {
-          eventBus.emit("app:background" as never, {} as never);
+          eventBus.emit("app:background", {});
         }
       },
     );

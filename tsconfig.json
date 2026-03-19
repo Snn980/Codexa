@@ -30,6 +30,7 @@
     "node_modules",
     "android",
     "ios",
-    "e2e"
+    "e2e",
+    "src/e2e"
   ]
 }

@@ -426,6 +426,11 @@ export interface AppEventMap {
   // LSP diagnostics  (Phase 3) ← [6]
   "lsp:diagnostic":          { fileId: UUID; diagnostics: Diagnostic[] };
   "lsp:ready":               { fileId: UUID };
+
+  // App lifecycle  (App.tsx)
+  "app:foreground":          Record<string, never>;
+  "app:background":          Record<string, never>;
+  "nav:error":               { error: string };
 }
 
 export type EventListener<K extends keyof AppEventMap> =
