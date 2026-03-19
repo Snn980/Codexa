@@ -18,7 +18,8 @@
     "paths": {
       "@/*": ["./src/*"]
     },
-    "baseUrl": "."
+    "baseUrl": ".",
+    "types": ["jest", "@testing-library/jest-native"]
   },
   "include": [
     "**/*.ts",
