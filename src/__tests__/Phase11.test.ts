@@ -443,8 +443,8 @@ describe("ModelDownloadManager.startDownloadFromUrl", () => {
 describe("AppContainer: OTA tam zincir", () => {
   it("manifest check → update-available → download → versiyon kaydedilir", async () => {
     // Manifest mock
-    globalThis.fetch = async (url: string) => {
-      if (url.includes("manifest")) {
+    globalThis.fetch = async (url: RequestInfo | URL) => {
+      if (String(url).includes("manifest")) {
         return new Response(JSON.stringify({
           schemaVersion: 1,
           updatedAt: "2026-03-09T00:00:00Z",

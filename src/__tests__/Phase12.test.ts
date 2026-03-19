@@ -52,9 +52,15 @@ function makeEventBus() {
 
 function makePermissionGate(status = "full" as any) {
   return {
-    getStatus: () => status,
-    request:   async () => status,
-  };
+    isTransitioning:   false,
+    getStatus:         () => status,
+    setAIStatus:       (_s: any) => {},
+    checkPermission:   async (_key: any) => ({ ok: true as const, data: 'granted' as const }),
+    requestPermission: async (_key: any) => ({ ok: true as const, data: 'granted' as const }),
+    statusSnapshot:    (_key: any) => 'granted' as const,
+    request:           async () => status,
+    dispose:           () => {},
+  } as any;
 }
 
 function makeOTAResult(
@@ -534,7 +540,7 @@ describe("Patch: 7 düzeltme", () => {
         useModelSelector({ permissionGate: gate, eventBus: eventBus as any }),
       );
       const ref1 = result.current.updatableModels;
-      rerender();
+      rerender({} as any);
       const ref2 = result.current.updatableModels;
       expect(ref1).toBe(ref2); // ✅ aynı referans
     });
@@ -546,7 +552,7 @@ describe("Patch: 7 düzeltme", () => {
         useModelSelector({ permissionGate: gate, eventBus: eventBus as any }),
       );
       const fn1 = result.current.hasUpdate;
-      rerender();
+      rerender({} as any);
       const fn2 = result.current.hasUpdate;
       expect(fn1).toBe(fn2); // ✅ useCallback stabil
     });
