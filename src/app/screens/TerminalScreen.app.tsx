@@ -123,7 +123,7 @@ export function TerminalScreen(): React.ReactElement {
   // ── Çalıştır ───────────────────────────────────────────────
   const handleRun = useCallback(() => {
     // terminal:run → src/screens/TerminalScreen.tsx useTerminalRuntime işler
-    eventBus.emit("terminal:run" as never, {});
+    eventBus.emit("terminal:run", {});
     setLines(prev => [...prev, makeLine("▶ Çalıştırılıyor…", "system")]);
   }, [eventBus, makeLine]);
 

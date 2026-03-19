@@ -104,19 +104,19 @@ function useTerminalRuntime({ container }: UseTerminalRuntimeOptions): UseTermin
 
   useEffect(() => {
     // § 3 — unsub cleanup
-    const u1 = eventBus.on('terminal:run' as never, ({ entryFile }: { entryFile?: string }) => {
+    const u1 = eventBus.on('terminal:run', ({ entryFile }) => {
       run(entryFile);
     });
 
-    const u2 = eventBus.on('terminal:clear' as never, () => {
+    const u2 = eventBus.on('terminal:clear', () => {
       clear();
     });
 
     // file:saved → autoRun kontrolü
-    const u3 = eventBus.on('file:saved' as never, ({ file }: { file: { id: string; name: string } }) => {
+    const u3 = eventBus.on('file:saved', ({ file }) => {
       // § 65 — container.config.autoRun (IAppConfig'te tanımlı)
       if (container.config.autoRun) {
-        eventBus.emit('terminal:run' as never, { entryFile: file.name });
+        eventBus.emit('terminal:run', { entryFile: file.name });
       }
     });
 

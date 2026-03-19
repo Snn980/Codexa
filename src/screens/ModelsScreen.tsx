@@ -114,20 +114,20 @@ function useModelsScreen(container: AppContainer) {
     };
 
     const u1 = eventBus.on(
-      'model:download:progress' as never,
-      ({ modelId }: { modelId: AIModelId }) => patch(modelId),
+      'model:download:progress',
+      ({ modelId }) => patch(modelId),
     );
     const u2 = eventBus.on(
-      'model:download:complete' as never,
-      ({ modelId }: { modelId: AIModelId }) => patchAndUpdateCount(modelId),
+      'model:download:complete',
+      ({ modelId }) => patchAndUpdateCount(modelId),
     );
     const u3 = eventBus.on(
-      'model:download:error' as never,
-      ({ modelId }: { modelId: AIModelId }) => patch(modelId),
+      'model:download:error',
+      ({ modelId }) => patch(modelId),
     );
     const u4 = eventBus.on(
-      'model:download:cancel' as never,
-      ({ modelId }: { modelId: AIModelId }) => patch(modelId),
+      'model:download:cancel',
+      ({ modelId }) => patch(modelId),
     );
 
     return () => { u1(); u2(); u3(); u4(); };

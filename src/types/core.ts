@@ -427,6 +427,33 @@ export interface AppEventMap {
   "lsp:diagnostic":          { fileId: UUID; diagnostics: Diagnostic[] };
   "lsp:ready":               { fileId: UUID };
 
+  // Model download lifecycle  (ModelDownloadManager, useModelDownload)
+  "model:download:start":    { modelId: string; sizeMB: number };
+  "model:download:progress": { modelId: string; receivedMB: number; totalMB: number; percent: number };
+  "model:download:complete": { modelId: string; localPath: string };
+  "model:download:error":    { modelId: string; code: string; message: string };
+  "model:download:cancel":   { modelId: string };
+  "model:download:failed":   { modelId: string; error: string };
+
+  // AI session lifecycle  (useAISession)
+  "ai:session:created":      { sessionId: string };
+  "ai:session:loaded":       { sessionId: string };
+  "ai:session:deleted":      { sessionId: string };
+  "ai:session:refresh":      Record<string, never>;
+  "ai:model:changed":        { modelId: string };
+
+  // Terminal  (TerminalScreen, § 62 / § 68)
+  "terminal:run":            { entryFile?: string };
+  "terminal:clear":          Record<string, never>;
+
+  // Editor extended events  (useAIPanel, EditorMainScreen)
+  "editor:error":            { error: unknown };
+  "editor:file:loaded":      { fileId: string; fileName: string; language: string; content: string };
+  "editor:selection:changed": { selection: string };
+
+  // Navigation  (RootNavigator)
+  "nav:navigate":            { screen: string; params?: unknown };
+
   // App lifecycle  (App.tsx)
   "app:foreground":          Record<string, never>;
   "app:background":          Record<string, never>;
