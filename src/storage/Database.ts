@@ -102,7 +102,7 @@ interface MigrationRecord {
 // § 4. Migration Listesi
 // ─────────────────────────────────────────────────────────────────────────────
 
-const MIGRATIONS: readonly Migration[] = Object.freeze([
+export const MIGRATIONS: readonly Migration[] = Object.freeze([
   {
     version:     1,
     description: "Migration tablosunu oluştur",

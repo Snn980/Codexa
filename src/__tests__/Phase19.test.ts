@@ -68,7 +68,7 @@ function makeMockContainer(opts: {
       cancelDownload: jest.fn(),
     },
     eventBus: {
-      on:   jest.fn(() => jest.fn()),  // unsubscribe fn döner
+      on:   jest.fn((_event: string, _handler: (...args: unknown[]) => void) => jest.fn()),
       emit: jest.fn(),
     },
     permissionGate: {
