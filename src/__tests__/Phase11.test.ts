@@ -37,7 +37,7 @@ function makeEventBus(): IEventBus & {
 
   return {
     emitted,
-    on(event, handler) {
+    on(event: string, handler: (p: unknown) => void) {
       if (!listeners.has(event)) listeners.set(event, []);
       listeners.get(event)!.push(handler as any);
       return () => {
@@ -46,7 +46,7 @@ function makeEventBus(): IEventBus & {
         if (i >= 0) list.splice(i, 1);
       };
     },
-    emit(event, payload) {
+    emit(event: string, payload: unknown) {
       if (!emitted[event]) emitted[event] = [];
       emitted[event].push(payload);
       const list = listeners.get(event as string) ?? [];

@@ -64,14 +64,15 @@ export interface DownloadState {
 // ─── Hata kodları ────────────────────────────────────────────────────────────
 
 export const DownloadErrorCode = {
-  MODEL_NOT_FOUND:     'DL_MODEL_NOT_FOUND',
-  NO_GGUF_META:        'DL_NO_GGUF_META',
-  INSUFFICIENT_SPACE:  'DL_INSUFFICIENT_SPACE',
-  NETWORK_ERROR:       'DL_NETWORK_ERROR',
-  WRITE_ERROR:         'DL_WRITE_ERROR',
-  ALREADY_DOWNLOADING: 'DL_ALREADY_DOWNLOADING',
-  CANCELLED:           'DL_CANCELLED',
-  CHECKSUM_MISMATCH:   'DL_CHECKSUM_MISMATCH',
+  MODEL_NOT_FOUND:       'DL_MODEL_NOT_FOUND',
+  NO_GGUF_META:          'DL_NO_GGUF_META',
+  INSUFFICIENT_SPACE:    'DOWNLOAD_INSUFFICIENT_SPACE',
+  NETWORK_ERROR:         'DL_NETWORK_ERROR',
+  WRITE_ERROR:           'DL_WRITE_ERROR',
+  ALREADY_DOWNLOADING:   'DL_ALREADY_DOWNLOADING',
+  CANCELLED:             'DL_CANCELLED',
+  CHECKSUM_MISMATCH:     'DL_CHECKSUM_MISMATCH',
+  UNKNOWN:               'DOWNLOAD_UNKNOWN',
 } as const;
 
 const MIN_FREE_BUFFER_MB = 200;
@@ -154,6 +155,148 @@ export class ModelDownloadManager {
       this._abortControllers.delete(modelId);
     }
     return result;
+  }
+
+  // ─── cancel (alias for cancelDownload) ───────────────────────────────
+
+  cancel(modelId: AIModelId): void {
+    this.cancelDownload(modelId);
+  }
+
+  // ─── startDownloadFromUrl ─────────────────────────────────────────────
+  // Manifest entry'den URL kullanarak indir (OTA entegrasyonu, § 11)
+
+  async startDownloadFromUrl(entry: {
+    id:          AIModelId;
+    filename:    string;
+    sizeMB:      number;
+    sha256:      string | null;
+    downloadUrl: string;
+  }): Promise<Result<string>> {
+    const modelId = entry.id;
+
+    if (this._downloadLock.has(modelId)) {
+      return err(DownloadErrorCode.UNKNOWN, 'Already downloading');
+    }
+
+    // Zaten tam indirilmiş mi?
+    const exists = await this._storage.modelExists(entry.filename);
+    if (exists) {
+      const storedBytes = await this._storage.storedBytes(entry.filename);
+      const expectedBytes = entry.sizeMB * 1024 * 1024;
+      if (storedBytes >= expectedBytes) {
+        const localPath = this._storage.modelLocalPath(entry.filename);
+        this._setState(modelId, {
+          status: 'complete', receivedMB: entry.sizeMB,
+          totalMB: entry.sizeMB, percent: 100, localPath,
+        });
+        this._eventBus.emit('model:download:complete', { modelId, localPath });
+        return ok(localPath);
+      }
+    }
+
+    // Alan kontrolü
+    this._setState(modelId, { status: 'checking', receivedMB: 0, totalMB: entry.sizeMB, percent: 0 });
+    const freeSpace = await this._storage.freeSpaceMB();
+    const required  = entry.sizeMB + MIN_FREE_BUFFER_MB;
+    if (freeSpace < required) {
+      const msg = `Yetersiz alan: ${freeSpace} MB mevcut, ${required} MB gerekli`;
+      this._setState(modelId, {
+        status: 'error', receivedMB: 0, totalMB: entry.sizeMB, percent: 0,
+        errorCode: DownloadErrorCode.INSUFFICIENT_SPACE, errorMessage: msg,
+      });
+      return err(DownloadErrorCode.INSUFFICIENT_SPACE, msg);
+    }
+
+    this._downloadLock.add(modelId);
+    const abortCtrl = new AbortController();
+    this._abortControllers.set(modelId, abortCtrl);
+    this._eventBus.emit('model:download:start', { modelId, sizeMB: entry.sizeMB });
+
+    let result: Result<string>;
+    try {
+      result = await this._downloadFromUrl(modelId, entry, abortCtrl.signal);
+    } finally {
+      this._downloadLock.delete(modelId);
+      this._abortControllers.delete(modelId);
+    }
+    return result;
+  }
+
+  // ─── _downloadFromUrl ─────────────────────────────────────────────────
+
+  private async _downloadFromUrl(
+    modelId: AIModelId,
+    entry: { filename: string; sizeMB: number; sha256: string | null; downloadUrl: string },
+    signal: AbortSignal,
+  ): Promise<Result<string>> {
+    const storedBytes = await this._storage.storedBytes(entry.filename);
+    const headers: Record<string, string> = {};
+    if (storedBytes > 0) {
+      headers['Range']    = `bytes=${storedBytes}-`;
+      headers['If-Range'] = entry.filename;
+    }
+
+    let response: Response;
+    try {
+      response = await fetch(entry.downloadUrl, { signal, headers });
+    } catch (e) {
+      if (signal.aborted) return err(DownloadErrorCode.CANCELLED, 'Cancelled');
+      return this._emitError(modelId, entry.sizeMB, DownloadErrorCode.NETWORK_ERROR, String(e));
+    }
+
+    const isPartial = response.status === 206;
+    if (!response.ok && !isPartial) {
+      return this._emitError(modelId, entry.sizeMB, DownloadErrorCode.NETWORK_ERROR, `HTTP ${response.status}`);
+    }
+
+    const contentLength = parseInt(response.headers.get('content-length') ?? '0', 10);
+    const totalBytes    = isPartial ? storedBytes + contentLength : contentLength;
+    const totalMB       = totalBytes > 0 ? totalBytes / (1024 * 1024) : entry.sizeMB;
+    let receivedBytes   = isPartial ? storedBytes : 0;
+    const resumable     = isPartial;
+
+    this._setState(modelId, {
+      status: 'downloading', receivedMB: receivedBytes / (1024 * 1024),
+      totalMB, percent: 0, resumable,
+    });
+
+    const reader = response.body?.getReader();
+    if (!reader) return this._emitError(modelId, totalMB, DownloadErrorCode.NETWORK_ERROR, 'No body');
+
+    try {
+      while (true) {
+        if (signal.aborted) { reader.cancel(); return err(DownloadErrorCode.CANCELLED, 'Cancelled'); }
+        const { done, value } = await reader.read();
+        if (done) break;
+        await this._storage.appendChunk(entry.filename, value);
+        receivedBytes += value.byteLength;
+        const receivedMB = receivedBytes / (1024 * 1024);
+        const percent    = totalBytes > 0 ? Math.round((receivedBytes / totalBytes) * 100) : 0;
+        this._setState(modelId, { status: 'downloading', receivedMB, totalMB, percent, resumable });
+        this._eventBus.emit('model:download:progress', { modelId, receivedMB, totalMB, percent });
+      }
+    } catch (e) {
+      if (signal.aborted) return err(DownloadErrorCode.CANCELLED, 'Cancelled');
+      return this._emitError(modelId, totalMB, DownloadErrorCode.NETWORK_ERROR, String(e));
+    } finally {
+      try { reader.releaseLock(); } catch { /* ignore */ }
+    }
+
+    // Checksum
+    if (entry.sha256) {
+      this._setState(modelId, { status: 'verifying', receivedMB: totalMB, totalMB, percent: 100 });
+      const actual = await this._storage.sha256(entry.filename);
+      if (actual && actual.toLowerCase() !== entry.sha256.toLowerCase()) {
+        return this._emitError(modelId, totalMB, DownloadErrorCode.CHECKSUM_MISMATCH,
+          `Checksum mismatch: expected ${entry.sha256}, got ${actual}`);
+      }
+    }
+
+    const localPath = this._storage.modelLocalPath(entry.filename);
+    this._setState(modelId, { status: 'complete', receivedMB: totalMB, totalMB, percent: 100, localPath });
+    this._eventBus.emit('model:download:complete', { modelId, localPath });
+    return ok(localPath);
   }
 
   // ─── cancelDownload ───────────────────────────────────────────────────
