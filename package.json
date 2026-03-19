@@ -58,9 +58,6 @@
     "vitest": "^3.0.0",
     "@types/jest": "^29.5.14"
   },
-  "jest": {
-    "preset": "jest-expo"
-  },
   "private": true,
   "expo": {
     "install": {
