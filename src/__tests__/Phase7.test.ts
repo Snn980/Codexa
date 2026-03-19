@@ -954,7 +954,7 @@ describe("AIWorker [PATCH]", () => {
   it("cancelSet cleanup — REQUEST gelince set'ten silinir", async () => {
     sent = [];
     const runtime = createMockRuntime(["t"]);
-    worker = new AIWorker(runtime, (m) => sent.push(m));
+    worker = new AIWorker(runtime, (m: unknown) => sent.push(m));
 
     const id = "req-cs-1" as UUID;
     // CANCEL önce
@@ -980,7 +980,7 @@ describe("AIWorker [PATCH]", () => {
 
   it("dispose — cancelSet temizlenir", () => {
     sent = [];
-    worker = new AIWorker(createMockRuntime(), (m) => sent.push(m));
+    worker = new AIWorker(createMockRuntime(), (m: unknown) => sent.push(m));
     (worker as any)._cancelSet.add("stale-1" as UUID);
     (worker as any)._cancelSet.add("stale-2" as UUID);
     worker.dispose();
@@ -990,7 +990,7 @@ describe("AIWorker [PATCH]", () => {
   it("seq overflow guard — SEQ_RESET_AT'da sıfırlanır", async () => {
     sent = [];
     const manyTokens = Array.from({ length: 5 }, (_, i) => `tok${i}`);
-    worker = new AIWorker(createMockRuntime(manyTokens), (m) => sent.push(m));
+    worker = new AIWorker(createMockRuntime(manyTokens), (m: unknown) => sent.push(m));
 
     // seq'i SEQ_RESET_AT - 2'ye set et
     const SEQ_RESET_AT = 2 ** 31 - 1;
@@ -1287,33 +1287,4 @@ describe("CodeMirrorAIBridge [PATCH]", () => {
   });
 });
 
-// Import helpers (patch testlerinin ihtiyacı)
-const {
-  OfflineRuntime,
-  MockLlamaCppLoader,
-} = require("../ai/OfflineRuntime");
-
-const {
-  AIWorker,
-} = require("../ai/AIWorker");
-
-const {
-  AIWorkerBridge,
-  createMockWorkerFactory,
-} = require("../ai/AIWorkerBridge");
-
-const {
-  AISessionRepository,
-} = require("../storage/AISessionRepository");
-
-const {
-  extractCursorContext,
-  detectLanguage,
-  createMockEditorState,
-  getOverlayPosition,
-} = require("../editor/CodeMirrorAIBridge");
-
-const {
-  ModelDownloadManager,
-  DownloadErrorCode,
-} = require("../download/ModelDownloadManager");
+// Not: Tüm importlar dosyanın üstünde tanımlı — buradaki require blokları kaldırıldı.
