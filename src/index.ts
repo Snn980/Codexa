@@ -167,18 +167,18 @@ export { SettingsRepository }       from "./storage/repositories/SettingsReposit
 // § 4. Public Servis Re-exports
 // ─────────────────────────────────────────────────────────────────────────────
 
-export type { IProjectService } from "./core/services/ProjectService";
-export { ProjectService }       from "./core/services/ProjectService";
+export type { IProjectService } from "./core/Service/ProjectService";
+export { ProjectService }       from "./core/Service/ProjectService";
 
-export type { IFileService } from "./core/services/FileService";
-export { FileService }       from "./core/services/FileService";
+export type { IFileService } from "./core/Service/FileService";
+export { FileService }       from "./core/Service/FileService";
 
 export {
   EventBus,
   getAppEventBus,
   createEventBus,
   resetAppEventBus,
-} from "./core/event-bus/EventBus";
+} from "./core/EventBus";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // § 5. UUID Factory
@@ -247,8 +247,8 @@ const createUUID: () => UUID = buildUUIDFactory();
 // § 6. AppServices — Servis kümesi tipi
 // ─────────────────────────────────────────────────────────────────────────────
 
-import type { IProjectService } from "./core/services/ProjectService";
-import type { IFileService }    from "./core/services/FileService";
+import type { IProjectService } from "./core/Service/ProjectService";
+import type { IFileService }    from "./core/Service/FileService";
 import type { IEventBus }       from "./types/core";
 import type { ISettingsRepository } from "./storage/repositories/SettingsRepository";
 
@@ -268,9 +268,9 @@ import type { DatabaseConfig, IDatabaseDriver } from "./storage/Database";
 import { ProjectRepository }  from "./storage/repositories/ProjectRepository";
 import { FileRepository }     from "./storage/repositories/FileRepository";
 import { SettingsRepository } from "./storage/repositories/SettingsRepository";
-import { ProjectService }     from "./core/services/ProjectService";
-import { FileService }        from "./core/services/FileService";
-import { EventBus }           from "./core/event-bus/EventBus";
+import { ProjectService }     from "./core/Service/ProjectService";
+import { FileService }        from "./core/Service/FileService";
+import { EventBus }           from "./core/EventBus";
 import type { AsyncResult }   from "./types/core";
 import { DEFAULT_SETTINGS }   from "./types/core";
 import { err, ok }            from "./utils/result";
