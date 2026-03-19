@@ -2,7 +2,7 @@ import type { ContextCollector, EditorSnapshot } from "./ContextCollector";
 import type { ContextRanker } from "./ContextRanker";
 import type { TokenLimiter, BudgetOverride } from "./TokenLimiter";
 import type { PromptBuilder, BuiltPrompt } from "./PromptBuilder";
-import type { IPermissionGate } from "./permission/PermissionGate";
+import type { IPermissionGate } from "../permission/PermissionGate";
 
 export interface IEngineLogger {
   warn(msg: string):  void;
@@ -52,6 +52,10 @@ const KNOWN_MODEL_KEYS = new Set([
   "claude-3-haiku", "claude-3-sonnet", "claude-3-opus",
 ]);
 
+export type EngineResult =
+  | { ok: true;  data: EngineRunResult; error?: undefined }
+  | { ok: false; error: { code: string; message: string }; data?: undefined };
+
 export class ContextEngine {
   private readonly _deps: ContextEngineDeps;
 
@@ -62,10 +66,7 @@ export class ContextEngine {
   async run(
     snapshot: EditorSnapshot,
     opts:     EngineRunOptions,
-  ): Promise<
-    | { ok: true;  data: EngineRunResult }
-    | { ok: false; error: { code: string; message: string } }
-  > {
+  ): Promise<EngineResult> {
     const { permissionGate, collector, ranker, limiter, builder, logger } = this._deps;
 
     // Permission check

@@ -195,8 +195,14 @@ export interface IPermissionGate {
   checkPermission(key: PermissionKey):   Promise<Result<PermissionStatusValue>>;
   requestPermission(key: PermissionKey): Promise<Result<PermissionStatusValue>>;
   statusSnapshot(key: PermissionKey):    PermissionStatusValue | null;
-  getStatus():                           AIPermissionStatus;
+  getStatus():                           AIPermissionStatus | { state: string; consent: null; changedAt: string };
   setAIStatus(status: AIPermissionStatus): void;
+  /** ContextEngine entegrasyonu — izin kontrolü */
+  isAllowed(variant: "offline" | "cloud"): boolean;
+  /** Opsiyonel init (test mock uyumu) */
+  init?(): Promise<{ ok: boolean; data: undefined }>;
+  /** Durum geçişi (test mock uyumu) */
+  transition?(state: string): void;
   dispose(): void;
 }
 
