@@ -109,7 +109,7 @@ function makeMockSentry() {
 function makeMockWorkerClient(completionText = 'completion result') {
   return {
     streamChat:         jest.fn(),
-    requestCompletion:  jest.fn(async () => ({
+    requestCompletion:  jest.fn(async (_payload: unknown, _signal?: unknown) => ({
       ok: true,
       data: completionText,
     })),

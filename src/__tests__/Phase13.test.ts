@@ -42,7 +42,7 @@ function makeWorkerClient(): jest.Mocked<IAIWorkerClient> {
 }
 
 const BASE_INTENT: Intent = {
-  category: 'code_generation', confidence: 0.9,
+  category: 'code_complete', confidence: 0.9,
   requiresCode: false, requiresContext: false, estimatedTokens: 100,
 };
 
@@ -126,7 +126,7 @@ describe('T-P13-2: ContextBuilder.build()', () => {
   });
 
   test('history geçilince prompt üretilir', () => {
-    const h = [{ role: 'user' as const, content: 'merhaba' }];
+    const h = [{ id: 'h1', role: 'user' as const, content: 'merhaba', timestamp: Date.now() }];
     expect(builder.build('şimdi yaz', h, BASE_INTENT, modelId).prompt.length).toBeGreaterThan(0);
   });
 

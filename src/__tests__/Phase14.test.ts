@@ -4,8 +4,9 @@
 
 import { makeSequentialIdFactory }    from '../utils/uuid';
 import { ChatHistoryRepository }      from '../storage/chat/ChatHistoryRepository';
+import type { SessionMeta }           from '../storage/chat/ChatHistoryRepository';
 import {
-  enqueuePendingDownload,
+  addPendingDownload as enqueuePendingDownload,
   removePendingDownload,
   readPendingDownloads,
   type PendingDownload,
@@ -81,7 +82,7 @@ describe('ChatHistoryRepository', () => {
       const list = repo.listSessions();
       expect(list.ok).toBe(true);
       if (!list.ok) return;
-      expect(list.data.some((s) => s.id === 's1')).toBe(true);
+      expect(list.data.some((s: SessionMeta) => s.id === 's1')).toBe(true);
     });
 
     it('title boşsa preview kullanır', () => {
@@ -171,7 +172,7 @@ describe('ChatHistoryRepository', () => {
       expect(del.ok).toBe(true);
 
       const list = repo.listSessions();
-      expect(list.ok && list.data.every((s) => s.id !== 's8')).toBe(true);
+      expect(list.ok && list.data.every((s: SessionMeta) => s.id !== 's8')).toBe(true);
     });
   });
 
@@ -182,7 +183,7 @@ describe('ChatHistoryRepository', () => {
       expect(result.ok).toBe(true);
 
       const list = repo.listSessions();
-      expect(list.ok && list.data.find((s) => s.id === 's9')?.title).toBe('Yeni Başlık');
+      expect(list.ok && list.data.find((s: SessionMeta) => s.id === 's9')?.title).toBe('Yeni Başlık');
     });
 
     it('olmayan session için err döner', () => {
@@ -213,7 +214,7 @@ describe('ChatHistoryRepository', () => {
       const list = repo.listSessions();
       expect(list.ok).toBe(true);
       if (!list.ok) return;
-      const ids = list.data.map((s) => s.id);
+      const ids = list.data.map((s: SessionMeta) => s.id);
       expect(ids.indexOf('newer')).toBeLessThan(ids.indexOf('older'));
     });
   });
