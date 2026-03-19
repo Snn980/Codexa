@@ -23,20 +23,30 @@ export const DepIndexErrorCode = {
 } as const;
 export type DepIndexErrorCode = (typeof DepIndexErrorCode)[keyof typeof DepIndexErrorCode];
 
-/** Bağımlılık kaydı */
+/** Bağımlılık kaydı — test + production ortak tip */
 export interface Dependency {
-  from:   UUID;
-  to:     UUID;
-  kind:   string;
-  line?:  number;
+  fromFileId:   string;
+  toFileId:     string;
+  rawSpecifier: string;
+  kind:         string;
+  id:           string;
+  importedNames?: string[];
+  line?:          number;
+  isResolved?:    boolean;
 }
 
-/** LevelDB-benzeri arayüz (DI) */
+/** LevelDB-benzeri arayüz — scan + batch ile genişletilmiş */
 export interface ILevelDb {
-  get(key: string): Promise<string | undefined>;
+  get(key: string): Promise<string | null | undefined>;
   put(key: string, value: string): Promise<void>;
   del(key: string): Promise<void>;
-  keys(prefix?: string): Promise<string[]>;
+  scan(prefix: string): Promise<ReadonlyArray<{ key: string; value: string }>>;
+  batch(ops: Array<{ type: "put" | "del"; key: string; value?: string }>): Promise<void>;
+}
+
+/** Basit event bus arayüzü */
+interface ISimpleBus {
+  emit(event: string, payload: unknown): void;
 }
 
 
@@ -69,18 +79,87 @@ export interface RebuildPlan {
 
 // ── DependencyIndex ───────────────────────────────────────────
 export class DependencyIndex {
-  private readonly _storage:  GraphStorage;
-  private readonly _graph:    SymbolGraph;
-  private readonly _resolver: IPathResolver;
+  private readonly _storage:  GraphStorage | null;
+  private readonly _graph:    SymbolGraph  | null;
+  private readonly _resolver: IPathResolver | null;
+  private readonly _db:       ILevelDb | null;
+  private readonly _bus:      ISimpleBus | null;
 
+  /** Production constructor: (storage, graph, resolver) */
+  constructor(storage: GraphStorage, graph: SymbolGraph, resolver: IPathResolver);
+  /** Test/LevelDB constructor: (db, bus) */
+  constructor(db: ILevelDb, bus: ISimpleBus);
   constructor(
-    storage:  GraphStorage,
-    graph:    SymbolGraph,
-    resolver: IPathResolver
+    storageOrDb: GraphStorage | ILevelDb,
+    graphOrBus:  SymbolGraph  | ISimpleBus,
+    resolver?:   IPathResolver
   ) {
-    this._storage  = storage;
-    this._graph    = graph;
-    this._resolver = resolver;
+    if (resolver !== undefined) {
+      this._storage  = storageOrDb as GraphStorage;
+      this._graph    = graphOrBus  as SymbolGraph;
+      this._resolver = resolver;
+      this._db       = null;
+      this._bus      = null;
+    } else {
+      this._db       = storageOrDb as ILevelDb;
+      this._bus      = graphOrBus  as ISimpleBus;
+      this._storage  = null;
+      this._graph    = null;
+      this._resolver = null;
+    }
+  }
+
+  // ── writeDeps — LevelDB'ye forward + reverse dep yazar ───────
+
+  async writeDeps(
+    fromFileId: string,
+    deps:       Dependency[],
+  ): Promise<Result<void>> {
+    if (!this._db) return err(ErrorCode.DEP_RESOLVE_FAILED, "No LevelDB instance");
+    try {
+      const db = this._db;
+      // Mevcut forward depları oku (stale reverse temizliği için)
+      const oldRaw = await db.get(`dep_fwd:${fromFileId}`);
+      const oldDeps: Dependency[] = oldRaw ? JSON.parse(oldRaw) : [];
+      const oldTargets = new Set(oldDeps.map((d) => d.toFileId));
+      const newTargets = new Set(deps.map((d) => d.toFileId));
+
+      // Forward yaz
+      if (deps.length > 0) {
+        await db.put(`dep_fwd:${fromFileId}`, JSON.stringify(deps));
+      } else {
+        await db.del(`dep_fwd:${fromFileId}`);
+      }
+
+      // Stale reverse dep temizle
+      for (const target of oldTargets) {
+        if (!newTargets.has(target)) {
+          const revRaw = await db.get(`dep_rev:${target}`);
+          const revSet: string[] = revRaw ? JSON.parse(revRaw) : [];
+          const updated = revSet.filter((id) => id !== fromFileId);
+          if (updated.length > 0) {
+            await db.put(`dep_rev:${target}`, JSON.stringify(updated));
+          } else {
+            await db.del(`dep_rev:${target}`);
+          }
+        }
+      }
+
+      // Yeni reverse dep yaz
+      for (const target of newTargets) {
+        const revRaw = await db.get(`dep_rev:${target}`);
+        const revSet: string[] = revRaw ? JSON.parse(revRaw) : [];
+        if (!revSet.includes(fromFileId)) {
+          revSet.push(fromFileId);
+          await db.put(`dep_rev:${target}`, JSON.stringify(revSet));
+        }
+      }
+
+      this._bus?.emit("deps:updated", { fromFileId, count: deps.length });
+      return ok(undefined);
+    } catch (e) {
+      return err(ErrorCode.DEP_RESOLVE_FAILED, String(e));
+    }
   }
 
   // ── Import specifier'larını çözümle (PARALEL) ────────────────
