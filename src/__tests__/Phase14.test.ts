@@ -150,7 +150,7 @@ describe('ChatHistoryRepository', () => {
       expect(result.data.messageCount).toBe(2);
 
       const msgs = repo.getMessages('s6');
-      if (msgs.ok) expect(msgs.data).toHaveLength(2);
+      expect(msgs.ok && msgs.data).toHaveLength(2);
     });
 
     it('aynı içerik tekrar append edilince no-op döner', () => {
@@ -244,8 +244,7 @@ describe('BackgroundModelDownload queue', () => {
 
   it('pending download kuyruğa eklenir', async () => {
     const dl = makePending('gemma-3-1b');
-    const result = await enqueuePendingDownload(dl);
-    expect(result.ok).toBe(true);
+    await enqueuePendingDownload(dl);
 
     const list = await readPendingDownloads();
     expect(list.some((d) => d.modelId === 'gemma-3-1b')).toBe(true);

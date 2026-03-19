@@ -63,7 +63,7 @@ function createMockRuntime(
   failWith?: string,
 ): IAIWorkerRuntime {
   return {
-    isReady: (_id) => true,
+    isReady: (_id: AIModelId) => true,
     async *streamChat(
       req: RuntimeChatRequest,
     ): AsyncGenerator<string, Result<StreamResult>, unknown> {
@@ -146,7 +146,7 @@ describe("AIWorker", () => {
 
   const makeWorker = (runtime: IAIWorkerRuntime) => {
     sent = [];
-    worker = new AIWorker(runtime, (msg) => sent.push(msg));
+    worker = new AIWorker(runtime, (msg: unknown) => sent.push(msg));
     return worker;
   };
 
@@ -396,7 +396,7 @@ describe("AIWorkerBridge", () => {
     const bridge = new AIWorkerBridge(factory);
 
     const received: unknown[] = [];
-    bridge.addEventListener("message", (e) => received.push(e.data));
+    bridge.addEventListener("message", (e: MessageEvent) => received.push(e.data));
 
     bridge.postMessage({
       type: "REQUEST",
@@ -426,7 +426,7 @@ describe("AIWorkerBridge", () => {
     const bridge = new AIWorkerBridge(factory);
 
     const received: unknown[] = [];
-    bridge.addEventListener("message", (e) => received.push(e.data));
+    bridge.addEventListener("message", (e: MessageEvent) => received.push(e.data));
 
     bridge.postMessage({
       type: "REQUEST",

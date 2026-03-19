@@ -258,7 +258,7 @@ describe('T-P16-2: useInlineCompletionBridge', () => {
 
   test('requestCompletion başarısız → status error, overlay gizlenir', async () => {
     const workerClient = {
-      requestCompletion: jest.fn(async () => ({
+      requestCompletion: jest.fn(async (_payload: Record<string, unknown>, _signal?: AbortSignal) => ({
         ok: false,
         error: { code: 'WORKER_ERROR', message: 'timeout' },
       })),
@@ -297,7 +297,7 @@ describe('T-P16-2: useInlineCompletionBridge', () => {
     const abortCtrl = new AbortController();
     let callCount = 0;
     const workerClient = {
-      requestCompletion: jest.fn(async () => {
+      requestCompletion: jest.fn(async (_payload: Record<string, unknown>, _signal?: AbortSignal) => {
         callCount++;
         return { ok: true, data: 'result' };
       }),
