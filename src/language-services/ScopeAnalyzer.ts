@@ -27,12 +27,32 @@ import type { SymbolNode, SymbolKind } from "./graph/types";
 // ─────────────────────────────────────────────────────────────
 
 export type ScopeKind =
-  | "global"      // Worker global scope
-  | "module"      // Dosya top-level — ES module boundary
-  | "function"    // function / arrow / method body
-  | "block"       // if / for / while / switch / bare {}
-  | "class"       // class body
-  | "namespace";  // TS namespace / module declaration
+  | "global"
+  | "module"
+  | "function"
+  | "arrow_function"
+  | "block"
+  | "class"
+  | "namespace";
+
+/** Enum-style erişim için companion object (ScopeKind.MODULE vb.) */
+export const ScopeKind = {
+  GLOBAL:         "global",
+  MODULE:         "module",
+  FUNCTION:       "function",
+  ARROW_FUNCTION: "arrow_function",
+  BLOCK:          "block",
+  CLASS:          "class",
+  NAMESPACE:      "namespace",
+} as const;
+
+/** ScopeAnalyzer hata kodları */
+export const ScopeErrorCode = {
+  SYMBOL_NOT_FOUND: "SCOPE_SYMBOL_NOT_FOUND",
+  PARSE_ERROR:      "SCOPE_PARSE_ERROR",
+  DISPOSED:         "SCOPE_DISPOSED",
+} as const;
+export type ScopeErrorCode = (typeof ScopeErrorCode)[keyof typeof ScopeErrorCode];
 
 export interface Scope {
   readonly id:       string;           // scope içinde unique
@@ -97,6 +117,25 @@ export class ScopeAnalyzer {
 
   /** fileId → ScopeTree önbelleği */
   private readonly _cache = new Map<UUID, ScopeTree>();
+
+  /** TreeSitterAdapter DI (opsiyonel — geriye dönük uyumluluk) */
+  constructor(_adapter?: unknown) {}
+
+  // ── Compat: analyze() → buildScopeTree() alias ───────────────
+
+  /** @alias buildScopeTree — TreeSitter entegrasyon testi için compat katmanı */
+  async analyze(content: string): Promise<Result<ScopeTree>> {
+    const fileId = `scope-${Date.now()}` as UUID;
+    return this.buildScopeTree(fileId, content, []);
+  }
+
+  /** @alias getScopeChainAt — findScopeAt compat */
+  async findScopeAt(content: string, line: number, col: number): Promise<Result<Scope>> {
+    const fileId = `scope-${Date.now()}` as UUID;
+    const chainResult = this.getScopeChainAt(fileId, content, [], line, col);
+    if (!chainResult.ok) return chainResult as unknown as Result<Scope>;
+    return ok(chainResult.data.innermost);
+  }
 
   // ── Cache yönetimi ───────────────────────────────────────────
 

@@ -14,6 +14,33 @@ import { EdgeKind as EK } from "./types";
 // ── External dosyalar için sabit ID (magic string yerine) ─────
 const EXTERNAL_FILE_ID = "00000000-0000-0000-0000-000000000000" as UUID;
 
+/** DependencyIndex hata kodları */
+export const DepIndexErrorCode = {
+  NOT_FOUND:       "DEP_INDEX_NOT_FOUND",
+  CYCLE_DETECTED:  "DEP_INDEX_CYCLE_DETECTED",
+  STORAGE_ERROR:   "DEP_INDEX_STORAGE_ERROR",
+  INVALID_PATH:    "DEP_INDEX_INVALID_PATH",
+} as const;
+export type DepIndexErrorCode = (typeof DepIndexErrorCode)[keyof typeof DepIndexErrorCode];
+
+/** Bağımlılık kaydı */
+export interface Dependency {
+  from:   UUID;
+  to:     UUID;
+  kind:   string;
+  line?:  number;
+}
+
+/** LevelDB-benzeri arayüz (DI) */
+export interface ILevelDb {
+  get(key: string): Promise<string | undefined>;
+  put(key: string, value: string): Promise<void>;
+  del(key: string): Promise<void>;
+  keys(prefix?: string): Promise<string[]>;
+}
+
+
+
 // ── Path resolver interface (platform bağımlı — inject edilir) ─
 export interface IPathResolver {
   /**
