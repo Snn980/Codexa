@@ -19,7 +19,7 @@
       "@/*": ["./src/*"]
     },
     "baseUrl": ".",
-    "types": ["jest", "@testing-library/jest-native"]
+    "types": ["jest"]
   },
   "include": [
     "**/*.ts",
