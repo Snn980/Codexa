@@ -29,7 +29,7 @@
 // ─────────────────────────────────────────────────────────────
 
 import type { UUID, Result } from "../../core";
-import { ok, err, tryResultAsync } from "../../core";
+import { ok, err, tryResultAsync, ErrorCode } from "../../core";
 import type {
   SymbolNode, DependencyEdge, ReferenceLocation, FileSnapshot, GraphStats,
 } from "../graph/types";
@@ -79,7 +79,7 @@ export class GraphStorage {
 
     if (!result.ok) {
       // [F] Başarısız init yeniden denenebilir — set burada değil
-      return err({ code: "STORAGE_INIT", message: "GraphStorage init failed", cause: result.error });
+      return err(ErrorCode.STORAGE_INIT, "GraphStorage init failed", { cause: result.error });
     }
 
     this._initialized = true;
@@ -98,7 +98,7 @@ export class GraphStorage {
   // toparlanır (Phase 3.5).
 
   async writeSnapshot(snapshot: FileSnapshot): Promise<Result<void>> {
-    if (!this._initialized) return err({ code: "STORAGE_INIT", message: "Not initialized" });
+    if (!this._initialized) return err(ErrorCode.STORAGE_INIT, "Not initialized");
 
     const { fileId } = snapshot;
 
@@ -277,7 +277,7 @@ export class GraphStorage {
 
     return result.ok
       ? ok(undefined)
-      : err({ code: "INDEX_FAILED", message: `Snapshot write failed: ${fileId}`, cause: result.error });
+      : err(ErrorCode.INDEX_FAILED, `Snapshot write failed: ${fileId}`, { cause: result.error });
   }
 
   // ── invalidateFile ────────────────────────────────────────────
@@ -321,7 +321,7 @@ export class GraphStorage {
 
     return result.ok
       ? ok(undefined)
-      : err({ code: "INDEX_FAILED", message: `Invalidate failed: ${fileId}`, cause: result.error });
+      : err(ErrorCode.INDEX_FAILED, `Invalidate failed: ${fileId}`, { cause: result.error });
   }
 
   // ── Hot-path reads (LevelDB first) ───────────────────────────

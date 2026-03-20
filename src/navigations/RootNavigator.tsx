@@ -160,8 +160,8 @@ export function RootNavigator({ container, onNavError }: RootNavigatorProps) {
       'nav:navigate',
       (payload: { screen: string; params?: unknown }) => {
         safeNavigate(
-          payload.screen,
-          payload.params as TabParamList[typeof payload.screen],
+          payload.screen as keyof TabParamList,
+          payload.params as TabParamList[keyof TabParamList],
           (err) => {
             container.eventBus.emit('nav:error', { error: err.message });
           },

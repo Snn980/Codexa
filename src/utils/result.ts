@@ -346,15 +346,17 @@ export function tryResult<T>(
  * );
  */
 export async function tryResultAsync<T>(
-  fn:      () => Promise<T>,
-  code:    ErrorCode,
-  message: string,
+  fn:       () => Promise<T>,
+  code?:    ErrorCode,
+  message?: string,
   context?: MetaRecord,
 ): AsyncResult<T, AppError> {
   try {
     const data = await fn();
     return { ok: true, data };
   } catch (cause) {
-    return err(code, message, { context, cause });
+    const errorCode    = code    ?? ("UNKNOWN" as ErrorCode);
+    const errorMessage = message ?? (cause instanceof Error ? cause.message : "Unknown error");
+    return err(errorCode, errorMessage, { context, cause });
   }
 }

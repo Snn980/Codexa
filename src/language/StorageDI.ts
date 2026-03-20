@@ -18,6 +18,7 @@
 
 import type { ISQLiteDriver } from "../storage/ISQLiteDriver";
 import type { Result } from "../types/core";
+import { ErrorCode } from "../types/core";
 import { ok, err, tryResultAsync } from "../utils/result";
 
 // ─── Minimal interface references ─────────────────────────────────────────
@@ -104,7 +105,7 @@ export class StorageInitializer {
     for (const sql of statements) {
       const result = await tryResultAsync(
         () => this._db.run(sql),
-        "STORAGE_INIT_FAILED",
+        ErrorCode.STORAGE_INIT,
         `DDL failed: ${sql.slice(0, 60)}...`,
       );
       if (!result.ok) return result;

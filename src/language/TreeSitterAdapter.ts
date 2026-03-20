@@ -24,8 +24,8 @@
  */
 
 import type { Result } from "../types/core";
-import { ok, err, tryResultAsync, ErrorCode } from "../utils/result";
-
+import { ok, err, tryResultAsync } from "../utils/result";
+import { ErrorCode } from "../types/core";
 // ─── Tree-sitter types (web-tree-sitter shapes) ────────────────────────────
 
 /** Tree-sitter AST node — yalnızca ScopeAnalyzer'ın ihtiyacı olan alanlar */
