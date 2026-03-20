@@ -38,7 +38,7 @@ export type RequireFields<T, K extends keyof T> =
 
 export type UUID      = string & { readonly _brand: "UUID" };
 export type Timestamp = number;
-export type MetaRecord = Record<string, string | number | boolean | null>;
+export type MetaRecord = Record<string, string | number | boolean | null | undefined>;
 
 // ─────────────────────────────────────────────────────────────────────────────
 // § 1. Hata Sistemi
@@ -443,6 +443,8 @@ export interface IProjectRepository
   findByStatus(status: ProjectStatus):        AsyncResult<IProject[]>;
   findRecent(limit: number):                  AsyncResult<IProject[]>;
   exists(id: UUID):                           AsyncResult<boolean>;
+  /** Optimistic lock — expectedVersion verilmezse version kontrolü atlanır */
+  update(id: UUID, dto: UpdateProjectDto, expectedVersion?: number): AsyncResult<IProject>;
 }
 
 export interface IFileRepository

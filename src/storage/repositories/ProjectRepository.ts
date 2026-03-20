@@ -245,7 +245,7 @@ export class ProjectRepository implements IProjectRepository {
       return err(
         ErrorCode.RECORD_NOT_FOUND,
         `Project bulunamadı: id="${id}"`,
-        { projectId: id },
+        { context: { projectId: id } },
       );
     }
 
@@ -337,7 +337,7 @@ export class ProjectRepository implements IProjectRepository {
   async update(
     id:              UUID,
     dto:             UpdateProjectDto,
-    expectedVersion: number,
+    expectedVersion?: number,
   ): AsyncResult<IProjectWithVersion> {
     const current = await this.findById(id);
     if (!current.ok) return current;
@@ -350,7 +350,7 @@ export class ProjectRepository implements IProjectRepository {
         return err(
           ErrorCode.VALIDATION_ERROR,
           `Geçersiz durum geçişi: "${project.status}" → "${dto.status}"`,
-          { projectId: id, from: project.status, to: dto.status },
+          { context: { projectId: id, from: project.status, to: dto.status } },
         );
       }
     }
@@ -367,7 +367,7 @@ export class ProjectRepository implements IProjectRepository {
         Date.now(),
         updatedMeta,
         id,
-        expectedVersion,        // ← WHERE version = ?
+        expectedVersion ?? project.version,  // ← undefined ise mevcut version kullan
       ]),
       ErrorCode.DB_QUERY_FAILED,
       `Project güncellenemedi: id="${id}"`,
@@ -387,7 +387,7 @@ export class ProjectRepository implements IProjectRepository {
       return err(
         ErrorCode.OPTIMISTIC_LOCK_CONFLICT,
         `Optimistic lock çakışması — kaydı yeniden çekip tekrar deneyin`,
-        { projectId: id, expectedVersion },
+        { context: { projectId: id, expectedVersion } },
       );
     }
 
@@ -419,7 +419,7 @@ export class ProjectRepository implements IProjectRepository {
       return err(
         ErrorCode.OPTIMISTIC_LOCK_CONFLICT,
         `Silme sırasında lock çakışması: id="${id}"`,
-        { projectId: id, version: current.data.version },
+        { context: { projectId: id, version: current.data.version } },
       );
     }
 
