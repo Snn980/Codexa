@@ -193,21 +193,21 @@ export function RootNavigator({ container, onNavError }: RootNavigatorProps) {
           >
             <Tab.Screen
               name="ChatTab"
-              options={{ tabBarLabel: 'Chat', tabBarTestID: 'tab-chat' }}
+              options={{ tabBarLabel: 'Chat' }}
             >
               {() => <ChatNavigator container={container} />}
             </Tab.Screen>
 
             <Tab.Screen
               name="EditorTab"
-              options={{ tabBarLabel: 'Editor', tabBarTestID: 'tab-editor' }}
+              options={{ tabBarLabel: 'Editor' }}
             >
               {() => <EditorNavigator container={container} />}
             </Tab.Screen>
 
             <Tab.Screen
               name="ModelsTab"
-              options={{ tabBarLabel: 'Models', tabBarTestID: 'tab-models' }}
+              options={{ tabBarLabel: 'Models' }}
             >
               {() => (
                 <React.Suspense fallback={<ScreenLoadingFallback />}>
@@ -219,7 +219,7 @@ export function RootNavigator({ container, onNavError }: RootNavigatorProps) {
             {/* § 62 — TerminalTab: ModelsTab ile SettingsTab arasına */}
             <Tab.Screen
               name="TerminalTab"
-              options={{ tabBarLabel: 'Terminal', tabBarTestID: 'tab-terminal' }}
+              options={{ tabBarLabel: 'Terminal' }}
             >
               {() => (
                 <React.Suspense fallback={<ScreenLoadingFallback />}>
@@ -230,7 +230,7 @@ export function RootNavigator({ container, onNavError }: RootNavigatorProps) {
 
             <Tab.Screen
               name="SettingsTab"
-              options={{ tabBarLabel: 'Settings', tabBarTestID: 'tab-settings' }}
+              options={{ tabBarLabel: 'Settings' }}
             >
               {() => (
                 <React.Suspense fallback={<ScreenLoadingFallback />}>

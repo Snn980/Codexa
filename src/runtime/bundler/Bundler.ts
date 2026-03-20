@@ -146,7 +146,8 @@ export class Bundler {
     try {
       if (!this._esbuild) {
         // esbuild-wasm named export'larla gelir; destructure ile tip güvenli atama.
-        const mod     = await import("esbuild-wasm");
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const mod     = await import("esbuild-wasm" as any) as { initialize: Function; build: Function };
         this._esbuild = {
           initialize: mod.initialize.bind(mod),
           build:      mod.build.bind(mod),

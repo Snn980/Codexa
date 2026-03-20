@@ -147,13 +147,13 @@ function resolvePermission(key: PermissionKey): Permission {
 
     case 'notifications':
       return Platform.select({
-        ios: PERMISSIONS.IOS.NOTIFICATIONS,
+        ios: (PERMISSIONS.IOS as Record<string, string>)['NOTIFICATIONS'] as Permission,
         // Android 13+ (API 33): POST_NOTIFICATIONS runtime izni zorunlu
         // Android 12- (API ≤ 32): sistem izni yok, her zaman granted kabul edilir
         // (_isNotificationAlwaysGranted() kısa devre yapıyor)
         android:
           api >= 33
-            ? PERMISSIONS.ANDROID.POST_NOTIFICATIONS
+            ? (PERMISSIONS.ANDROID as Record<string, string>)['POST_NOTIFICATIONS'] as Permission
             : (null as unknown as Permission),
       })!;
   }
