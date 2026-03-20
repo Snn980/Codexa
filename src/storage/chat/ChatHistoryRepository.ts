@@ -12,6 +12,7 @@ type MMKVInstance = {
   delete(key: string): void;
   remove(key: string): void;
   getAllKeys(): string[];
+  clearAll(): void;
 };
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const { MMKV } = require('react-native-mmkv') as { MMKV: new (opts?: { id?: string }) => MMKVInstance };

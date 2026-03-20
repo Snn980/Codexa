@@ -53,9 +53,10 @@ export const CryptoHasher = {
       try {
         // Uint8Array.buffer is ArrayBufferLike (may be SharedArrayBuffer);
         // crypto.subtle.digest requires ArrayBuffer — copy to guarantee it.
-        const safeBuffer: ArrayBuffer = data.buffer instanceof ArrayBuffer
-          ? data.buffer.slice(data.byteOffset, data.byteOffset + data.byteLength)
-          : new Uint8Array(data).buffer;
+        // Always copy to a guaranteed ArrayBuffer (avoids SharedArrayBuffer incompatibility)
+        const safeBuffer = data.buffer.slice(
+          data.byteOffset, data.byteOffset + data.byteLength
+        ) as ArrayBuffer;
         const hashBuffer = await (crypto as Crypto).subtle.digest("SHA-256", safeBuffer);
         return _bufferToHex(new Uint8Array(hashBuffer));
       } catch {

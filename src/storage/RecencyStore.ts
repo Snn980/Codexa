@@ -193,7 +193,7 @@ export class SqliteRecencyStore implements IRecencyReader {
       return err(RecencyErrorCode.ALREADY_DISPOSED, "RecencyStore disposed");
     }
 
-    return tryResultAsync(
+    const r = await tryResultAsync(
       () => this._db.run(
         `INSERT INTO file_recency (file_id, last_edited, edit_count)
          VALUES (?, ?, 1)
@@ -205,6 +205,8 @@ export class SqliteRecencyStore implements IRecencyReader {
       RecencyErrorCode.DB_WRITE_FAILED,
       `Failed to record edit for: ${fileId}`,
     );
+    if (!r.ok) return r;
+    return { ok: true, data: undefined };
   }
 
   /**
