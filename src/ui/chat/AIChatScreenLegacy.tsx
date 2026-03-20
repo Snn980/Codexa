@@ -28,6 +28,7 @@ import {
 import type { AppContainer } from '../../app/AppContainer';
 import { useAIChat }         from '../../hooks/useAIChat';
 import { AIWorkerClient }    from '../../ai/AIWorkerClient';
+import type { UUID } from '../../types/core';
 import { generateId }        from '../../utils/uuid';
 import type { ChatMessage }  from '../../hooks/useAIChat';
 import {
@@ -56,7 +57,7 @@ export const AIChatScreenLegacy = memo(({
   // AIWorkerClient — sadece bir kez oluşturulur (§ 8 ref pattern)
   const workerClientRef = useRef<AIWorkerClient | null>(null);
   if (!workerClientRef.current) {
-    workerClientRef.current = new AIWorkerClient(bridge, generateId);
+    workerClientRef.current = new AIWorkerClient(bridge, generateId as () => UUID);
   }
 
   const workerClient = workerClientRef.current;

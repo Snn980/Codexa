@@ -33,6 +33,7 @@ import {
 import type { AppContainer }  from '../../app/AppContainer';
 import { useAIOrchestrator }  from '../../hooks/useAIOrchestrator';
 import { AIWorkerClient }     from '../../ai/AIWorkerClient';
+import type { UUID } from '../../types/core';
 import { generateId }         from '../../utils/uuid';
 import type { ChatMessage }   from '../../hooks/useAIChat';
 import {
@@ -64,7 +65,7 @@ export const AIChatScreenV2 = memo(({
   // § 8 — AIWorkerClient ref pattern
   const workerClientRef = useRef<AIWorkerClient | null>(null);
   if (!workerClientRef.current) {
-    workerClientRef.current = new AIWorkerClient(bridge, generateId);
+    workerClientRef.current = new AIWorkerClient(bridge, generateId as () => UUID);
   }
 
   const permission = permissionGate.getStatus();
@@ -84,7 +85,7 @@ export const AIChatScreenV2 = memo(({
     permission,
     onEvent: (event, detail) => {
       // § 32 ek — Sentry AI panel events
-      sentryService.captureAIEvent(event, detail);
+      sentryService.captureAIEvent(event, (detail as Record<string, unknown>) ?? {});
     },
   });
 

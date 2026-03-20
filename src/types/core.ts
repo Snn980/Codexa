@@ -27,7 +27,7 @@
 // § 0. Tip Yardımcıları
 // ─────────────────────────────────────────────────────────────────────────────
 
-export type Values<T extends Record<string, string>> = T[keyof T];
+export type Values<T extends Record<string, string | number>> = T[keyof T];
 
 export type DeepReadonly<T> = {
   readonly [K in keyof T]: T[K] extends object ? DeepReadonly<T[K]> : T[K];
