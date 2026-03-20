@@ -188,7 +188,7 @@ export class Bundler {
       return err(
         "VALIDATION_ERROR",
         `Entry bulunamadı: ${entryPath}`,
-        { availableFiles: Object.keys(files).join(", ") },
+        { context: { availableFiles: Object.keys(files).join(", ") } },
       );
     }
 

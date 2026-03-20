@@ -106,8 +106,9 @@ export const ModelDownloadScreen = memo(({ container }: Props): React.ReactEleme
   // EventBus dinleyicileri — § 61
   useEffect(() => {
     const offProgress = eventBus.on('model:download:progress', (payload) => {
-      const p = payload as { modelId: AIModelId; state: DownloadState };
-      dispatch({ type: 'SET_STATE', modelId: p.modelId, state: p.state });
+      const modelId = payload.modelId as AIModelId;
+      const s = downloadManager.getState(modelId);
+      dispatch({ type: 'SET_STATE', modelId, state: s });
     });
     const offComplete = eventBus.on('model:download:complete', (payload) => {
       const p = payload as { modelId: AIModelId };

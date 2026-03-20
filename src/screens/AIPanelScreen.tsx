@@ -40,6 +40,7 @@ import { AIWorkerClient }       from '../ai/AIWorkerClient';
 import { useAIPanel }           from '../hooks/useAIPanel';
 import type { QuickActionKind } from '../hooks/useAIPanel';
 import type { ChatMessage }     from '../hooks/useAIChat';
+import type { UUID } from '../types/core';
 import { generateId }           from '../utils/uuid';
 
 // ─── Props ────────────────────────────────────────────────────────────────────
@@ -199,7 +200,7 @@ export function AIPanelScreen({ container }: AIPanelScreenProps): React.ReactEle
   // § 56 — AIWorkerClient (bridge'den)
   const workerClientRef = useRef<AIWorkerClient | null>(null);
   if (!workerClientRef.current) {
-    workerClientRef.current = new AIWorkerClient(container.bridge, generateId);
+    workerClientRef.current = new AIWorkerClient(container.bridge, generateId as () => UUID);
   }
 
   const permission = permissionGate.getStatus();
