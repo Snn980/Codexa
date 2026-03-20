@@ -24,7 +24,7 @@
  * Kural § 10: mock bridge/http inject — gerçek native modül gerektirmez
  */
 
-import { describe, it, expect, beforeEach, vi } from "vitest";
+
 import type {
   ILlamaBridge,
   ILlamaContextHandle,
@@ -89,7 +89,7 @@ function makeMockHandle(opts: {
   const { text = "hello world", promptN = 10, predictedN = 2, failWith, onBeforeReturn } = opts;
 
   return {
-    completion: vi.fn(async (
+    completion: jest.fn(async (
       _params: LlamaCompletionParams,
       onToken: (t: { text: string; done: boolean }) => void,
     ): Promise<LlamaCompletionResult> => {
@@ -107,18 +107,18 @@ function makeMockHandle(opts: {
         timings: { prompt_n: promptN, predicted_n: predictedN, prompt_ms: 5, predicted_ms: 50 },
       };
     }),
-    stopCompletion: vi.fn(async () => {}),
-    release:        vi.fn(async () => {}),
+    stopCompletion: jest.fn(async () => {}),
+    release:        jest.fn(async () => {}),
   };
 }
 
 function makeBridge(handle?: ILlamaContextHandle, failLoad = false): ILlamaBridge {
   return {
-    loadModel:    vi.fn(async () => {
+    loadModel:    jest.fn(async () => {
       if (failLoad) throw new Error("native load failed");
       return handle ?? makeMockHandle();
     }),
-    getModelInfo: vi.fn(async () => ({ contextLength: 4096, description: "test" })),
+    getModelInfo: jest.fn(async () => ({ contextLength: 4096, description: "test" })),
   };
 }
 
@@ -140,14 +140,14 @@ function makeLlamaRunner(bridge?: ILlamaBridge): LlamaCppRunner {
 
 function makeHttpClient(overrides: Partial<IHttpClient> = {}): IHttpClient {
   return {
-    post: vi.fn(async (): Promise<IHttpResponse> => ({
+    post: jest.fn(async (): Promise<IHttpResponse> => ({
       status: 200,
       body: {
         content: [{ type: "text", text: "api response" }],
         usage: { input_tokens: 20, output_tokens: 5 },
       },
     })),
-    postStream: vi.fn(async (
+    postStream: jest.fn(async (
       _url: string,
       _headers: Record<string, string>,
       _body: unknown,
@@ -322,7 +322,7 @@ describe("LlamaCppRunner.unload()", () => {
 
   it("release hata → MODEL_UNLOAD_FAILED", async () => {
     const handle = makeMockHandle();
-    (handle.release as ReturnType<typeof vi.fn>).mockRejectedValueOnce(new Error("fail"));
+    (handle.release as ReturnType<typeof jest.fn>).mockRejectedValueOnce(new Error("fail"));
     const r = makeLlamaRunner(makeBridge(handle));
     await r.load(PHI3);
     const res = await r.unload(PHI3);
@@ -436,12 +436,12 @@ describe("LlamaCppRunner.run() — maxConcurrentRuns", () => {
     // Handle completion'ı asla resolve etmez — run askıda kalır
     let releaseBlock: (() => void) | null = null;
     const blockingHandle: ILlamaContextHandle = {
-      completion: vi.fn(async (_p, _onT) => {
+      completion: jest.fn(async (_p, _onT) => {
         await new Promise<void>((res) => { releaseBlock = res; });
         return { text: "", timings: { prompt_n: 0, predicted_n: 0, prompt_ms: 0, predicted_ms: 0 } };
       }),
-      stopCompletion: vi.fn(async () => {}),
-      release:        vi.fn(async () => {}),
+      stopCompletion: jest.fn(async () => {}),
+      release:        jest.fn(async () => {}),
     };
 
     const r = makeLlamaRunner(makeBridge(blockingHandle));
@@ -520,8 +520,8 @@ describe("LlamaCppRunner.healthCheck() / dispose()", () => {
 
   it("bridge hata → MODEL_NOT_LOADED", async () => {
     const bridge: ILlamaBridge = {
-      loadModel:    vi.fn(),
-      getModelInfo: vi.fn(async () => { throw new Error("no file"); }),
+      loadModel:    jest.fn(),
+      getModelInfo: jest.fn(async () => { throw new Error("no file"); }),
     };
     const r = new LlamaCppRunner(bridge);
     r.setModelPath(PHI3, PHI3_PATH);
@@ -589,7 +589,7 @@ describe("ClaudeApiRunner.run() — non-streaming", () => {
 
   it("HTTP 401 → PROVIDER_AUTH_FAILED", async () => {
     const http = makeHttpClient({
-      post: vi.fn(async () => ({ status: 401, body: { error: { type: "auth" } } })),
+      post: jest.fn(async () => ({ status: 401, body: { error: { type: "auth" } } })),
     });
     const res = await makeClaudeRunner(http).run(makeCloudRequest());
     expect(res.error?.code).toBe(ModelErrorCode.PROVIDER_AUTH_FAILED);
@@ -597,7 +597,7 @@ describe("ClaudeApiRunner.run() — non-streaming", () => {
 
   it("HTTP 429 → PROVIDER_RATE_LIMITED", async () => {
     const http = makeHttpClient({
-      post: vi.fn(async () => ({ status: 429, body: {} })),
+      post: jest.fn(async () => ({ status: 429, body: {} })),
     });
     const res = await makeClaudeRunner(http).run(makeCloudRequest());
     expect(res.error?.code).toBe(ModelErrorCode.PROVIDER_RATE_LIMITED);
@@ -605,7 +605,7 @@ describe("ClaudeApiRunner.run() — non-streaming", () => {
 
   it("HTTP 503 → PROVIDER_UNAVAILABLE", async () => {
     const http = makeHttpClient({
-      post: vi.fn(async () => ({ status: 503, body: {} })),
+      post: jest.fn(async () => ({ status: 503, body: {} })),
     });
     const res = await makeClaudeRunner(http).run(makeCloudRequest());
     expect(res.error?.code).toBe(ModelErrorCode.PROVIDER_UNAVAILABLE);
@@ -649,7 +649,7 @@ describe("ClaudeApiRunner.run() — streaming & SSE events", () => {
 
   it("input_json_delta görmezden gelinir (text'e eklenmez)", async () => {
     const http = makeHttpClient({
-      postStream: vi.fn(async (_u, _h, _b, onLine): Promise<IHttpStreamResponse> => {
+      postStream: jest.fn(async (_u, _h, _b, onLine): Promise<IHttpStreamResponse> => {
         onLine(`data: ${JSON.stringify({ type: "message_start", message: { usage: { input_tokens: 5 } } })}`);
         onLine(`data: ${JSON.stringify({ type: "content_block_start", index: 0, content_block: { type: "tool_use" } })}`);
         // input_json_delta: tool-use JSON, metin değil
@@ -673,7 +673,7 @@ describe("ClaudeApiRunner.run() — streaming & SSE events", () => {
 
   it("ping event → no-op, text etkilenmez", async () => {
     const http = makeHttpClient({
-      postStream: vi.fn(async (_u, _h, _b, onLine): Promise<IHttpStreamResponse> => {
+      postStream: jest.fn(async (_u, _h, _b, onLine): Promise<IHttpStreamResponse> => {
         onLine(`data: ${JSON.stringify({ type: "message_start", message: { usage: { input_tokens: 5 } } })}`);
         onLine(`data: ${JSON.stringify({ type: "ping" })}`);
         onLine(`data: ${JSON.stringify({ type: "content_block_start", index: 0, content_block: { type: "text" } })}`);
@@ -690,7 +690,7 @@ describe("ClaudeApiRunner.run() — streaming & SSE events", () => {
 
   it("SSE error event → INFERENCE_FAILED", async () => {
     const http = makeHttpClient({
-      postStream: vi.fn(async (_u, _h, _b, onLine): Promise<IHttpStreamResponse> => {
+      postStream: jest.fn(async (_u, _h, _b, onLine): Promise<IHttpStreamResponse> => {
         onLine(`data: ${JSON.stringify({ type: "error", error: { type: "overloaded_error", message: "Overloaded" } })}`);
         return { status: 200, errorBody: null };
       }),
@@ -702,7 +702,7 @@ describe("ClaudeApiRunner.run() — streaming & SSE events", () => {
 
   it("streaming HTTP 401 → PROVIDER_AUTH_FAILED (stream açılmadan)", async () => {
     const http = makeHttpClient({
-      postStream: vi.fn(async (): Promise<IHttpStreamResponse> => ({
+      postStream: jest.fn(async (): Promise<IHttpStreamResponse> => ({
         status: 401,
         errorBody: { error: { type: "authentication_error", message: "Invalid API key" } },
       })),
@@ -714,7 +714,7 @@ describe("ClaudeApiRunner.run() — streaming & SSE events", () => {
 
   it("streaming HTTP 429 → PROVIDER_RATE_LIMITED", async () => {
     const http = makeHttpClient({
-      postStream: vi.fn(async (): Promise<IHttpStreamResponse> => ({
+      postStream: jest.fn(async (): Promise<IHttpStreamResponse> => ({
         status: 429,
         errorBody: { error: { type: "rate_limit_error", message: "Rate limit" } },
       })),
@@ -725,7 +725,7 @@ describe("ClaudeApiRunner.run() — streaming & SSE events", () => {
 
   it("streaming HTTP 503 → PROVIDER_UNAVAILABLE", async () => {
     const http = makeHttpClient({
-      postStream: vi.fn(async (): Promise<IHttpStreamResponse> => ({
+      postStream: jest.fn(async (): Promise<IHttpStreamResponse> => ({
         status: 503,
         errorBody: null,
       })),
@@ -797,14 +797,14 @@ describe("ClaudeApiRunner.dispose() / healthCheck()", () => {
 
   it("healthCheck başarılı", async () => {
     const http = makeHttpClient({
-      post: vi.fn(async () => ({ status: 200, body: { data: [] } })),
+      post: jest.fn(async () => ({ status: 200, body: { data: [] } })),
     });
     expect((await makeClaudeRunner(http).healthCheck()).ok).toBe(true);
   });
 
   it("healthCheck 401 → PROVIDER_AUTH_FAILED", async () => {
     const http = makeHttpClient({
-      post: vi.fn(async () => ({ status: 401, body: {} })),
+      post: jest.fn(async () => ({ status: 401, body: {} })),
     });
     expect((await makeClaudeRunner(http).healthCheck()).error?.code).toBe(ModelErrorCode.PROVIDER_AUTH_FAILED);
   });
@@ -881,8 +881,8 @@ describe("ModelRegistry", () => {
   it("dispose — tüm runner'ların dispose'u çağrılır", async () => {
     const llamaR  = makeLlamaRunner();
     const claudeR = makeClaudeRunner();
-    const spyL = vi.spyOn(llamaR,  "dispose");
-    const spyC = vi.spyOn(claudeR, "dispose");
+    const spyL = jest.spyOn(llamaR,  "dispose");
+    const spyC = jest.spyOn(claudeR, "dispose");
 
     const reg = new ModelRegistry({ allowedVariants: new Set([RunnerVariant.OFFLINE]) });
     reg.register(llamaR);

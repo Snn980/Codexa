@@ -1,4 +1,4 @@
-import { AIPermissionState } from "./types";
+import { AIPermissionState } from "./permission_types";
 
 export type { AIPermissionState };
 

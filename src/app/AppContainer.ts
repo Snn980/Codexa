@@ -42,6 +42,7 @@ import {
 import { AIOrchestrator }           from "../ai/orchestration/AIOrchestrator";
 import { AIWorkerClient }           from "../ai/AIWorkerClient";
 import { generateId }               from "../utils/uuid";
+import type { UUID }                from "../core/Types";
 import { sentryService, SentryService } from "../monitoring/SentryService";
 import type { IStorageInfo }         from "../download/ModelDownloadManager";
 import type { IEventBus }            from "../core/EventBus";
@@ -120,7 +121,7 @@ export class AppContainer {
    */
   get orchestrator(): AIOrchestrator {
     if (!this._orchestrator) {
-      const client = new AIWorkerClient(this.bridge, generateId);
+      const client = new AIWorkerClient(this.bridge, generateId as () => UUID);
       this._orchestrator = new AIOrchestrator(client);
     }
     return this._orchestrator;

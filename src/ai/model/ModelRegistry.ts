@@ -16,8 +16,8 @@
 
 import type { IModelRunner, ModelKey, ModelMeta, RunnerVariant } from "./IModelRunner";
 import { ModelErrorCode } from "./IModelRunner";
-import type { Result } from "../types";
-import { ok, err } from "../result";
+import type { Result } from "../../core/Result";
+import { ok, err } from "../../core/Result";
 
 // ─── Registry config ──────────────────────────────────────────────────────
 

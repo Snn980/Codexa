@@ -20,7 +20,7 @@ import { ContextBuilder }                   from '../ContextBuilder';
 import { AIOrchestrator }                   from '../AIOrchestrator';
 import { IntentCategory }                   from '../types';
 import { AIModelId }                        from '../../AIModels';
-import type { IAIWorkerClient }             from '../../AIWorkerClient';
+import type { IAIWorkerClient, AIChatRequestPayload } from '../../AIWorkerClient';
 import type { OrchestrationRequest }        from '../types';
 import { ok, err }                          from '../../../core/Result';
 
@@ -36,7 +36,7 @@ function makeMockClient(
   shouldFail = false,
 ): IAIWorkerClient {
   return {
-    async *streamChat(_payload, _signal) {
+    async *streamChat(_payload: Omit<AIChatRequestPayload, "kind">, _signal?: AbortSignal) {
       if (shouldFail) throw new Error('mock_failure');
       for (const chunk of chunks) {
         yield chunk;

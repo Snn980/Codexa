@@ -123,7 +123,7 @@ function makeEngine(
   } = {},
 ): ContextEngine {
   const deps: ContextEngineDeps = {
-    permissionGate: makeGate(gateAllowed, overrides.state),
+    permissionGate: makeGate(gateAllowed, overrides.state ?? AIPermissionState.LocalOnly),
     collector: new ContextCollector({
       symbolIndex:      makeSymbolIndex(overrides.symbols),
       projectStructure: makeStructureReader(overrides.tree),
