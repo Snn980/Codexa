@@ -50,6 +50,8 @@ import type { IPermissionGate }      from "../permission/PermissionGate";
 import type { IDatabaseDriver }      from "../storage/Database";
 import { createChatStorageMigrator } from "../storage/chat/ChatStorageMigrator";
 import { SQLiteChatRepository }      from "../storage/chat/SQLiteChatRepository";
+import { createModelStorage }        from "../storage/StorageFactory";
+import { AIModelId }                 from "../ai/AIModels";
 
 // ─── AsyncStorage arayüzü ─────────────────────────────────────────────────────
 
@@ -173,12 +175,12 @@ export class AppContainer {
     // 5. ModelUpdateCoordinator
     this._coordinator = new ModelUpdateCoordinator({
       manifestUrl:  this._config.manifestUrl,
-      storage:      this._storage,
+      storage:      this._storage!,
       versionStore: this._versionStore,
     });
 
     // 6. ModelDownloadManager + eventBus subscriptions
-    this._downloadMgr = new ModelDownloadManager(eventBus, this._storage);
+    this._downloadMgr = new ModelDownloadManager(eventBus, this._storage!);
 
     // ✅ DÜZELTME #2: unsub kaydedilir
     this._unsubs.push(
@@ -190,8 +192,9 @@ export class AppContainer {
     // 7. AIRuntimeManager + Bridge
     this._runtimeMgr = new AIRuntimeManager();
     const runtimeResult = await this._runtimeMgr.init({
-      keyStore: this._keyStore,
-      useMock:  useMockWorkers,
+      offlineModelId: AIModelId.OFFLINE_GEMMA3_1B,
+      keyStore:       this._keyStore!,
+      useMock:        useMockWorkers,
     });
     if (!runtimeResult.ok) {
       throw new Error(`AIRuntimeManager init failed: ${(runtimeResult as any).message}`);

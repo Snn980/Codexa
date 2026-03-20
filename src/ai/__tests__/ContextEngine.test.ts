@@ -64,11 +64,16 @@ function makeSnapshot(overrides: Partial<EditorSnapshot> = {}): EditorSnapshot {
 
 function makeGate(allowed: boolean, state = AIPermissionState.LocalOnly): IPermissionGate {
   return {
-    init:       jest.fn().mockResolvedValue({ ok: true, data: undefined }),
-    getStatus:  jest.fn().mockReturnValue({ state, consent: null, changedAt: "" }),
-    isAllowed:  jest.fn().mockReturnValue(allowed),
-    transition: jest.fn(),
-    dispose:    jest.fn(),
+    isTransitioning:   false,
+    init:              jest.fn().mockResolvedValue({ ok: true, data: undefined }),
+    getStatus:         jest.fn().mockReturnValue({ state, consent: null, changedAt: "" }),
+    isAllowed:         jest.fn().mockReturnValue(allowed),
+    transition:        jest.fn(),
+    dispose:           jest.fn(),
+    checkPermission:   jest.fn().mockResolvedValue({ ok: true, data: "granted" }),
+    requestPermission: jest.fn().mockResolvedValue({ ok: true, data: "granted" }),
+    statusSnapshot:    jest.fn().mockReturnValue(null),
+    setAIStatus:       jest.fn(),
   };
 }
 

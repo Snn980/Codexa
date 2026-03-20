@@ -457,7 +457,7 @@ describe("LlamaCppRunner.run() — maxConcurrentRuns", () => {
     expect(secondRes.error?.code).toBe(ModelErrorCode.RUNNER_BUSY);
 
     // Temizlik
-    releaseBlock?.();
+    if (releaseBlock) releaseBlock();
     await firstRunPromise;
   });
 });
