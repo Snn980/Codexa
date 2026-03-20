@@ -152,7 +152,8 @@ class IndexedDBModelStorage implements IStorageInfo {
     try {
       const data = await this._get<Uint8Array>(IndexedDBModelStorage.MODELS, filename);
       if (!data || !crypto?.subtle) return null;
-      const hash = await (crypto as Crypto).subtle.digest("SHA-256", data);
+      const _db = data.buffer.slice(data.byteOffset, data.byteOffset + data.byteLength) as ArrayBuffer;
+      const hash = await (crypto as Crypto).subtle.digest("SHA-256", _db);
       return Array.from(new Uint8Array(hash)).map((b) => b.toString(16).padStart(2, "0")).join("");
     } catch { return null; }
   }
@@ -171,7 +172,8 @@ async function getModelsDir(): Promise<FileSystemDirectoryHandle> {
 }
 
 async function sha256Hex(data: Uint8Array): Promise<string> {
-  const hash = await crypto.subtle.digest("SHA-256", data);
+  const _buf = data.buffer.slice(data.byteOffset, data.byteOffset + data.byteLength) as ArrayBuffer;
+  const hash = await crypto.subtle.digest("SHA-256", _buf);
   return Array.from(new Uint8Array(hash)).map((b) => b.toString(16).padStart(2, "0")).join("");
 }
 
