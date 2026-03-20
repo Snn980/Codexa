@@ -42,7 +42,7 @@ import {
 } from 'react-native';
 
 import type { AppContainer } from '../app/AppContainer';
-import { RingBuffer }        from '../runtime/console/RingBuffer';
+// RingBuffer ConsoleEntry tipine bağlı — TerminalLine için plain array kullanıyoruz
 
 // ─── Terminal Satırı ──────────────────────────────────────────────────────────
 
@@ -78,7 +78,7 @@ interface UseTerminalRuntimeReturn {
 }
 
 function useTerminalRuntime({ container }: UseTerminalRuntimeOptions): UseTerminalRuntimeReturn {
-  const ringRef    = useRef(new RingBuffer<TerminalLine>(RING_CAPACITY));
+  const ringRef    = useRef<TerminalLine[]>([]);
   const [lines, setLines] = useState<TerminalLine[]>([]);
   const [isRunning, setIsRunning] = useState(false);
   const mountedRef = useRef(true);
@@ -94,8 +94,10 @@ function useTerminalRuntime({ container }: UseTerminalRuntimeOptions): UseTermin
     if (!mountedRef.current) return;
     const line = makeLine(kind, text);
     ringRef.current.push(line);
-    // RingBuffer → state sync (shallow copy for React)
-    setLines(ringRef.current.toArray());
+    if (ringRef.current.length > RING_CAPACITY) {
+      ringRef.current = ringRef.current.slice(-RING_CAPACITY);
+    }
+    setLines([...ringRef.current]);
   }, []);
 
   // ─── EventBus entegrasyonu ─────────────────────────────────────────────────
@@ -140,16 +142,17 @@ function useTerminalRuntime({ container }: UseTerminalRuntimeOptions): UseTermin
       const { Bundler } = await import('../runtime/bundler/Bundler');
       const bundler = new Bundler();
 
-      const result = await bundler.run(entryFile ?? 'index.js', {
-        signal: abortRef.current.signal,
-        onStdout: (line: string) => pushLine('stdout', line),
-        onStderr: (line: string) => pushLine('stderr', line),
-      });
+      const payload = {
+        executionId: String(Date.now()),
+        entryPath:   entryFile ?? 'index.js',
+        files:       {} as Record<string, string>,
+      };
+      const result = await bundler.bundle(payload, abortRef.current.signal);
 
       if (!mountedRef.current) return;
 
       if (result.ok) {
-        pushLine('success', `✓ Tamamlandı (${result.value?.durationMs ?? 0}ms)`);
+        pushLine('success', `✓ Tamamlandı (${result.data?.sizeBytes ?? 0}ms)`);
       } else {
         pushLine('warn', `✗ Hata: ${result.error.message}`);
       }
@@ -167,7 +170,7 @@ function useTerminalRuntime({ container }: UseTerminalRuntimeOptions): UseTermin
   // ─── clear ─────────────────────────────────────────────────────────────────
 
   const clear = useCallback(() => {
-    ringRef.current.clear();
+    ringRef.current = [];
     setLines([]);
     abortRef.current?.abort();
   }, []);

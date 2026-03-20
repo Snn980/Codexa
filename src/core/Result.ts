@@ -19,3 +19,7 @@ export type {
   AsyncResult,
   AppError,
 } from '../utils/result';
+
+// ErrorCode — canonical: types/core.ts
+export { ErrorCode } from '../types/core';
+export type { ErrorCode } from '../types/core';
