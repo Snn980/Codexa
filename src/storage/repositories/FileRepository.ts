@@ -431,17 +431,25 @@ export class FileRepository implements IFileRepository {
 
   /** Yalnızca içerik günceller. Auto-save akışında kullanılır. */
   async updateContent(
-    id:              UUID,
-    content:         string,
-    expectedVersion: number,
+    id:               UUID,
+    content:          string,
+    expectedVersion?: number,
   ): AsyncResult<IFile> {
     const size = computeByteSize(content);
     if (size > FILE_CONSTRAINTS.MAX_SIZE_BYTES) {
       return err(ErrorCode.VALIDATION_ERROR, `İçerik boyutu sınırı aşıyor: ${size} byte`, { context: {fileId: id, size} });
     }
 
+    // expectedVersion undefined ise önce mevcut version'ı çek
+    let lockVersion = expectedVersion;
+    if (lockVersion === undefined) {
+      const cur = await this.findById(id);
+      if (!cur.ok) return cur;
+      lockVersion = cur.data.version;
+    }
+
     const execResult = await tryResultAsync(
-      () => this.driver.execute(SQL.UPDATE_CONTENT, [content, computeChecksum(content), size, Date.now(), id, expectedVersion]),
+      () => this.driver.execute(SQL.UPDATE_CONTENT, [content, computeChecksum(content), size, Date.now(), id, lockVersion]),
       ErrorCode.FILE_WRITE_ERROR,
       `İçerik güncellenemedi: id="${id}"`,
       { fileId: id },
@@ -457,12 +465,14 @@ export class FileRepository implements IFileRepository {
 
   /** isDirty günceller. Version artırmaz — editörden sık çağrılabilir. */
   async markDirty(id: UUID, dirty: boolean): AsyncResult<void> {
-    return tryResultAsync(
+    const result = await tryResultAsync(
       () => this.driver.execute(SQL.MARK_DIRTY, [dirty ? 1 : 0, id]),
       ErrorCode.FILE_WRITE_ERROR,
       `isDirty güncellenemedi: id="${id}"`,
       { fileId: id, dirty },
     );
+    if (!result.ok) return result;
+    return { ok: true, data: undefined };
   }
 
   /** Hard-delete. Optimistic lock uygulanır. */

@@ -303,7 +303,7 @@ export class ProjectRepository implements IProjectRepository {
   async create(dto: CreateProjectDto): AsyncResult<IProjectWithVersion> {
     const validationError = validateCreateDto(dto);
     if (validationError) {
-      return err(ErrorCode.VALIDATION_ERROR, validationError, { context: {dto: dto as unknown as Record<string, unknown>,} });
+      return err(ErrorCode.VALIDATION_ERROR, validationError, { context: { dtoName: dto.name ?? "" } });
     }
 
     const now  = Date.now();

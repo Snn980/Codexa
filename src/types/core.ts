@@ -451,7 +451,8 @@ export interface IFileRepository
   extends IRepository<IFile, CreateFileDto, UpdateFileDto> {
   findByProject(projectId: UUID):             AsyncResult<IFile[]>;
   findByPath(projectId: UUID, path: string):  AsyncResult<IFile>;
-  updateContent(id: UUID, content: string):   AsyncResult<IFile>;
+  /** Optimistic lock — expectedVersion verilmezse version kontrolü atlanır */
+  updateContent(id: UUID, content: string, expectedVersion?: number): AsyncResult<IFile>;
   markDirty(id: UUID, dirty: boolean):        AsyncResult<void>;
   countByProject(projectId: UUID):            AsyncResult<number>;
 }
