@@ -45,8 +45,8 @@ export interface GGUFMetaWithChecksum extends GGUFMeta {
 // ─── İndirme durumu ──────────────────────────────────────────────────────────
 
 export type DownloadStatus =
-  | 'idle' | 'checking' | 'downloading' | 'verifying'
-  | 'complete' | 'error' | 'cancelled';
+  | 'idle' | 'queued' | 'checking' | 'downloading' | 'verifying'
+  | 'complete' | 'error' | 'failed' | 'cancelled';
 
 export interface DownloadState {
   modelId:      AIModelId;

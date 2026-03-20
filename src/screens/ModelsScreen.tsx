@@ -115,19 +115,19 @@ function useModelsScreen(container: AppContainer) {
 
     const u1 = eventBus.on(
       'model:download:progress',
-      ({ modelId }) => patch(modelId),
+      ({ modelId }) => patch(modelId as import('../ai/AIModels').AIModelId),
     );
     const u2 = eventBus.on(
       'model:download:complete',
-      ({ modelId }) => patchAndUpdateCount(modelId),
+      ({ modelId }) => patchAndUpdateCount(modelId as import('../ai/AIModels').AIModelId),
     );
     const u3 = eventBus.on(
       'model:download:error',
-      ({ modelId }) => patch(modelId),
+      ({ modelId }) => patch(modelId as import('../ai/AIModels').AIModelId),
     );
     const u4 = eventBus.on(
       'model:download:cancel',
-      ({ modelId }) => patch(modelId),
+      ({ modelId }) => patch(modelId as import('../ai/AIModels').AIModelId),
     );
 
     return () => { u1(); u2(); u3(); u4(); };
@@ -200,7 +200,7 @@ const ModelCard = memo(({
   const isError       = state.status === 'error';
   const isBusy        = isDownloading || isVerifying;
 
-  const sizeMB = model.sizeGB ? Math.round(model.sizeGB * 1024) : null;
+  const sizeMB = model.gguf?.sizeMB ?? null;
 
   return (
     <View style={styles.card}>
