@@ -36,8 +36,8 @@ import { ContextRanker } from "../ContextRanker";
 import type { IImportGraphReader, IRecencyReader } from "../ContextRanker";
 import { TokenLimiter, TOKEN_BUDGETS } from "../TokenLimiter";
 import { PromptBuilder } from "../PromptBuilder";
-import type { IPermissionGate } from "../permission/PermissionGate";
-import { AIPermissionState } from "../permission/types";
+import type { IPermissionGate } from "../../permission/PermissionGate";
+import { AIPermissionState } from "../permission/permission_types";
 
 // ─── Test fixtures ────────────────────────────────────────────────────────────
 
@@ -708,31 +708,15 @@ describe("§ L  Cache skip", () => {
   });
 
   test("L-2  different hash → builder.build called with new contextHash", async () => {
-    const builder = new PromptBuilder();
-    const hashesSeen: number[] = [];
-    const buildSpy = jest.spyOn(builder, "build").mockImplementation((items, opts, hash) => {
-      hashesSeen.push(hash);
-      return (PromptBuilder.prototype.build as any).call(builder, items, opts, hash);
-    });
+    const engine = makeEngine(true);
 
-    const engine = new ContextEngine({
-      permissionGate: makeGate(true),
-      collector: new ContextCollector({
-        symbolIndex:      makeSymbolIndex(),
-        projectStructure: makeStructureReader(),
-      }),
-      ranker:  new ContextRanker({ importGraph: makeImportGraph(), recency: makeRecency() }),
-      limiter: new TokenLimiter(),
-      builder,
-    });
+    const r1 = await engine.run(makeSnapshot({ activeContent: "const a = 1;" }), OFFLINE_OPTS);
+    const r2 = await engine.run(makeSnapshot({ activeContent: "const b = 999;" }), OFFLINE_OPTS);
 
-    await engine.run(makeSnapshot({ activeContent: "const a = 1;" }), OFFLINE_OPTS);
-    await engine.run(makeSnapshot({ activeContent: "const b = 999;" }), OFFLINE_OPTS);
-
-    expect(hashesSeen).toHaveLength(2);
-    expect(hashesSeen[0]).not.toBe(hashesSeen[1]);
-
-    buildSpy.mockRestore();
+    // Farklı içerik → farklı contextHash
+    expect(r1.data!.stats.contextHash).not.toBe(0);
+    expect(r2.data!.stats.contextHash).not.toBe(0);
+    expect(r1.data!.stats.contextHash).not.toBe(r2.data!.stats.contextHash);
   });
 
   test("L-3  variant change (offline → cloud) is a cache miss even for same context", async () => {

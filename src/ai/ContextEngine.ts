@@ -24,6 +24,7 @@ export interface PipelineStats {
   tokensAvailable: number;
   contextHash:     number;
   cacheHit:        boolean;
+  anyTruncated:    boolean;
 }
 
 export interface EngineRunResult {
@@ -50,7 +51,19 @@ function fnv1a(text: string): number {
 }
 
 const KNOWN_MODEL_KEYS = new Set([
-  "offline", "cloud-default",
+  // Offline
+  "offline",
+  // Cloud default
+  "cloud-default",
+  // Claude 4.x — AIModelId formatı ("cloud:*")
+  "cloud:claude-haiku-4-5",
+  "cloud:claude-sonnet-4-6",
+  "cloud:claude-opus-4-6",
+  // Claude 4.x — apiModelId formatı
+  "claude-haiku-4-5-20251001",
+  "claude-sonnet-4-6",
+  "claude-opus-4-6",
+  // Geriye dönük uyumluluk (deprecation: Phase 22)
   "claude-3-haiku", "claude-3-sonnet", "claude-3-opus",
 ]);
 
@@ -124,6 +137,7 @@ export class ContextEngine {
           tokensAvailable: limitResult.tokensAvailable,
           contextHash,
           cacheHit,
+          anyTruncated:    limitResult.anyTruncated,
         },
       },
     };

@@ -489,3 +489,4 @@ export class PermissionGate {
     this._isTransitioning = false;
   }
 }
+

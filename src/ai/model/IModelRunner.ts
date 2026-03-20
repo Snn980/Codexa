@@ -18,7 +18,7 @@
  *  § 5  IPC şeması — REQUEST/RESPONSE/STREAM/CANCEL
  */
 
-import type { Result } from "../types";
+import type { Result } from "../../core/Result";
 
 // ─── Branded types ────────────────────────────────────────────────────────────
 

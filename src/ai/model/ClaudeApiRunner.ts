@@ -43,8 +43,8 @@ import {
   modelKey,
   runId,
 } from "./IModelRunner";
-import type { Result } from "../types";
-import { ok, err, tryResultAsync } from "../result";
+import type { Result } from "../../core/Result";
+import { ok, err, tryResultAsync } from "../../core/Result";
 
 // ─── HTTP Client interface (DI) ────────────────────────────────────────────
 
