@@ -176,7 +176,7 @@ export class ChatExportImport {
       const sessionsResult = this._repo.listSessions();
       if (!sessionsResult.ok) return sessionsResult;
 
-      const meta = sessionsResult.data.find(s => s.id === sessionId);
+      const meta = sessionsResult.data.find((s: { id: string }) => s.id === sessionId);
       if (!meta) return err('EXPORT_NOT_FOUND', `Session not found: ${sessionId}`);
 
       const msgResult = this._repo.getMessages(sessionId);
@@ -231,7 +231,7 @@ export class ChatExportImport {
       // ── Mevcut session ID'leri
       const existingResult = this._repo.listSessions();
       const existingIds    = new Set(
-        existingResult.ok ? existingResult.value.map(s => s.id) : [],
+        existingResult.ok ? existingResult.data.map((s: { id: string }) => s.id) : [],
       );
 
       const summary: ImportSummary = {

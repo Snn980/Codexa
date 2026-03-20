@@ -6,7 +6,15 @@
 //   FIX-11  MAX_BYTES_PER_SESSION enforcement doğrulandı ve güçlendirildi
 //           (TextEncoder yerine byte estimate — RN'de TextEncoder performans sorunu)
 
-import { MMKV }                    from 'react-native-mmkv';
+type MMKVInstance = {
+  getString(key: string): string | undefined;
+  set(key: string, value: string): void;
+  delete(key: string): void;
+  remove(key: string): void;
+  getAllKeys(): string[];
+};
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const { MMKV } = require('react-native-mmkv') as { MMKV: new (opts?: { id?: string }) => MMKVInstance };
 import { ok, err, type Result }    from '../../core/Result';
 import type { ChatMessage }        from '../../hooks/useAIChat';
 
@@ -114,7 +122,7 @@ export interface SessionMeta {
 // ─── ChatHistoryRepository ────────────────────────────────────────────────────
 
 export class ChatHistoryRepository {
-  private readonly _storage: MMKV;
+  private readonly _storage: MMKVInstance;
 
   constructor(instanceId = 'chat-history') {
     // FIX (§ 37) — MMKV her zaman id ile açılır; namespace izolasyonu

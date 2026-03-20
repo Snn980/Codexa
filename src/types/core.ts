@@ -166,6 +166,11 @@ export const ErrorCode = {
 
   // Migration  (ChatStorageMigrator)
   MIGRATION_FAILED:                "MIGRATION_FAILED",
+
+  // RecencyStore
+  RECENCY_DB_READ_FAILED:          "RECENCY_DB_READ_FAILED",
+  RECENCY_DB_WRITE_FAILED:         "RECENCY_DB_WRITE_FAILED",
+  RECENCY_ALREADY_DISPOSED:        "RECENCY_ALREADY_DISPOSED",
 } as const;
 
 export type ErrorCode = Values<typeof ErrorCode>;

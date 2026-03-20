@@ -485,7 +485,7 @@ export class FileRepository implements IFileRepository {
       `Dosya silinemedi: id="${id}"`,
       { fileId: id },
     );
-    if (!execResult.ok) return execResult;
+    if (!execResult.ok) return { ok: false, error: execResult.error };
 
     if (execResult.data.rowsAffected === 0) {
       return err(ErrorCode.OPTIMISTIC_LOCK_CONFLICT, `Silme sırasında lock çakışması: id="${id}"`, { context: {fileId: id} });
