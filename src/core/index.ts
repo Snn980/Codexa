@@ -18,7 +18,6 @@ export type {
   Values,
   DeepReadonly,
   RequireFields,
-  ErrorCode,
   AppError,
   Result,
   AsyncResult,

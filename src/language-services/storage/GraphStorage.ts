@@ -347,8 +347,8 @@ export class GraphStorage {
     });
 
     // [D] Cache-miss sonrası LevelDB'yi ısıt — sonraki okuma LevelDB'den gelir
-    if (result.ok && result.value.length > 0) {
-      const ops = result.value.map(sym => ({
+    if (result.ok && result.data.length > 0) {
+      const ops = result.data.map((sym: SymbolNode) => ({
         type:  "put" as const,
         key:   LevelKey.symbol(fileId, sym.id),
         value: JSON.stringify(sym),
