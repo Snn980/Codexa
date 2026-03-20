@@ -135,7 +135,7 @@ function EditorNavigator({ container }: { container: AppContainer }) {
   return (
     <EditorStack.Navigator screenOptions={{ headerShown: false }}>
       <EditorStack.Screen name="EditorMain">
-        {(props) => <EditorMainScreen {...props} container={container} />}
+        {(props) => <EditorMainScreen {...(props as any)} container={container} />}
       </EditorStack.Screen>
       <EditorStack.Screen name="AIPanel">
         {(props) => <AIPanelScreen {...props} container={container} />}
@@ -158,7 +158,7 @@ export function RootNavigator({ container, onNavError }: RootNavigatorProps) {
   useEffect(() => {
     const unsub = container.eventBus.on(
       'nav:navigate',
-      (payload: { screen: keyof TabParamList; params?: unknown }) => {
+      (payload: { screen: string; params?: unknown }) => {
         safeNavigate(
           payload.screen,
           payload.params as TabParamList[typeof payload.screen],

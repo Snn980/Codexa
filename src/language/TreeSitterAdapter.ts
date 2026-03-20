@@ -24,7 +24,7 @@
  */
 
 import type { Result } from "../types/core";
-import { ok, err, tryResultAsync } from "../utils/result";
+import { ok, err, tryResultAsync, ErrorCode } from "../utils/result";
 
 // ─── Tree-sitter types (web-tree-sitter shapes) ────────────────────────────
 
@@ -91,9 +91,9 @@ export interface ITreeSitterAdapter {
 // ─── Error codes ──────────────────────────────────────────────────────────
 
 export const TreeSitterErrorCode = {
-  WASM_LOAD_FAILED:    "TREE_SITTER_WASM_LOAD_FAILED",
-  PARSE_FAILED:        "TREE_SITTER_PARSE_FAILED",
-  ADAPTER_DISPOSED:    "TREE_SITTER_ADAPTER_DISPOSED",
+  WASM_LOAD_FAILED:    ErrorCode.TREE_SITTER_WASM_LOAD_FAILED,
+  PARSE_FAILED:        ErrorCode.TREE_SITTER_PARSE_FAILED,
+  ADAPTER_DISPOSED:    ErrorCode.TREE_SITTER_ADAPTER_DISPOSED,
 } as const;
 
 // ─── TreeSitterAdapter ────────────────────────────────────────────────────
