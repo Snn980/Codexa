@@ -51,7 +51,7 @@ const INLINE_ESCALATION_COOLDOWN_MS = 5_000;
 export interface UseInlineCompletionBridgeOptions {
   workerClient:  IAIWorkerClient;
   orchestrator:  AIOrchestrator;
-  permission:    PermissionStatus;
+  permission:    AIPermissionStatus;
   activeModelId: AIModelId | null;
   onAccept:      (insertText: string, ctx: CursorContext) => void;
   /** Escalation gerçekleştiğinde Sentry / analytics için */

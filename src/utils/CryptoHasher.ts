@@ -51,7 +51,7 @@ export const CryptoHasher = {
     // ── 1. Web Crypto API ─────────────────────────────────────────────────
     if (typeof crypto !== "undefined" && crypto?.subtle) {
       try {
-        const hashBuffer = await crypto.subtle.digest("SHA-256", data);
+        const hashBuffer = await (crypto as Crypto).subtle.digest("SHA-256", data);
         return _bufferToHex(new Uint8Array(hashBuffer));
       } catch {
         // subtle.digest başarısız → Node fallback dene

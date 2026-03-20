@@ -41,7 +41,7 @@ import type {
   MetaRecord,
   Result,
   UUID,
-} from "./core";
+} from "../types/core";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // § 1. Builder'lar

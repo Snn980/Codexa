@@ -206,7 +206,7 @@ export class ExpoModelStorage implements IStorageInfo {
       const info = await this._fs.getInfoAsync(
         this._modelsDir + filename + ".partial", { size: true }
       );
-      return info.exists ? (info.size ?? 0) : 0;
+      return info.exists ? (((info as any).size as number) ?? 0) : 0;
     } catch { return 0; }
   }
 
@@ -262,7 +262,7 @@ export class ExpoModelStorage implements IStorageInfo {
       const uri  = this._modelsDir + filename;
       const info = await this._fs.getInfoAsync(uri, { size: true });
       if (!info.exists) return null;
-      return computeSHA256(this._fs, uri, info.size ?? 0);
+      return computeSHA256(this._fs, uri, ((info as any).size as number) ?? 0);
     } catch { return null; }
   }
 

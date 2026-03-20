@@ -12,11 +12,14 @@
  *
  * § 3  : IEventBus unsub cleanup
  * § 14.6 : usePermissionGate entegrasyonu
+ *
+ * REFACTOR — PermissionStatus → AIPermissionStatus (doğru tip adı)
+ *   AppEventMap'e "permission:status:changed" eklendi (types/core.ts)
  */
 
 import { useState, useEffect, useCallback } from "react";
 import type { IEventBus }                   from "../core/EventBus";
-import type { IPermissionGate, PermissionStatus } from "../permission/PermissionGate";
+import type { IPermissionGate, AIPermissionStatus } from "../permission/PermissionGate";
 import type { AIModelId, AIModel }          from "../ai/AIModels";
 import { getAvailableModels, getDefaultModel, isModelAvailable } from "../ai/AIModels";
 
@@ -28,7 +31,7 @@ const EMPTY_SET: ReadonlySet<AIModelId> = new Set<AIModelId>();
 export interface ModelSelectorState {
   availableModels:          readonly AIModel[];
   selectedModelId:          AIModelId | null;
-  permissionStatus:         PermissionStatus;
+  permissionStatus:         AIPermissionStatus;
   isSelectedModelAvailable: boolean;
   updatableModels:          ReadonlySet<AIModelId>;
   hasUpdate(modelId: AIModelId): boolean;
@@ -57,7 +60,7 @@ export function useModelSelector(
     updatableModels = EMPTY_SET,
   } = opts;
 
-  const [permissionStatus, setPermissionStatus] = useState<PermissionStatus>(
+  const [permissionStatus, setPermissionStatus] = useState<AIPermissionStatus>(
     () => permissionGate.getStatus(),
   );
   const [selectedModelId, setSelectedModelId] = useState<AIModelId | null>(
@@ -69,7 +72,7 @@ export function useModelSelector(
   useEffect(() => {
     const unsub = eventBus.on(
       "permission:status:changed",
-      (payload: { status: PermissionStatus }) => {
+      (payload: { status: AIPermissionStatus }) => {
         const newStatus = payload.status;
         setPermissionStatus(newStatus);
         setSelectedModelId((prev) => {
@@ -108,8 +111,6 @@ export function useModelSelector(
   const hasUpdate = useCallback(
     (modelId: AIModelId) => updatableModels.has(modelId),
     [updatableModels],
-    // ✅ DÜZELTME #3: dep [updatableModels] — EMPTY_SET stabil olduğu için
-    //    geçirilmediğinde hasUpdate da stabil kalır.
   );
 
   // ─── Türetilmiş değerler ──────────────────────────────────────────────────

@@ -1,23 +1,28 @@
 import React from "react";
 import { View, Text, TouchableOpacity } from "react-native";
 import { useNavigation } from "@react-navigation/native";
+import type { BottomTabNavigationProp } from "@react-navigation/bottom-tabs";
 import { useAppContext } from "@/app/AppContainer";
+import type { TabParamList } from "@/navigations/types";
+
+type TabNavProp = BottomTabNavigationProp<TabParamList>;
 
 const TabBar = () => {
-  const navigation = useNavigation();
+  const navigation = useNavigation<TabNavProp>();
   const { state } = useAppContext();
 
   return (
     <View style={{ flexDirection: "row", justifyContent: "space-around" }}>
-      <TouchableOpacity onPress={() => navigation.navigate("Home" as never)}>
+      <TouchableOpacity onPress={() => navigation.navigate("ChatTab")}>
         <Text>Home</Text>
       </TouchableOpacity>
 
-      <TouchableOpacity onPress={() => navigation.navigate("Settings" as never)}>
+      <TouchableOpacity onPress={() => navigation.navigate("SettingsTab")}>
         <Text>Settings</Text>
       </TouchableOpacity>
     </View>
   );
 };
 
+export { TabBar };
 export default TabBar;

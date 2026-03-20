@@ -110,7 +110,8 @@ export function generateId(): string {
  */
 export async function generateIdAsync(): Promise<string> {
   try {
-    const { getRandomBytesAsync } = await import('expo-crypto');
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { getRandomBytesAsync } = await import('expo-crypto' as any);
     const bytes = await getRandomBytesAsync(16);
     return bytesToUUIDv4(new Uint8Array(bytes));
   } catch {

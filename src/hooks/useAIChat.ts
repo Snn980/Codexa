@@ -40,6 +40,12 @@ export interface ChatMessage {
   readonly timestamp:     number;
   /** İdempotency key — rapid send dedup için (opsiyonel, dışarıdan inject edilebilir) */
   readonly idempotencyKey?: string;
+  /** Streaming devam ediyor mu — UI cursor animasyonu için */
+  readonly isStreaming?:  boolean;
+  /** Hata kodu — mesaj balonu kırmızı gösterim için */
+  readonly errorCode?:    string;
+  /** Token sayısı — UI token counter için */
+  readonly tokens?:       number;
 }
 
 export interface AIChatState {
@@ -149,7 +155,10 @@ function reducer(state: AIChatState, action: Action): AIChatState {
       // pendingId eşleşmiyorsa eski / iptal edilmiş stream — yoksay
       if (state.pendingId !== action.assistantId) return state;
       const msgs = [...state.messages];
-      const idx  = msgs.findLastIndex((m) => m.id === action.assistantId);
+      // ES2022 uyumlu findLastIndex — Array.findLastIndex ES2023'te eklendi,
+      // ancak tsconfig hedefi ES2022 olduğundan reverse+findIndex ile implement edilir.
+      const reversedIdx = [...msgs].reverse().findIndex((m) => m.id === action.assistantId);
+      const idx = reversedIdx === -1 ? -1 : msgs.length - 1 - reversedIdx;
       if (idx === -1) return state;
       msgs[idx] = { ...msgs[idx], content: msgs[idx].content + action.chunk };
       return { ...state, messages: msgs };

@@ -275,7 +275,7 @@ export class ProjectRepository implements IProjectRepository {
 
   async findRecent(limit: number): AsyncResult<IProjectWithVersion[]> {
     if (limit < 1 || !Number.isInteger(limit)) {
-      return err(ErrorCode.VALIDATION_ERROR, `limit pozitif tam sayı olmalı: ${limit}`, { limit });
+      return err(ErrorCode.VALIDATION_ERROR, `limit pozitif tam sayı olmalı: ${limit}`, { context: {limit} });
     }
     const result = await tryResultAsync(
       () => this.driver.query<ProjectRow>(SQL.FIND_RECENT, [ProjectStatus.PendingGC, limit]),
@@ -303,9 +303,7 @@ export class ProjectRepository implements IProjectRepository {
   async create(dto: CreateProjectDto): AsyncResult<IProjectWithVersion> {
     const validationError = validateCreateDto(dto);
     if (validationError) {
-      return err(ErrorCode.VALIDATION_ERROR, validationError, {
-        dto: dto as unknown as Record<string, unknown>,
-      });
+      return err(ErrorCode.VALIDATION_ERROR, validationError, { context: {dto: dto as unknown as Record<string, unknown>,} });
     }
 
     const now  = Date.now();
@@ -383,7 +381,7 @@ export class ProjectRepository implements IProjectRepository {
       const existsResult = await this.exists(id);
 
       if (existsResult.ok && !existsResult.data) {
-        return err(ErrorCode.RECORD_NOT_FOUND, `Project bulunamadı: id="${id}"`, { projectId: id });
+        return err(ErrorCode.RECORD_NOT_FOUND, `Project bulunamadı: id="${id}"`, { context: {projectId: id} });
       }
 
       return err(

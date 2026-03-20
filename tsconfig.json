@@ -18,8 +18,7 @@
     "paths": {
       "@/*": ["./src/*"]
     },
-    "baseUrl": ".",
-    "types": ["jest"]
+    "baseUrl": "."
   },
   "include": [
     "**/*.ts",
@@ -32,6 +31,10 @@
     "android",
     "ios",
     "e2e",
-    "src/e2e"
+    "src/e2e",
+    "src/**/__tests__",
+    "src/**/*.test.ts",
+    "src/**/*.test.tsx",
+    "jest.setup.ts"
   ]
 }

@@ -22,7 +22,7 @@ import {
   Pressable,
 } from "react-native";
 
-import type { IPermissionGate, PermissionStatus } from "../../permission/PermissionGate";
+import type { IPermissionGate, AIPermissionStatus } from "../../permission/PermissionGate";
 import type { IEventBus } from "../../core/EventBus";
 
 // ─── Step tanımları ─────────────────────────────────────────────────────────
@@ -34,7 +34,7 @@ interface StepConfig {
   bulletPoints: string[];
   consentLabel: string;
   actionLabel: string;
-  targetStatus: PermissionStatus;
+  targetStatus: AIPermissionStatus;
 }
 
 const STEPS: Record<string, StepConfig> = {
@@ -153,9 +153,9 @@ export interface PermissionGateModalProps {
   permissionGate: IPermissionGate;
   eventBus: IEventBus;
   /** Hangi seviyeye yükseltmek isteniyor */
-  targetStatus?: PermissionStatus;
+  targetStatus?: AIPermissionStatus;
   onClose: () => void;
-  onSuccess: (newStatus: PermissionStatus) => void;
+  onSuccess: (newStatus: AIPermissionStatus) => void;
 }
 
 export const PermissionGateModal = ({
@@ -166,7 +166,7 @@ export const PermissionGateModal = ({
   onClose,
   onSuccess,
 }: PermissionGateModalProps) => {
-  const [currentStatus, setCurrentStatus] = useState<PermissionStatus>(
+  const [currentStatus, setCurrentStatus] = useState<AIPermissionStatus>(
     () => permissionGate.getStatus(),
   );
   const [isTransitioning, setIsTransitioning] = useState(false);
@@ -185,7 +185,7 @@ export const PermissionGateModal = ({
   useEffect(() => {
     const unsub = eventBus.on(
       "permission:status:changed",
-      (payload: { status: PermissionStatus }) => {
+      (payload: { status: AIPermissionStatus }) => {
         if (mountedRef.current) setCurrentStatus(payload.status);
       },
     );
@@ -211,18 +211,18 @@ export const PermissionGateModal = ({
     setIsTransitioning(true);
     setErrorMessage(null);
 
-    const result = await permissionGate.transition(stepConfig.targetStatus);
-
-    if (!mountedRef.current) return;
-
-    setIsTransitioning(false);
-
-    if (!result.ok) {
-      setErrorMessage(result.message ?? "Geçiş başarısız.");
+    try {
+      // transition() void döndürür; setAIStatus ile geçiş yapılır
+      permissionGate.setAIStatus(stepConfig.targetStatus);
+      if (!mountedRef.current) return;
+      setCurrentStatus(stepConfig.targetStatus);
+    } catch (e) {
+      if (!mountedRef.current) return;
+      setErrorMessage(e instanceof Error ? e.message : "Geçiş başarısız.");
       return;
+    } finally {
+      if (mountedRef.current) setIsTransitioning(false);
     }
-
-    setCurrentStatus(stepConfig.targetStatus);
     onSuccess(stepConfig.targetStatus);
     onClose();
   }, [stepConfig, isTransitioning, permissionGate, onSuccess, onClose]);
@@ -286,7 +286,7 @@ const StatusStep = ({ label, active, done }: { label: string; active: boolean; d
 
 // ─── AlreadyActive ───────────────────────────────────────────────────────────
 
-const AlreadyActiveState = ({ status, onClose }: { status: PermissionStatus; onClose: () => void }) => (
+const AlreadyActiveState = ({ status, onClose }: { status: AIPermissionStatus; onClose: () => void }) => (
   <View style={styles.alreadyActive}>
     <Text style={styles.alreadyActiveIcon}>✅</Text>
     <Text style={styles.alreadyActiveTitle}>

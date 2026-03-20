@@ -154,8 +154,8 @@ export class AIWorker {
       if (result && !result.ok) {
         this._sendResponse(id, {
           ok: false,
-          errorCode: result.code,
-          errorMessage: result.message ?? "Runtime error",
+          errorCode: result.error.code,
+          errorMessage: result.error.message ?? "Runtime error",
         });
       } else {
         this._sendResponse(id, {

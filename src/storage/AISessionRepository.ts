@@ -270,7 +270,7 @@ export class AISessionRepository implements IAISessionRepository {
       });
 
       const result = await this.getSession(id);
-      if (!result.ok) throw new Error(result.message);
+      if (!result.ok) throw new Error(result.error.message);
       return result.data;
     }, AISessionErrorCode.WRITE_ERROR, "appendMessages failed");
   }

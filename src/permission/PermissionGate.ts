@@ -195,7 +195,12 @@ export interface IPermissionGate {
   checkPermission(key: PermissionKey):   Promise<Result<PermissionStatusValue>>;
   requestPermission(key: PermissionKey): Promise<Result<PermissionStatusValue>>;
   statusSnapshot(key: PermissionKey):    PermissionStatusValue | null;
-  getStatus(): AIPermissionStatus | { state: string; consent: null; changedAt: string };
+  /**
+   * AI izin seviyesini döner.
+   * REFACTOR: Union tip daraltıldı — class her zaman AIPermissionStatus döndürür.
+   * Legacy { state, consent, changedAt } şekli kaldırıldı.
+   */
+  getStatus(): AIPermissionStatus;
   setAIStatus(status: AIPermissionStatus): void;
   isAllowed(variant: "offline" | "cloud"): boolean;
   init?(): Promise<{ ok: boolean; data: undefined }>;
@@ -479,6 +484,17 @@ export class PermissionGate {
   // ─── AI İzin Seviyesi ─────────────────────────────────────────────────────
   getStatus(): AIPermissionStatus     { return this._aiStatus; }
   setAIStatus(s: AIPermissionStatus)  { this._aiStatus = s; }
+
+  /**
+   * IPermissionGate.isAllowed() implementasyonu.
+   * "offline" → AI kapalı değilse izin var
+   * "cloud"   → yalnızca CLOUD_ENABLED'da izin var
+   */
+  isAllowed(variant: "offline" | "cloud"): boolean {
+    if (this._disposed) return false;
+    if (variant === "offline") return this._aiStatus !== "DISABLED";
+    return this._aiStatus === "CLOUD_ENABLED";
+  }
 
   // ─── Dispose ──────────────────────────────────────────────────────────────
   dispose(): void {

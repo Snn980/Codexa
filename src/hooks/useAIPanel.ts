@@ -56,7 +56,7 @@ const QUICK_ACTION_PROMPTS: Record<QuickActionKind, (code: string, lang: string)
 
 export interface UseAIPanelOptions {
   orchestrator:  AIOrchestrator;
-  permission:    PermissionStatus;
+  permission:    AIPermissionStatus;
   eventBus:      IEventBus;
   sentryService: SentryService;
 }
@@ -94,7 +94,11 @@ export function useAIPanel({
     permission,
     onEvent: (event, detail) => {
       // § 32 ek — Sentry AI panel events
-      sentryService.captureAIEvent(event, detail);
+      // onEvent detail: unknown; captureAIEvent Record<string,unknown> bekliyor
+      sentryService.captureAIEvent(
+        event,
+        (detail as Record<string, unknown>) ?? {},
+      );
     },
   });
 
@@ -102,15 +106,15 @@ export function useAIPanel({
 
   useEffect(() => {
     // § 3 — tüm unsub'lar return fonksiyonunda
-    const u1 = eventBus.on('editor:tab:focused', ({ fileId }: { fileId: string }) => {
+    const u1 = eventBus.on('editor:tab:focused', ({ fileId }) => {
       if (!mountedRef.current) return;
       setActiveFile(prev => prev ? { ...prev, fileId } : null);
     });
 
     // editor:file:loaded — tam dosya bağlamı (fileId, fileName, language, content)
     const u2 = eventBus.on(
-      'editor:file:loaded' as never,
-      ({ fileId, fileName, language, content }: ActiveFileContext) => {
+      'editor:file:loaded',
+      ({ fileId, fileName, language, content }) => {
         if (!mountedRef.current) return;
         setActiveFile({ fileId, fileName, language, content, selection: '' });
       },
@@ -118,8 +122,8 @@ export function useAIPanel({
 
     // editor:selection:changed — seçim güncelleme
     const u3 = eventBus.on(
-      'editor:selection:changed' as never,
-      ({ selection }: { selection: string }) => {
+      'editor:selection:changed',
+      ({ selection }) => {
         if (!mountedRef.current) return;
         setActiveFile(prev => prev ? { ...prev, selection } : null);
       },
@@ -127,8 +131,8 @@ export function useAIPanel({
 
     // editor:content:changed — içerik güncelleme (AI bağlamı için)
     const u4 = eventBus.on(
-      'editor:content:changed' as never,
-      ({ fileId, content }: { fileId: string; content: string }) => {
+      'editor:content:changed',
+      ({ fileId, content }) => {
         if (!mountedRef.current) return;
         setActiveFile(prev =>
           prev && prev.fileId === fileId ? { ...prev, content } : prev,

@@ -15,6 +15,15 @@ module.exports = {
   setupFilesAfterFramework: [],
   setupFilesAfterEnv: ['<rootDir>/jest.setup.ts'],
 
+  // ─── TypeScript — test ortamına özgü tsconfig (jest types burada) ─────────
+  // tsconfig.json'dan "types":["jest"] kaldırıldı (SORUN-6).
+  // Jest global'leri (describe/it/expect) sadece test dosyalarına inject edilir.
+  globals: {
+    'ts-jest': {
+      tsconfig: './tsconfig.test.json',
+    },
+  },
+
   // ─── Transform ────────────────────────────────────────────────────────────
   transformIgnorePatterns: [
     'node_modules/(?!((jest-)?react-native|@react-native(-community)?)|expo(nent)?|@expo(nent)?/.*|@expo-google-fonts/.*|react-navigation|@react-navigation/.*|@unimodules/.*|unimodules|sentry-expo|native-base|react-native-svg)',

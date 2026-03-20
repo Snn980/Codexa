@@ -63,15 +63,15 @@ export interface ConsoleEntry {
   readonly seq:         number;
 }
 
-export type RingBufferListener = (entry: ConsoleEntry) => void;
+export type RingBufferListener<T extends ConsoleEntry = ConsoleEntry> = (entry: T) => void;
 
 // ─────────────────────────────────────────────────────────────────────────────
 // § 2. RingBuffer
 // ─────────────────────────────────────────────────────────────────────────────
 
-export class RingBuffer {
+export class RingBuffer<T extends ConsoleEntry = ConsoleEntry> {
   private readonly _capacity: number;
-  private readonly _buffer:   (ConsoleEntry | undefined)[];
+  private readonly _buffer:   (T | undefined)[];
   private _head:    number = 0;   // en eski öğenin indeksi
   private _count:   number = 0;   // mevcut öğe sayısı
   private _seq:     number = 0;   // global sıra (sıfırlanmaz)
@@ -86,7 +86,7 @@ export class RingBuffer {
   constructor(capacity: number = SECURITY_LIMITS.CONSOLE_MAX_LINES) {
     if (capacity < 1) throw new RangeError("RingBuffer: capacity en az 1 olmalı");
     this._capacity = capacity;
-    this._buffer   = new Array<ConsoleEntry | undefined>(capacity).fill(undefined);
+    this._buffer   = new Array<T | undefined>(capacity).fill(undefined);
   }
 
   // ── Yazma ────────────────────────────────────────────────────────────────

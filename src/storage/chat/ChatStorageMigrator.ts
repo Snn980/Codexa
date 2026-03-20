@@ -50,10 +50,10 @@ function estimateTotalSizeMB(repo: ChatHistoryRepository): number {
   if (!sessionsResult.ok) return 0;
 
   let totalChars = 0;
-  for (const session of sessionsResult.value) {
+  for (const session of sessionsResult.data) {
     const msgResult = repo.getMessages(session.id);
     if (!msgResult.ok) continue;
-    for (const msg of msgResult.value) {
+    for (const msg of msgResult.data) {
       totalChars += msg.content.length;
     }
   }
@@ -68,7 +68,7 @@ function estimateTotalSizeMB(repo: ChatHistoryRepository): number {
 function countTotalMessages(repo: ChatHistoryRepository): number {
   const sessionsResult = repo.listSessions();
   if (!sessionsResult.ok) return 0;
-  return sessionsResult.value.reduce((sum, s) => sum + s.messageCount, 0);
+  return sessionsResult.data.reduce((sum, s) => sum + s.messageCount, 0);
 }
 
 // ─── ChatStorageMigrator ─────────────────────────────────────────────────────
@@ -130,7 +130,7 @@ export class ChatStorageMigrator {
       const sessionsResult = this._mmkvRepo.listSessions();
       if (!sessionsResult.ok) return sessionsResult;
 
-      const sessions = sessionsResult.value;
+      const sessions = sessionsResult.data;
       const total    = sessions.length;
 
       // 3. Her session'ı SQLite'a taşı
@@ -149,7 +149,7 @@ export class ChatStorageMigrator {
           const createResult = await this._sqliteRepo.createSessionAsync(
             session.id,
             session.title,
-            [...msgResult.value],
+            [...msgResult.data],
           );
 
           if (!createResult.ok) {
@@ -159,7 +159,7 @@ export class ChatStorageMigrator {
           }
 
           report.sessionsMigrated++;
-          report.messagesMigrated += msgResult.value.length;
+          report.messagesMigrated += msgResult.data.length;
 
         } catch (e) {
           report.sessionsSkipped++;

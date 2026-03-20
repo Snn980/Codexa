@@ -152,7 +152,7 @@ class IndexedDBModelStorage implements IStorageInfo {
     try {
       const data = await this._get<Uint8Array>(IndexedDBModelStorage.MODELS, filename);
       if (!data || !crypto?.subtle) return null;
-      const hash = await crypto.subtle.digest("SHA-256", data);
+      const hash = await (crypto as Crypto).subtle.digest("SHA-256", data);
       return Array.from(new Uint8Array(hash)).map((b) => b.toString(16).padStart(2, "0")).join("");
     } catch { return null; }
   }

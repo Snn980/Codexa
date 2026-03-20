@@ -143,13 +143,13 @@ export class ChatExportImport {
       const sessionsResult = this._repo.listSessions();
       if (!sessionsResult.ok) return sessionsResult;
 
-      const sessions = sessionsResult.value;
+      const sessions = sessionsResult.data;
       const exported: ExportedSession[] = [];
 
       for (const meta of sessions) {
         const msgResult = this._repo.getMessages(meta.id);
         const messages  = msgResult.ok
-          ? [...msgResult.value]
+          ? [...msgResult.data]
           : [];
 
         exported.push({ meta, messages });
@@ -176,11 +176,11 @@ export class ChatExportImport {
       const sessionsResult = this._repo.listSessions();
       if (!sessionsResult.ok) return sessionsResult;
 
-      const meta = sessionsResult.value.find(s => s.id === sessionId);
+      const meta = sessionsResult.data.find(s => s.id === sessionId);
       if (!meta) return err('EXPORT_NOT_FOUND', `Session not found: ${sessionId}`);
 
       const msgResult = this._repo.getMessages(sessionId);
-      const messages  = msgResult.ok ? [...msgResult.value] : [];
+      const messages  = msgResult.ok ? [...msgResult.data] : [];
 
       const payload: ChatExportPayload = {
         version:    EXPORT_VERSION,
@@ -225,7 +225,7 @@ export class ChatExportImport {
       const validationResult = validatePayload(raw);
       if (!validationResult.ok) return validationResult;
 
-      const payload  = validationResult.value;
+      const payload  = validationResult.data;
       const sessions = payload.sessions.slice(0, MAX_IMPORT_SESSIONS);
 
       // ── Mevcut session ID'leri

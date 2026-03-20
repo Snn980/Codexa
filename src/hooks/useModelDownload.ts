@@ -18,7 +18,7 @@ import {
 } from 'react';
 
 import type { IEventBus }      from '../core/EventBus';
-import type { AIModelId }      from '../models/AIModels';
+import type { AIModelId }      from '../ai/AIModels';
 import {
   downloadModelForeground,
   enqueuePendingDownload,
@@ -152,9 +152,9 @@ export function useModelDownload(
         } else {
           updateState(modelId, {
             status:       'failed',
-            errorMessage: result.message,
+            errorMessage: result.error.message,
           });
-          eventBus.emit('model:download:failed', { modelId, error: result.message });
+          eventBus.emit('model:download:failed', { modelId, error: result.error.message });
         }
       } finally {
         lockRef.current.delete(modelId);
@@ -171,7 +171,7 @@ export function useModelDownload(
       if (result.ok) {
         updateState(modelId, { status: 'queued' });
       } else {
-        updateState(modelId, { status: 'failed', errorMessage: result.message });
+        updateState(modelId, { status: 'failed', errorMessage: result.error.message });
       }
     },
     [updateState],

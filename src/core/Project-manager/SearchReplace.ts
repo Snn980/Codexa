@@ -93,7 +93,7 @@ export class SearchReplace {
   async search(projectId: UUID, query: string, options: SearchOptions = {}): AsyncResult<SearchResult> {
     if (!query.trim()) return ok({ query, totalMatches: 0, fileResults: [], truncated: false });
     const built = buildRegex(query, options);
-    if ("error" in built) return err(ErrorCode.VALIDATION_ERROR, built.error, { query });
+    if ("error" in built) return err(ErrorCode.VALIDATION_ERROR, built.error, { context: {query} });
     const fr = await this.fileService.getProjectFiles(projectId);
     if (!fr.ok) return fr;
     const fileResults: FileSearchResult[] = [];
@@ -116,7 +116,7 @@ export class SearchReplace {
     // Bos regex her karakter sinirinda eslesir, tum icerik bozulabilir.
     if (!query.trim()) return ok({ fileId, filePath: "", replacements: 0, newContent: "" });
     const built = buildRegex(query, options);
-    if ("error" in built) return err(ErrorCode.VALIDATION_ERROR, built.error, { query });
+    if ("error" in built) return err(ErrorCode.VALIDATION_ERROR, built.error, { context: {query} });
     const fr = await this.fileService.getFile(fileId);
     if (!fr.ok) return fr;
     // Her cagri icin yeni RegExp — built.regex'in lastIndex durumuna bagimlilik kalmadi.
@@ -133,7 +133,7 @@ export class SearchReplace {
     // FIX #1b: replace ile tutarli bos query guard.
     if (!query.trim()) return ok([]);
     const built = buildRegex(query, options);
-    if ("error" in built) return err(ErrorCode.VALIDATION_ERROR, built.error, { query });
+    if ("error" in built) return err(ErrorCode.VALIDATION_ERROR, built.error, { context: {query} });
     const fr = await this.fileService.getProjectFiles(projectId);
     if (!fr.ok) return fr;
 

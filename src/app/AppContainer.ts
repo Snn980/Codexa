@@ -197,7 +197,7 @@ export class AppContainer {
       useMock:        useMockWorkers,
     });
     if (!runtimeResult.ok) {
-      throw new Error(`AIRuntimeManager init failed: ${(runtimeResult as any).message}`);
+      throw new Error(`AIRuntimeManager init failed: ${(runtimeResult as any).error?.message ?? "Unknown error"}`);
     }
     this._bridge = this._runtimeMgr.bridge;
 

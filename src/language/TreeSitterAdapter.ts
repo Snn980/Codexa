@@ -23,8 +23,8 @@
  * § 1  Result<T> / tryResultAsync()
  */
 
-import type { Result } from "../types";
-import { ok, err, tryResultAsync } from "../result";
+import type { Result } from "../types/core";
+import { ok, err, tryResultAsync } from "../utils/result";
 
 // ─── Tree-sitter types (web-tree-sitter shapes) ────────────────────────────
 

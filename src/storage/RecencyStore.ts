@@ -28,8 +28,8 @@ import {
   DEFAULT_RECENCY_LIMIT,
   DOC_CHANGE_DEBOUNCE_MS,
 } from "./IRecencyReader";
-import type { Result } from "../types";
-import { ok, err, tryResultAsync } from "../result";
+import type { Result } from "../types/core";
+import { ok, err, tryResultAsync } from "../utils/result";
 
 // ─── ISQLiteDriver (minimal — T-8 transaction() eklenmeden önce) ───────────
 

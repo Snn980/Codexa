@@ -103,6 +103,68 @@ export const ErrorCode = {
   SYMBOL_NOT_FOUND:          "SYMBOL_NOT_FOUND",
   /** ← [5] Bağımlılık çözümleme başarısız */
   DEP_RESOLVE_FAILED:        "DEP_RESOLVE_FAILED",
+
+  // Permission  (PermissionGate)
+  DISPOSED:                        "DISPOSED",
+  PERMISSION_CHECK_FAILED:         "PERMISSION_CHECK_FAILED",
+  PERMISSION_LOCKED:               "PERMISSION_LOCKED",
+  PERMISSION_BLOCKED:              "PERMISSION_BLOCKED",
+  PERMISSION_REQUEST_FAILED:       "PERMISSION_REQUEST_FAILED",
+  PERMISSION_CHECK_ALL_FAILED:     "PERMISSION_CHECK_ALL_FAILED",
+  PERMISSION_REQUEST_ALL_FAILED:   "PERMISSION_REQUEST_ALL_FAILED",
+  SETTINGS_OPEN_FAILED:            "SETTINGS_OPEN_FAILED",
+
+  // AI Runtime  (AIRuntimeFactory, IAIWorkerRuntime)
+  RUNTIME_LLAMA_INIT_FAILED:       "RUNTIME_LLAMA_INIT_FAILED",
+  RUNTIME_UNKNOWN:                 "RUNTIME_UNKNOWN",
+
+  // Orchestration  (AIOrchestrator, ParallelExecutor)
+  PERMISSION_DENIED:               "PERMISSION_DENIED",
+  ABORTED:                         "ABORTED",
+  MODEL_NOT_FOUND:                 "MODEL_NOT_FOUND",
+  OFFLINE_TIMEOUT:                 "OFFLINE_TIMEOUT",
+  EXECUTION_ERROR:                 "EXECUTION_ERROR",
+
+  // Streaming  (StreamingInferenceClient)
+  STREAM_FAILED:                   "STREAM_FAILED",
+  WS_STREAM_ERROR:                 "WS_STREAM_ERROR",
+  WS_CONNECTION_ERROR:             "WS_CONNECTION_ERROR",
+
+  // Chat repository  (ChatHistoryRepository)
+  CHAT_LIST_FAILED:                "CHAT_LIST_FAILED",
+  CHAT_CREATE_FAILED:              "CHAT_CREATE_FAILED",
+  CHAT_READ_FAILED:                "CHAT_READ_FAILED",
+  CHAT_APPEND_FAILED:              "CHAT_APPEND_FAILED",
+  CHAT_NOT_FOUND:                  "CHAT_NOT_FOUND",
+  CHAT_UPDATE_FAILED:              "CHAT_UPDATE_FAILED",
+  CHAT_DELETE_FAILED:              "CHAT_DELETE_FAILED",
+
+  // Background download  (BackgroundModelDownload, iOSBGProcessingTask)
+  BG_FETCH_UNAVAILABLE:            "BG_FETCH_UNAVAILABLE",
+  BG_PROCESSING_SCHEDULE_FAILED:   "BG_PROCESSING_SCHEDULE_FAILED",
+  BG_SCHEDULE_FAILED:              "BG_SCHEDULE_FAILED",
+  DOWNLOAD_FAILED:                 "DOWNLOAD_FAILED",
+
+  // Chat export/import  (ChatExportImport, useChatExportImport)
+  EXPORT_FAILED:                   "EXPORT_FAILED",
+  EXPORT_NOT_FOUND:                "EXPORT_NOT_FOUND",
+  IMPORT_FAILED:                   "IMPORT_FAILED",
+  IMPORT_INVALID_FORMAT:           "IMPORT_INVALID_FORMAT",
+  IMPORT_INVALID_SESSION:          "IMPORT_INVALID_SESSION",
+  IMPORT_PARSE_ERROR:              "IMPORT_PARSE_ERROR",
+  IMPORT_TOO_LARGE:                "IMPORT_TOO_LARGE",
+  IMPORT_VERSION_MISMATCH:         "IMPORT_VERSION_MISMATCH",
+
+  // SQLite low-level  (SQLiteChatRepository, Database)
+  SQLITE_APPEND_FAILED:            "SQLITE_APPEND_FAILED",
+  SQLITE_CREATE_FAILED:            "SQLITE_CREATE_FAILED",
+  SQLITE_LIST_FAILED:              "SQLITE_LIST_FAILED",
+  SQLITE_NOT_FOUND:                "SQLITE_NOT_FOUND",
+  SQLITE_READ_FAILED:              "SQLITE_READ_FAILED",
+  SQLITE_SCHEMA_FAILED:            "SQLITE_SCHEMA_FAILED",
+
+  // Migration  (ChatStorageMigrator)
+  MIGRATION_FAILED:                "MIGRATION_FAILED",
 } as const;
 
 export type ErrorCode = Values<typeof ErrorCode>;
@@ -308,6 +370,12 @@ export const DEFAULT_SETTINGS: ISettings = Object.freeze({
 // § 6. AI Sistemi & Rate Limiting
 // ─────────────────────────────────────────────────────────────────────────────
 
+/**
+ * AIProvider — AI oturum takibi için kullanılan provider tipi.
+ * Model kataloğundaki AIProvider (ai/AIModels.ts) farklı bir enum'dur;
+ * o, model yapımcılarını (GOOGLE, MICROSOFT) tanımlar.
+ * Bu tanım, IAISession.provider alanı için kullanılır.
+ */
 export const AIProvider = {
   Offline:   "offline",
   Anthropic: "anthropic",
@@ -322,6 +390,13 @@ export const AIPermissionState = {
   CloudEnabled: "cloud_enabled",
 } as const;
 export type AIPermissionState = Values<typeof AIPermissionState>;
+
+/**
+ * AIPermissionStatus — PermissionGate.ts'deki canonical tip.
+ * UPPER_SNAKE_CASE string literal union; AppEventMap ve hook'larda kullanılır.
+ * AIPermissionState (camelCase values) ile karıştırılmamalı — bkz. HATA-9.
+ */
+export type AIPermissionStatus = "DISABLED" | "LOCAL_ONLY" | "CLOUD_ENABLED";
 
 export interface AIRateLimitPolicy {
   readonly maxCallsPerMinute: number;
@@ -458,6 +533,9 @@ export interface AppEventMap {
   "app:foreground":          Record<string, never>;
   "app:background":          Record<string, never>;
   "nav:error":               { error: string };
+
+  // Permission  (PermissionGate, useModelSelector, PermissionGateModal)
+  "permission:status:changed": { status: AIPermissionStatus };
 }
 
 export type EventListener<K extends keyof AppEventMap> =

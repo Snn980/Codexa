@@ -164,7 +164,7 @@ async function downloadSingle(
       try {
         const meta = JSON.parse(metaRaw) as { etag?: string; bytes: number };
         const info = await FileSystem.getInfoAsync(partialPath, { size: true }).catch(() => null);
-        if (info?.exists && info.size === meta.bytes) {
+        if (info?.exists && ((info as any).size as number) === meta.bytes) {
           resumeOffset = meta.bytes;
         } else {
           await FileSystem.deleteAsync(partialPath, { idempotent: true });

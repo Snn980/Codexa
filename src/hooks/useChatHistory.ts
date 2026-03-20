@@ -89,7 +89,7 @@ export function useChatHistory(
     if (result.ok) {
       setSessions(result.data);
     } else {
-      setError(result.message);
+      setError(result.error.message);
     }
   }, [repo]);
 
@@ -116,7 +116,7 @@ export function useChatHistory(
       setActiveMessages([]);
       refreshSessions();
     } else {
-      setError(result.message);
+      setError(result.error.message);
     }
     return id;
   }, [repo, refreshSessions]);
@@ -129,7 +129,7 @@ export function useChatHistory(
       setActiveMessages(result.data);
       setError(null);
     } else {
-      setError(result.message);
+      setError(result.error.message);
     }
   }, [repo]);
 
@@ -159,7 +159,7 @@ export function useChatHistory(
     if (result.ok) {
       refreshSessions();
     } else {
-      setError(result.message);
+      setError(result.error.message);
     }
   }, [repo, refreshSessions]);
 
@@ -173,7 +173,7 @@ export function useChatHistory(
       }
       refreshSessions();
     } else {
-      setError(result.message);
+      setError(result.error.message);
     }
   }, [repo, activeSessionId, refreshSessions]);
 

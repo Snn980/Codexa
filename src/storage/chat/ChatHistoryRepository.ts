@@ -8,7 +8,7 @@
 
 import { MMKV }                    from 'react-native-mmkv';
 import { ok, err, type Result }    from '../../core/Result';
-import type { ChatMessage }        from '../hooks/useAIChat';
+import type { ChatMessage }        from '../../hooks/useAIChat';
 
 // ─── Sabitler ─────────────────────────────────────────────────────────────────
 

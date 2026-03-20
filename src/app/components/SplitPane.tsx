@@ -226,7 +226,9 @@ const styles = StyleSheet.create({
     flexDirection:   "row",
     alignItems:      "center",
     justifyContent:  "center",
-    cursor:          Platform.OS === "web" ? ("ns-resize" as never) : undefined,
+    // Web-only cursor style; cast to any to avoid RN StyleSheet type mismatch on web platform
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    cursor:          Platform.OS === "web" ? ("ns-resize" as any) : undefined,
   },
   dividerActive: {
     backgroundColor: COLORS.dividerHover,

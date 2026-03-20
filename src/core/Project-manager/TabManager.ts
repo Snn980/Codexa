@@ -74,7 +74,7 @@ export class TabManager implements ITabManager {
 
   async closeTab(tabId: UUID): AsyncResult<void> {
     const idx = this._tabs.findIndex((t) => t.id === tabId);
-    if (idx === -1) return err(ErrorCode.RECORD_NOT_FOUND, `Tab not found: "${tabId}"`, { tabId });
+    if (idx === -1) return err(ErrorCode.RECORD_NOT_FOUND, `Tab not found: "${tabId}"`, { context: {tabId} });
 
     const tab = this._tabs[idx];
 
@@ -100,7 +100,7 @@ export class TabManager implements ITabManager {
 
   async focusTab(tabId: UUID): AsyncResult<ITab> {
     const tab = this._tabs.find((t) => t.id === tabId);
-    if (!tab) return err(ErrorCode.RECORD_NOT_FOUND, `Tab not found: "${tabId}"`, { tabId });
+    if (!tab) return err(ErrorCode.RECORD_NOT_FOUND, `Tab not found: "${tabId}"`, { context: {tabId} });
     for (const t of this._tabs) t.isActive = false;
     tab.isActive = true;
     this.eventBus.emit("editor:tab:focused", { fileId: tab.fileId });

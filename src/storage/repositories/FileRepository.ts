@@ -278,7 +278,7 @@ export class FileRepository implements IFileRepository {
       { fileId: id },
     );
     if (!result.ok) return result;
-    if (!result.data) return err(ErrorCode.FILE_NOT_FOUND, `File bulunamadı: id="${id}"`, { fileId: id });
+    if (!result.data) return err(ErrorCode.FILE_NOT_FOUND, `File bulunamadı: id="${id}"`, { context: {fileId: id} });
     return ok(hydrateFile(result.data));
   }
 
@@ -311,7 +311,7 @@ export class FileRepository implements IFileRepository {
       { projectId, path },
     );
     if (!result.ok) return result;
-    if (!result.data) return err(ErrorCode.FILE_NOT_FOUND, `Dosya bulunamadı: path="${path}"`, { projectId, path });
+    if (!result.data) return err(ErrorCode.FILE_NOT_FOUND, `Dosya bulunamadı: path="${path}"`, { context: {projectId, path} });
     return ok(hydrateFile(result.data));
   }
 
@@ -345,9 +345,7 @@ export class FileRepository implements IFileRepository {
   async create(dto: CreateFileDto): AsyncResult<IFile> {
     const validationError = validateCreateDto(dto);
     if (validationError) {
-      return err(ErrorCode.VALIDATION_ERROR, validationError, {
-        dto: dto as unknown as Record<string, unknown>,
-      });
+      return err(ErrorCode.VALIDATION_ERROR, validationError, { context: {dto: dto as unknown as Record<string, unknown>,} });
     }
 
     const content  = dto.content ?? "";
@@ -413,7 +411,7 @@ export class FileRepository implements IFileRepository {
     const size     = dto.content !== undefined ? computeByteSize(content) : file.size;
 
     if (size > FILE_CONSTRAINTS.MAX_SIZE_BYTES) {
-      return err(ErrorCode.VALIDATION_ERROR, `Güncellenmiş boyut sınırı aşıyor: ${size} byte`, { fileId: id, size });
+      return err(ErrorCode.VALIDATION_ERROR, `Güncellenmiş boyut sınırı aşıyor: ${size} byte`, { context: {fileId: id, size} });
     }
 
     const execResult = await tryResultAsync(
@@ -425,7 +423,7 @@ export class FileRepository implements IFileRepository {
     if (!execResult.ok) return execResult;
 
     if (execResult.data.rowsAffected === 0) {
-      return err(ErrorCode.OPTIMISTIC_LOCK_CONFLICT, "Optimistic lock çakışması — dosyayı yeniden çekip tekrar deneyin", { fileId: id, expectedVersion });
+      return err(ErrorCode.OPTIMISTIC_LOCK_CONFLICT, "Optimistic lock çakışması — dosyayı yeniden çekip tekrar deneyin", { context: {fileId: id, expectedVersion} });
     }
 
     return this.findById(id);
@@ -439,7 +437,7 @@ export class FileRepository implements IFileRepository {
   ): AsyncResult<IFile> {
     const size = computeByteSize(content);
     if (size > FILE_CONSTRAINTS.MAX_SIZE_BYTES) {
-      return err(ErrorCode.VALIDATION_ERROR, `İçerik boyutu sınırı aşıyor: ${size} byte`, { fileId: id, size });
+      return err(ErrorCode.VALIDATION_ERROR, `İçerik boyutu sınırı aşıyor: ${size} byte`, { context: {fileId: id, size} });
     }
 
     const execResult = await tryResultAsync(
@@ -451,7 +449,7 @@ export class FileRepository implements IFileRepository {
     if (!execResult.ok) return execResult;
 
     if (execResult.data.rowsAffected === 0) {
-      return err(ErrorCode.OPTIMISTIC_LOCK_CONFLICT, "İçerik güncelleme sırasında lock çakışması", { fileId: id, expectedVersion });
+      return err(ErrorCode.OPTIMISTIC_LOCK_CONFLICT, "İçerik güncelleme sırasında lock çakışması", { context: {fileId: id, expectedVersion} });
     }
 
     return this.findById(id);
@@ -481,7 +479,7 @@ export class FileRepository implements IFileRepository {
     if (!execResult.ok) return execResult;
 
     if (execResult.data.rowsAffected === 0) {
-      return err(ErrorCode.OPTIMISTIC_LOCK_CONFLICT, `Silme sırasında lock çakışması: id="${id}"`, { fileId: id });
+      return err(ErrorCode.OPTIMISTIC_LOCK_CONFLICT, `Silme sırasında lock çakışması: id="${id}"`, { context: {fileId: id} });
     }
 
     return ok(undefined);
