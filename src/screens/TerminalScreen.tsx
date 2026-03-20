@@ -42,6 +42,7 @@ import {
 } from 'react-native';
 
 import type { AppContainer } from '../app/AppContainer';
+import type { BundlePayload } from '../ipc/Protocol';
 // RingBuffer ConsoleEntry tipine bağlı — TerminalLine için plain array kullanıyoruz
 
 // ─── Terminal Satırı ──────────────────────────────────────────────────────────
@@ -140,10 +141,10 @@ function useTerminalRuntime({ container }: UseTerminalRuntimeOptions): UseTermin
     try {
       // Bundler dinamik import — WASM heavy load Worker thread'de (§ 0)
       const { Bundler } = await import('../runtime/bundler/Bundler');
-      const bundler = new Bundler();
+      const bundler = new Bundler(''); // wasmURL: runtime'da inject edilir
 
       const payload = {
-        executionId: String(Date.now()),
+        executionId: String(Date.now()) as import('../types/core').UUID,
         entryPath:   entryFile ?? 'index.js',
         files:       {} as Record<string, string>,
       };

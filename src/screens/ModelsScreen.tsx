@@ -207,7 +207,7 @@ const ModelCard = memo(({
       {/* Başlık satırı */}
       <View style={styles.cardHeader}>
         <View style={styles.cardTitleRow}>
-          <Text style={styles.cardName}>{model.name}</Text>
+          <Text style={styles.cardName}>{model.displayName}</Text>
           {isCloud && (
             <View style={styles.cloudBadge}>
               <Text style={styles.cloudBadgeText}>☁ Bulut</Text>
@@ -229,9 +229,9 @@ const ModelCard = memo(({
 
       {/* Model meta */}
       <Text style={styles.cardMeta} numberOfLines={1}>
-        {model.contextWindow ? `${(model.contextWindow / 1000).toFixed(0)}K ctx` : ''}
-        {model.contextWindow && model.quantization ? '  ·  ' : ''}
-        {model.quantization ?? ''}
+        {model.maxContextTokens ? `${(model.maxContextTokens / 1000).toFixed(0)}K ctx` : ''}
+        {model.maxContextTokens && model.gguf?.quantization ? '  ·  ' : ''}
+        {model.gguf?.quantization ?? ''}
       </Text>
 
       {/* Progress */}
@@ -271,7 +271,7 @@ const ModelCard = memo(({
               style={styles.downloadBtn}
               onPress={() => onStart(model.id)}
               accessibilityRole="button"
-              accessibilityLabel={`${model.name} indir`}
+              accessibilityLabel={`${model.displayName} indir`}
             >
               <Text style={styles.downloadBtnText}>↓ İndir</Text>
             </Pressable>
