@@ -277,7 +277,7 @@ export class ExpoModelStorage implements IStorageInfo {
 // ─── Factory ─────────────────────────────────────────────────────────────────
 
 export async function createModelStorage(): Promise<IStorageInfo> {
-  if (typeof navigator !== "undefined" && navigator.storage?.getDirectory) {
+  if (typeof navigator !== "undefined" && typeof navigator.storage?.getDirectory === 'function') {
     const { OPFSModelStorage } = await import("./OPFSModelStorage");
     return new OPFSModelStorage();
   }

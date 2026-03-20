@@ -14,7 +14,7 @@
  *      üretilir. updateTitle'a gerek kalmadan iyi UX.
  */
 
-import { ok, err, tryResultAsync } from "../core/Result";
+import { ok, err, tryResultAsync, ErrorCode } from "../core/Result";
 import type { Result } from "../core/Result";
 import type { ISQLiteDriver } from "../storage/ISQLiteDriver";
 import type { UUID } from "../core/Types";
@@ -66,11 +66,13 @@ export interface AISessionSummary {
 
 // ─── Hata kodları ─────────────────────────────────────────────────────────────
 
+// AISessionErrorCode — ErrorCode enum'undaki değerlere alias
+// (ErrorCode'a AI_SESSION_* kodları eklendi — types/core.ts)
 export const AISessionErrorCode = {
-  NOT_FOUND:    "AI_SESSION_NOT_FOUND",
-  PARSE_ERROR:  "AI_SESSION_PARSE_ERROR",
-  WRITE_ERROR:  "AI_SESSION_WRITE_ERROR",
-  DELETE_ERROR: "AI_SESSION_DELETE_ERROR",
+  NOT_FOUND:    ErrorCode.AI_SESSION_NOT_FOUND,
+  PARSE_ERROR:  ErrorCode.AI_SESSION_PARSE_ERROR,
+  WRITE_ERROR:  ErrorCode.AI_SESSION_WRITE_ERROR,
+  DELETE_ERROR: ErrorCode.AI_SESSION_DELETE_ERROR,
 } as const;
 
 // ─── Yardımcı: title üret ────────────────────────────────────────────────────

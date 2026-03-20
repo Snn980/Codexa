@@ -167,6 +167,18 @@ export const ErrorCode = {
   // Migration  (ChatStorageMigrator)
   MIGRATION_FAILED:                "MIGRATION_FAILED",
 
+  // AISessionRepository local codes
+  AI_SESSION_NOT_FOUND:            "AI_SESSION_NOT_FOUND",
+  AI_SESSION_PARSE_ERROR:          "AI_SESSION_PARSE_ERROR",
+  AI_SESSION_WRITE_ERROR:          "AI_SESSION_WRITE_ERROR",
+  AI_SESSION_DELETE_ERROR:         "AI_SESSION_DELETE_ERROR",
+
+  // APIKeyStore local codes
+  APIKEY_NOT_FOUND:                "APIKEY_NOT_FOUND",
+  APIKEY_INVALID_FORMAT:           "APIKEY_INVALID_FORMAT",
+  APIKEY_STORE_FAILED:             "APIKEY_STORE_FAILED",
+  APIKEY_DELETE_FAILED:            "APIKEY_DELETE_FAILED",
+
   // RecencyStore
   RECENCY_DB_READ_FAILED:          "RECENCY_DB_READ_FAILED",
   RECENCY_DB_WRITE_FAILED:         "RECENCY_DB_WRITE_FAILED",

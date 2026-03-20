@@ -28,7 +28,7 @@
  *   Test        : InMemorySecureStore → değişmedi
  */
 
-import { ok, err } from "../core/Result";
+import { ok, err, ErrorCode } from "../core/Result";
 import type { Result } from "../core/Result";
 import type { IAPIKeyStore } from "../ai/CloudRuntime";
 
@@ -136,10 +136,10 @@ export function validateKeyFormat(provider: "anthropic" | "openai", key: string)
 // ─── Hata kodları ─────────────────────────────────────────────────────────────
 
 export const APIKeyErrorCode = {
-  NOT_FOUND:       "APIKEY_NOT_FOUND",
-  INVALID_FORMAT:  "APIKEY_INVALID_FORMAT",
-  STORE_FAILED:    "APIKEY_STORE_FAILED",
-  DELETE_FAILED:   "APIKEY_DELETE_FAILED",
+  NOT_FOUND:       ErrorCode.APIKEY_NOT_FOUND,
+  INVALID_FORMAT:  ErrorCode.APIKEY_INVALID_FORMAT,
+  STORE_FAILED:    ErrorCode.APIKEY_STORE_FAILED,
+  DELETE_FAILED:   ErrorCode.APIKEY_DELETE_FAILED,
 } as const;
 
 const KEYCHAIN_PREFIX = "ai_key_";
