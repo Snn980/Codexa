@@ -109,7 +109,7 @@ function makeMockSentry() {
 function makeMockWorkerClient(completionText = 'completion result') {
   return {
     streamChat:         jest.fn(),
-    requestCompletion:  jest.fn(async (_payload: Record<string, unknown>, _signal?: AbortSignal) => ({
+    requestCompletion:  jest.fn(async (_payload: unknown, _signal?: unknown) => ({
       ok: true,
       data: completionText,
     })),
@@ -258,7 +258,7 @@ describe('T-P16-2: useInlineCompletionBridge', () => {
 
   test('requestCompletion başarısız → status error, overlay gizlenir', async () => {
     const workerClient = {
-      requestCompletion: jest.fn(async (_payload: Record<string, unknown>, _signal?: AbortSignal) => ({
+      requestCompletion: jest.fn(async () => ({
         ok: false,
         error: { code: 'WORKER_ERROR', message: 'timeout' },
       })),
@@ -297,7 +297,7 @@ describe('T-P16-2: useInlineCompletionBridge', () => {
     const abortCtrl = new AbortController();
     let callCount = 0;
     const workerClient = {
-      requestCompletion: jest.fn(async (_payload: Record<string, unknown>, _signal?: AbortSignal) => {
+      requestCompletion: jest.fn(async () => {
         callCount++;
         return { ok: true, data: 'result' };
       }),
@@ -371,7 +371,7 @@ describe('T-P16-3: AIChatScreen Orchestrator Migration', () => {
   });
 
   test('status === analyzing → "Analiz ediliyor…" gösterilir', () => {
-    const status = ('analyzing') as string;
+    const status = 'analyzing';
     const label =
       status === 'analyzing'  ? 'Analiz ediliyor…' :
       status === 'streaming'  ? 'Yanıt üretiliyor…' :
@@ -380,7 +380,7 @@ describe('T-P16-3: AIChatScreen Orchestrator Migration', () => {
   });
 
   test('status === streaming → "Yanıt üretiliyor…" gösterilir', () => {
-    const status = ('streaming') as string;
+    const status = 'streaming';
     const label =
       status === 'analyzing' ? 'Analiz ediliyor…' :
       status === 'streaming' ? 'Yanıt üretiliyor…' :
@@ -458,8 +458,7 @@ describe('T-P16-4: TerminalScreen / useTerminalRuntime', () => {
     const eventBus = makeMockEventBus();
     const run      = jest.fn();
 
-    eventBus.on('terminal:run' as never, (payload: unknown) => {
-      const { entryFile } = payload as { entryFile?: string };
+    eventBus.on('terminal:run' as never, ({ entryFile }: { entryFile?: string }) => {
       run(entryFile);
     });
 

@@ -244,7 +244,8 @@ describe('BackgroundModelDownload queue', () => {
 
   it('pending download kuyruğa eklenir', async () => {
     const dl = makePending('gemma-3-1b');
-    await enqueuePendingDownload(dl);
+    const result = await enqueuePendingDownload(dl);
+    expect(result.ok).toBe(true);
 
     const list = await readPendingDownloads();
     expect(list.some((d) => d.modelId === 'gemma-3-1b')).toBe(true);
