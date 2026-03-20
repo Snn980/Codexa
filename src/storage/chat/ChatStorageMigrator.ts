@@ -68,7 +68,7 @@ function estimateTotalSizeMB(repo: ChatHistoryRepository): number {
 function countTotalMessages(repo: ChatHistoryRepository): number {
   const sessionsResult = repo.listSessions();
   if (!sessionsResult.ok) return 0;
-  return sessionsResult.data.reduce((sum, s) => sum + s.messageCount, 0);
+  return sessionsResult.data.reduce((sum: number, s: { messageCount: number }) => sum + s.messageCount, 0);
 }
 
 // ─── ChatStorageMigrator ─────────────────────────────────────────────────────

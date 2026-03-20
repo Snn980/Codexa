@@ -45,7 +45,8 @@ type FlexDocument = {
 async function tryLoadFlexSearch(): Promise<FlexDocument | null> {
   try {
     // FlexSearch v0.7+ ESM / CJS uyumlu
-    const flex = await import('flexsearch');
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const flex = await import('flexsearch' as any);
     const Ctor = flex.Index ?? flex.default?.Index ?? flex.default;
     if (typeof Ctor !== 'function') return null;
     return new Ctor({

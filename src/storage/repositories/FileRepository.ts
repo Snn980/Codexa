@@ -345,7 +345,7 @@ export class FileRepository implements IFileRepository {
   async create(dto: CreateFileDto): AsyncResult<IFile> {
     const validationError = validateCreateDto(dto);
     if (validationError) {
-      return err(ErrorCode.VALIDATION_ERROR, validationError, { context: {dto: dto as unknown as Record<string, unknown>,} });
+      return err(ErrorCode.VALIDATION_ERROR, validationError, { context: { path: dto.path ?? "" } });
     }
 
     const content  = dto.content ?? "";
@@ -374,16 +374,14 @@ export class FileRepository implements IFileRepository {
         return err(
           ErrorCode.DUPLICATE_RECORD,
           `Bu path zaten mevcut: "${dto.path}"`,
-          { projectId: dto.projectId, path: dto.path },
-          cause,
+          { context: { path: dto.path }, cause },
         );
       }
       // Diğer DB hataları
       return err(
         ErrorCode.FILE_WRITE_ERROR,
         `Dosya oluşturulamadı: path="${dto.path}"`,
-        { dto: dto as unknown as Record<string, unknown> },
-        cause,
+        { cause },
       );
     }
 
@@ -395,14 +393,15 @@ export class FileRepository implements IFileRepository {
    * Optimistic lock zorunludur.
    */
   async update(
-    id:              UUID,
-    dto:             UpdateFileDto,
-    expectedVersion: number,
+    id:               UUID,
+    dto:              UpdateFileDto,
+    expectedVersion?: number,
   ): AsyncResult<IFile> {
     const current = await this.findById(id);
     if (!current.ok) return current;
 
     const file    = current.data;
+    const lockVer = expectedVersion ?? file.version;
     const content = dto.content  ?? file.content;
     const path    = dto.path?.trim() ?? file.path;
     const name    = dto.name?.trim() ?? file.name;
@@ -415,7 +414,7 @@ export class FileRepository implements IFileRepository {
     }
 
     const execResult = await tryResultAsync(
-      () => this.driver.execute(SQL.UPDATE, [path, name, content, checksum, size, Date.now(), id, expectedVersion]),
+      () => this.driver.execute(SQL.UPDATE, [path, name, content, checksum, size, Date.now(), id, lockVer]),
       ErrorCode.FILE_WRITE_ERROR,
       `Dosya güncellenemedi: id="${id}"`,
       { fileId: id },

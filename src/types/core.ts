@@ -29,9 +29,10 @@
 
 export type Values<T extends Record<string, string | number>> = T[keyof T];
 
-export type DeepReadonly<T> = {
-  readonly [K in keyof T]: T[K] extends object ? DeepReadonly<T[K]> : T[K];
-};
+export type DeepReadonly<T> =
+  T extends string | number | boolean | bigint | symbol | null | undefined
+    ? T
+    : { readonly [K in keyof T]: T[K] extends object ? DeepReadonly<T[K]> : T[K] };
 
 export type RequireFields<T, K extends keyof T> =
   Required<Pick<T, K>> & Partial<Omit<T, K>>;
@@ -453,6 +454,8 @@ export interface IFileRepository
   findByPath(projectId: UUID, path: string):  AsyncResult<IFile>;
   /** Optimistic lock — expectedVersion verilmezse version kontrolü atlanır */
   updateContent(id: UUID, content: string, expectedVersion?: number): AsyncResult<IFile>;
+  /** Optimistic lock — expectedVersion verilmezse version kontrolü atlanır */
+  update(id: UUID, dto: UpdateFileDto, expectedVersion?: number): AsyncResult<IFile>;
   markDirty(id: UUID, dirty: boolean):        AsyncResult<void>;
   countByProject(projectId: UUID):            AsyncResult<number>;
 }
