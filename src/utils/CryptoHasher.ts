@@ -51,7 +51,12 @@ export const CryptoHasher = {
     // ── 1. Web Crypto API ─────────────────────────────────────────────────
     if (typeof crypto !== "undefined" && crypto?.subtle) {
       try {
-        const hashBuffer = await (crypto as Crypto).subtle.digest("SHA-256", data);
+        // Uint8Array.buffer is ArrayBufferLike (may be SharedArrayBuffer);
+        // crypto.subtle.digest requires ArrayBuffer — copy to guarantee it.
+        const safeBuffer: ArrayBuffer = data.buffer instanceof ArrayBuffer
+          ? data.buffer.slice(data.byteOffset, data.byteOffset + data.byteLength)
+          : new Uint8Array(data).buffer;
+        const hashBuffer = await (crypto as Crypto).subtle.digest("SHA-256", safeBuffer);
         return _bufferToHex(new Uint8Array(hashBuffer));
       } catch {
         // subtle.digest başarısız → Node fallback dene

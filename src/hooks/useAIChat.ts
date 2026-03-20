@@ -46,6 +46,8 @@ export interface ChatMessage {
   readonly errorCode?:    string;
   /** Token sayısı — UI token counter için */
   readonly tokens?:       number;
+  /** Toplam token (streaming bittikten sonra) — UI özet için */
+  readonly totalTokens?:  number;
 }
 
 export interface AIChatState {
