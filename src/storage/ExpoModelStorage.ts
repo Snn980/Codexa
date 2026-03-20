@@ -127,7 +127,8 @@ async function sha256FromStream(stream: ReadableStream<Uint8Array>): Promise<str
 async function subtleSHA256(data: Uint8Array): Promise<string | null> {
   try {
     if (!crypto?.subtle) return null;
-    const hash = await crypto.subtle.digest("SHA-256", data);
+    const buf  = data.buffer.slice(data.byteOffset, data.byteOffset + data.byteLength) as ArrayBuffer;
+    const hash = await crypto.subtle.digest("SHA-256", buf);
     return Array.from(new Uint8Array(hash)).map((b) => b.toString(16).padStart(2, "0")).join("");
   } catch { return null; }
 }

@@ -214,7 +214,8 @@ class OPFSNativeStorage implements IStorageInfo {
     const writable     = await handle.createWritable({ keepExistingData: true });
     try {
       await writable.seek(existingSize);
-      await writable.write(chunk);
+      // Cast to ArrayBuffer to satisfy FileSystemWritableFileStream type
+      await writable.write(chunk.buffer.slice(chunk.byteOffset, chunk.byteOffset + chunk.byteLength) as ArrayBuffer);
     } finally { await writable.close(); }
   }
 
