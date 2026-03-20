@@ -185,7 +185,7 @@ export class AppContainer {
     // ✅ DÜZELTME #2: unsub kaydedilir
     this._unsubs.push(
       eventBus.on("model:download:complete", async ({ modelId }) => {
-        await this._coordinator?.onDownloadComplete(modelId);
+        await this._coordinator?.onDownloadComplete(modelId as import("../ai/AIModels").AIModelId);
       }),
     );
 

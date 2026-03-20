@@ -258,6 +258,8 @@ class TreeSitterStub implements ITreeSitterParser {
           endCol:     col + name.length,
           exportedAs: exported ? name : null,    // [LW-T3] null, undefined değil
           // [LW-T2] isExported alanı SymbolNode'da yok — kaldırıldı
+          endLine:    lineIdx,
+          parentId:   null,
         });
         break;
       }

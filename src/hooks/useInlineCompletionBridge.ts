@@ -145,11 +145,11 @@ export function useInlineCompletionBridge(
     // Satır bazlı öneri listesi
     const lines = fullText
       .split('\n')
-      .map(l => l.trimEnd())
+      .map((l: string) => l.trimEnd())
       .filter(Boolean)
       .slice(0, 3);
 
-    const suggestions: CompletionSuggestion[] = lines.map(line => ({
+    const suggestions: CompletionSuggestion[] = lines.map((line: string) => ({
       id:           generateId(),
       text:         line,
       insertOffset: 0,

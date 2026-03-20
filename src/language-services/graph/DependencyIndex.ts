@@ -5,7 +5,7 @@
 // ─────────────────────────────────────────────────────────────
 
 import type { UUID, Result } from "../../core";
-import { tryResultAsync, ErrorCode } from "../../core";
+import { ok, tryResultAsync, ErrorCode } from "../../core";
 import type { GraphStorage } from "../storage/GraphStorage";
 import type { SymbolGraph } from "./SymbolGraph";
 import type { DependencyEdge, EdgeKind } from "./types";
@@ -227,18 +227,21 @@ export class DependencyIndex {
     rawEdges: ReadonlyArray<{ specifier: string; names: string[]; kind: EdgeKind; line: number }>
   ): Promise<Result<ReadonlyArray<DependencyEdge>>> {
     return tryResultAsync(async () => {
-      const fromPath = this._resolver.getPath(fromFileId);
+      const fromPath = this._resolver?.getPath(fromFileId) ?? null;
       if (!fromPath) return [];
 
       const promises = rawEdges.map(async (raw) => {
-        const toFileId = await this._resolver.resolve(raw.specifier, fromPath);
+        const toFileId = await this._resolver!.resolve(raw.specifier, fromPath);
 
+        const id = `${fromFileId}:${raw.specifier}:${raw.kind}` as UUID;
         return {
+          id,
           fromFileId,
           toFileId:      toFileId ?? EXTERNAL_FILE_ID,
           kind:          raw.kind,
           rawSpecifier:  raw.specifier,
           importedNames: raw.names,
+          isTruncated:   false,
           line:          raw.line,
           isResolved:    toFileId !== null,
         } satisfies DependencyEdge;
@@ -265,7 +268,7 @@ export class DependencyIndex {
 
       // In-degree ve reverse adjacency hesapla
       for (const id of fileIds) {
-        const deps = this._graph.getDirectDeps(id);
+        const deps = this._graph?.getDirectDeps(id) ?? [];
         for (const depId of deps) {
           if (!fileIdSet.has(depId)) continue;
           reverseAdjList.get(depId)!.add(id);
@@ -311,7 +314,7 @@ export class DependencyIndex {
     reason: "edit" | "delete" | "rename"
   ): Promise<Result<RebuildPlan>> {
     return tryResultAsync(async () => {
-      const impacted = this._graph.getImpactedFiles(changedFileId);
+      const impacted = this._graph?.getImpactedFiles(changedFileId) ?? [];
 
       const allIds = reason === "delete"
         ? impacted
@@ -332,8 +335,8 @@ export class DependencyIndex {
   async getSummary(fileId: UUID): Promise<Result<DependencySummary>> {
     return tryResultAsync(async () => {
       const [depsRes, revDepsRes] = await Promise.all([
-        this._storage.getDependencies(fileId),
-        this._storage.getReverseDependencies(fileId),
+        this._storage!.getDependencies(fileId),
+        this._storage!.getReverseDependencies(fileId),
       ]);
 
       const allDeps    = depsRes.ok    ? depsRes.data    : [];
@@ -353,7 +356,7 @@ export class DependencyIndex {
         externalDeps:     externalCount,
         typeOnlyDeps:     typeOnlyCount,
         dependants:       allRevDeps.length,
-        transitiveDeps:   new Set(this._graph.getTransitiveDeps(fileId)).size,
+        transitiveDeps:   new Set(this._graph?.getTransitiveDeps(fileId) ?? []).size,
         byKind,
       };
     }, ErrorCode.INDEX_FAILED, `getSummary failed for ${fileId}`);
@@ -377,7 +380,7 @@ export class DependencyIndex {
         visited.add(id);
         component.push(id);
 
-        for (const depId of this._graph.getDirectDeps(id)) {
+        for (const depId of this._graph?.getDirectDeps(id) ?? []) {
           if (nodeSet.has(depId) && !visited.has(depId)) {
             stack.push(depId);
           }

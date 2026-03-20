@@ -108,13 +108,13 @@ export class ModelDownloadManager {
 
   async startDownload(modelId: AIModelId): Promise<Result<string>> {
     if (this._downloadLock.has(modelId)) {
-      return err(DownloadErrorCode.ALREADY_DOWNLOADING, 'Already downloading');
+      return err(DownloadErrorCode.ALREADY_DOWNLOADING as import("../types/core").ErrorCode, 'Already downloading');
     }
 
     const model = AI_MODELS.find((m) => m.id === modelId);
-    if (!model) return err(DownloadErrorCode.MODEL_NOT_FOUND, `Unknown: ${modelId}`);
+    if (!model) return err(DownloadErrorCode.MODEL_NOT_FOUND as import("../types/core").ErrorCode, `Unknown: ${modelId}`);
     const gguf = model.gguf as GGUFMetaWithChecksum | undefined;
-    if (!gguf)  return err(DownloadErrorCode.NO_GGUF_META, 'No GGUF meta');
+    if (!gguf)  return err(DownloadErrorCode.NO_GGUF_META as import("../types/core").ErrorCode, 'No GGUF meta');
 
     // Zaten yüklü mu?
     const exists = await this._storage.modelExists(gguf.filename);
@@ -139,7 +139,7 @@ export class ModelDownloadManager {
         status: 'error', receivedMB: 0, totalMB: gguf.sizeMB, percent: 0,
         errorCode: DownloadErrorCode.INSUFFICIENT_SPACE, errorMessage: msg,
       });
-      return err(DownloadErrorCode.INSUFFICIENT_SPACE, msg);
+      return err(DownloadErrorCode.INSUFFICIENT_SPACE as import("../types/core").ErrorCode, msg);
     }
 
     this._downloadLock.add(modelId);
@@ -176,7 +176,7 @@ export class ModelDownloadManager {
     const modelId = entry.id;
 
     if (this._downloadLock.has(modelId)) {
-      return err(DownloadErrorCode.UNKNOWN, 'Already downloading');
+      return err(DownloadErrorCode.UNKNOWN as import("../types/core").ErrorCode, 'Already downloading');
     }
 
     // Zaten tam indirilmiş mi?
@@ -205,7 +205,7 @@ export class ModelDownloadManager {
         status: 'error', receivedMB: 0, totalMB: entry.sizeMB, percent: 0,
         errorCode: DownloadErrorCode.INSUFFICIENT_SPACE, errorMessage: msg,
       });
-      return err(DownloadErrorCode.INSUFFICIENT_SPACE, msg);
+      return err(DownloadErrorCode.INSUFFICIENT_SPACE as import("../types/core").ErrorCode, msg);
     }
 
     this._downloadLock.add(modelId);
@@ -241,7 +241,7 @@ export class ModelDownloadManager {
     try {
       response = await fetch(entry.downloadUrl, { signal, headers });
     } catch (e) {
-      if (signal.aborted) return err(DownloadErrorCode.CANCELLED, 'Cancelled');
+      if (signal.aborted) return err(DownloadErrorCode.CANCELLED as import("../types/core").ErrorCode, 'Cancelled');
       return this._emitError(modelId, entry.sizeMB, DownloadErrorCode.NETWORK_ERROR, String(e));
     }
 
@@ -266,7 +266,7 @@ export class ModelDownloadManager {
 
     try {
       while (true) {
-        if (signal.aborted) { reader.cancel(); return err(DownloadErrorCode.CANCELLED, 'Cancelled'); }
+        if (signal.aborted) { reader.cancel(); return err(DownloadErrorCode.CANCELLED as import("../types/core").ErrorCode, 'Cancelled'); }
         const { done, value } = await reader.read();
         if (done) break;
         await this._storage.appendChunk(entry.filename, value);
@@ -277,7 +277,7 @@ export class ModelDownloadManager {
         this._eventBus.emit('model:download:progress', { modelId, receivedMB, totalMB, percent });
       }
     } catch (e) {
-      if (signal.aborted) return err(DownloadErrorCode.CANCELLED, 'Cancelled');
+      if (signal.aborted) return err(DownloadErrorCode.CANCELLED as import("../types/core").ErrorCode, 'Cancelled');
       return this._emitError(modelId, totalMB, DownloadErrorCode.NETWORK_ERROR, String(e));
     } finally {
       try { reader.releaseLock(); } catch { /* ignore */ }
@@ -336,7 +336,7 @@ export class ModelDownloadManager {
     try {
       response = await fetch(url, { signal, headers });
     } catch (e) {
-      if (signal.aborted) return err(DownloadErrorCode.CANCELLED, 'Cancelled');
+      if (signal.aborted) return err(DownloadErrorCode.CANCELLED as import("../types/core").ErrorCode, 'Cancelled');
       return this._emitError(modelId, gguf.sizeMB, DownloadErrorCode.NETWORK_ERROR, String(e));
     }
 
@@ -363,7 +363,7 @@ export class ModelDownloadManager {
 
     try {
       while (true) {
-        if (signal.aborted) { reader.cancel(); return err(DownloadErrorCode.CANCELLED, 'Cancelled'); }
+        if (signal.aborted) { reader.cancel(); return err(DownloadErrorCode.CANCELLED as import("../types/core").ErrorCode, 'Cancelled'); }
         const { done, value } = await reader.read();
         if (done) break;
 
@@ -376,7 +376,7 @@ export class ModelDownloadManager {
         this._eventBus.emit('model:download:progress', { modelId, receivedMB, totalMB, percent });
       }
     } catch (e) {
-      if (signal.aborted) return err(DownloadErrorCode.CANCELLED, 'Cancelled');
+      if (signal.aborted) return err(DownloadErrorCode.CANCELLED as import("../types/core").ErrorCode, 'Cancelled');
       return this._emitError(modelId, totalMB, DownloadErrorCode.NETWORK_ERROR, String(e));
     } finally {
       try { reader.releaseLock(); } catch { /* ignore */ }
@@ -405,7 +405,7 @@ export class ModelDownloadManager {
   private _emitError(
     modelId: AIModelId,
     totalMB: number,
-    code: string,
+    code: import('../types/core').ErrorCode,
     message: string,
   ): Result<string> {
     this._setState(modelId, {

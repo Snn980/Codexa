@@ -139,7 +139,7 @@ export function useChatHistory(
 
     // Session yoksa oluştur
     const metaRaw = repo.listSessions();
-    const exists  = metaRaw.ok && metaRaw.data.some((s) => s.id === activeSessionId);
+    const exists  = metaRaw.ok && metaRaw.data.some((s: { id: string }) => s.id === activeSessionId);
 
     if (!exists) {
       // Auto-title § 17.3

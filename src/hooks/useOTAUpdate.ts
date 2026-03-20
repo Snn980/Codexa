@@ -145,7 +145,8 @@ export function useOTAUpdate(
 
     const unsub = container.eventBus.on(
       "model:download:complete",
-      ({ modelId }: { modelId: AIModelId }) => {
+      ({ modelId: _modelId }: { modelId: string }) => {
+        const modelId = _modelId as AIModelId;
         setUpdatableModels((prev) => {
           if (!prev.has(modelId)) return prev; // referans değişmesin
           const next = new Set(prev);

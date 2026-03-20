@@ -96,6 +96,7 @@ export function useChatExportImport(
 
   const safe = useCallback(<T>(fn: () => T): T | undefined => {
     if (mountedRef.current) return fn();
+    return undefined;
   }, []);
 
   // ── exportAll ──────────────────────────────────────────────────────────────

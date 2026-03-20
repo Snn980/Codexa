@@ -354,3 +354,22 @@ export async function downloadModelForeground(
     releaseDownloadSlot();
   }
 }
+
+/** enqueuePendingDownload — Result<void> sarmalı (useModelDownload uyumu) */
+export async function enqueuePendingDownload(
+  download: PendingDownload,
+): Promise<import('../types/core').Result<void>> {
+  try {
+    await addPendingDownload(download);
+    return { ok: true, data: undefined };
+  } catch (cause) {
+    return {
+      ok: false,
+      error: {
+        code:      "DB_QUERY_FAILED" as import('../types/core').ErrorCode,
+        message:   cause instanceof Error ? cause.message : "enqueuePendingDownload failed",
+        timestamp: Date.now(),
+      },
+    };
+  }
+}

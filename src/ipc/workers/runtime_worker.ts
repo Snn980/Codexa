@@ -198,6 +198,7 @@ export class QuickJSSandboxRuntime implements ISandboxRuntime {
     // Dynamic import — bundle boyutunu küçük tutar (§ 9)
     // quickjs-emscripten paket ismi package.json'a eklendiğinde aktif olur.
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    // @ts-ignore — quickjs-emscripten opsiyonel bağımlılık, package.json eklenince aktif
     const { getQuickJS } = await import("quickjs-emscripten") as any;
     const module = await getQuickJS();
     return new QuickJSSandboxRuntime(module);

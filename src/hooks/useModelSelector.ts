@@ -89,8 +89,8 @@ export function useModelSelector(
   useEffect(() => {
     const unsub = eventBus.on(
       "ai:model:changed",
-      (payload: { modelId: AIModelId }) => {
-        setSelectedModelId(payload.modelId);
+      (payload: { modelId: string }) => {
+        setSelectedModelId(payload.modelId as AIModelId);
       },
     );
     return () => unsub();

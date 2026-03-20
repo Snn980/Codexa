@@ -145,7 +145,7 @@ export class ReferenceIndex {
 
   // ── Reference sorgu yardımcı ─────────────────────────────────
 
-  private async _fetchReferences(symId: UUID): Promise<ReferenceLocation[]> {
+  private async _fetchReferences(symId: UUID): Promise<ReadonlyArray<ReferenceLocation>> {
 
     const result = await this._storage.getReferences(symId);
 

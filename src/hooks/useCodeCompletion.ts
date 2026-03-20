@@ -123,11 +123,11 @@ export function useCodeCompletion(opts: UseCodeCompletionOptions): CodeCompletio
     // Birden fazla satır → birden fazla öneri olarak sun
     const lines = completionText
       .split("\n")
-      .map((l) => l.trimEnd())
+      .map((l: string) => l.trimEnd())
       .filter(Boolean)
       .slice(0, MAX_SUGGESTIONS);
 
-    const newSuggestions: CompletionSuggestion[] = lines.map((line) => ({
+    const newSuggestions: CompletionSuggestion[] = lines.map((line: string) => ({
       id: `s${++suggestionCounterRef.current}`,
       text: line,
       insertOffset: 0,
