@@ -21,7 +21,7 @@
  *     [dirty/saved] [dosya adı]   ···   [dil] [satır:sütun] [encoding]
  */
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import {
   Platform,
   StyleSheet,
