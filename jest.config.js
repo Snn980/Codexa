@@ -12,7 +12,7 @@ module.exports = {
   maxWorkers: 2,
 
   // ─── Setup dosyası ────────────────────────────────────────────────────────
-  setupFilesAfterFramework: [],
+  
   setupFilesAfterEnv: ['<rootDir>/jest.setup.ts'],
 
   // ─── TypeScript — test ortamına özgü tsconfig (jest types burada) ─────────
