@@ -7,7 +7,7 @@
 import type { AsyncResult, CursorPosition, IEventBus, IFile, ITab, UUID } from "../../types/core";
 import { DEFAULT_SETTINGS, ErrorCode } from "../../types/core";
 import { err, ok } from "../../utils/result";
-import type { FileService } from "../services/FileService";
+import type { FileService } from "../Service/FileService";
 
 interface MutableTab {
   id: UUID; fileId: UUID; title: string;

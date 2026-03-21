@@ -11,7 +11,7 @@
 import type { AsyncResult, IFile, UUID } from "../../types/core";
 import { ErrorCode } from "../../types/core";
 import { err, ok } from "../../utils/result";
-import type { FileService } from "../services/FileService";
+import type { FileService } from "../Service/FileService";
 
 export interface SearchOptions {
   readonly caseSensitive?: boolean;

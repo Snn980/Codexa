@@ -10,7 +10,7 @@
 
 import type { AsyncResult, IProject, UUID } from "../../types/core";
 import { ok } from "../../utils/result";
-import type { IProjectService } from "../services/ProjectService";
+import type { IProjectService } from "../Service/ProjectService";
 
 const META_PINNED         = "pinned";
 const META_LAST_OPENED_AT = "lastOpenedAt";
@@ -38,8 +38,8 @@ export class RecentProjects implements IRecentProjects {
     const all = await this.projectService.getAllProjects();
     if (!all.ok) return all;
     const pinned = all.data
-      .filter((p) => this.isPinned(p))
-      .sort((a, b) => Number(b.meta[META_PIN_ORDER] ?? 0) - Number(a.meta[META_PIN_ORDER] ?? 0));
+      .filter((p: import('../../types/core').IProject) => this.isPinned(p))
+      .sort((a: import('../../types/core').IProject, b: import('../../types/core').IProject) => Number(b.meta[META_PIN_ORDER] ?? 0) - Number(a.meta[META_PIN_ORDER] ?? 0));
     return ok(pinned);
   }
 
