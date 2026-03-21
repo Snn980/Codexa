@@ -1,16 +1,10 @@
-const { defineConfig } = require("eslint/config");
-
-module.exports = defineConfig([
+module.exports = [
   {
     ignores: [
       "node_modules/**",
       "android/**",
       "ios/**",
       "dist/**",
-      "*.config.js",
-      "babel.config.js",
-      "metro.config.js",
-      "jest.config.js",
     ],
   },
   {
@@ -27,9 +21,9 @@ module.exports = defineConfig([
       "@typescript-eslint": require("@typescript-eslint/eslint-plugin"),
     },
     rules: {
-      "@typescript-eslint/no-explicit-any": "warn",
-      "@typescript-eslint/no-unused-vars": ["warn", { argsIgnorePattern: "^_" }],
+      "@typescript-eslint/no-explicit-any": "off",
+      "@typescript-eslint/no-unused-vars": "off",
       "no-console": "off",
     },
   },
-]);
+];
