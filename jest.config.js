@@ -18,11 +18,6 @@ module.exports = {
   // ─── TypeScript — test ortamına özgü tsconfig (jest types burada) ─────────
   // tsconfig.json'dan "types":["jest"] kaldırıldı (SORUN-6).
   // Jest global'leri (describe/it/expect) sadece test dosyalarına inject edilir.
-  globals: {
-    'ts-jest': {
-      tsconfig: './tsconfig.test.json',
-    },
-  },
 
   // ─── Transform ────────────────────────────────────────────────────────────
   transformIgnorePatterns: [
