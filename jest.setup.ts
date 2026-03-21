@@ -5,7 +5,7 @@
  * jest.config.js → setupFilesAfterEnv: ['<rootDir>/jest.setup.ts']
  */
 
-import '@testing-library/react-native/extend-expect';
+
 
 // ─── Global timeout ────────────────────────────────────────────────────────
 // Her test için default timeout (jest.config.js'deki testTimeout ile senkron)
