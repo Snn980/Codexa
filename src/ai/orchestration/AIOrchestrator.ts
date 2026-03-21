@@ -91,7 +91,7 @@ export class AIOrchestrator {
       return err(execResult.error.code, execResult.error.message);
     }
 
-    const { fullText, modelUsed, escalated, durationMs } = execResult.value;
+    const { fullText, modelUsed, escalated, durationMs } = execResult.data;
 
     // ── 5. Self-critique ──────────────────────────────────────────────────────
     const qualityScore = this._aggregator.score(fullText, intent);

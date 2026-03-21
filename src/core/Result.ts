@@ -1,11 +1,5 @@
 /**
- * src/core/Result.ts
- *
- * Geriye dönük uyumluluk köprüsü.
- * Canonical konum: src/utils/result.ts
- * Bu dosya eski import path'lerini kırmadan çalışmaya devam ettirir.
- *
- * § 1 : Result<T> | ok() | err() | errFrom() | tryResultAsync()
+ * src/core/Result.ts — geriye dönük uyumluluk köprüsü.
  */
 export {
   ok,
@@ -18,8 +12,7 @@ export type {
   Result,
   AsyncResult,
   AppError,
-} from '../utils/result';
+} from '../types/core';
 
-// ErrorCode — canonical: types/core.ts
+// ErrorCode — value olarak (type ayrı export edilmez, value export tipi de kapsar)
 export { ErrorCode } from '../types/core';
-export type { ErrorCode } from '../types/core';

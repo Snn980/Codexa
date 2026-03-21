@@ -230,14 +230,14 @@ export function useAIOrchestrator({
       return;
     }
 
-    safeDispatch({ type: 'STREAM_END', assistantId, result: result.value });
+    safeDispatch({ type: 'STREAM_END', assistantId, result: result.data });
 
     // Event callback'ler
-    if (result.value.escalated) {
-      onEvent?.('escalated', { modelUsed: result.value.modelUsed });
+    if (result.data.escalated) {
+      onEvent?.('escalated', { modelUsed: result.data.modelUsed });
     }
-    if (result.value.qualityScore < 0.7) {
-      onEvent?.('low_quality', { score: result.value.qualityScore });
+    if (result.data.qualityScore < 0.7) {
+      onEvent?.('low_quality', { score: result.data.qualityScore });
     }
 
   // eslint-disable-next-line react-hooks/exhaustive-deps

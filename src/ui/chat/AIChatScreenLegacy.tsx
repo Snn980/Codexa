@@ -72,14 +72,16 @@ export const AIChatScreenLegacy = memo(({
     sendMessage,
     cancelPending,
   } = useAIChat({
-    sendFn: (msgs, signal) => workerClient.streamChat(
-      {
-        model:     'offline-gemma3-1b' as import('../../ai/AIModels').AIModelId,
-        messages:  msgs.map(m => ({ role: m.role as 'user' | 'assistant' | 'system', content: m.content })),
-        maxTokens: 1024,
-      },
-      signal,
-    ),
+    sendFn: async function* (msgs, signal) {
+      yield* workerClient.streamChat(
+        {
+          model:     'offline-gemma3-1b' as import('../../ai/AIModels').AIModelId,
+          messages:  msgs.map(m => ({ role: m.role as 'user' | 'assistant' | 'system', content: m.content })),
+          maxTokens: 1024,
+        },
+        signal,
+      );
+    },
   });
 
   const isStreaming = sendStatus === 'streaming' || sendStatus === 'pending';

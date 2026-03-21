@@ -5,7 +5,7 @@
 // ─────────────────────────────────────────────────────────────
 
 import type { UUID, Result } from "../../core";
-import { ok, tryResultAsync, ErrorCode } from "../../core";
+import { ok, err, tryResultAsync, ErrorCode } from "../../core";
 import type { GraphStorage } from "../storage/GraphStorage";
 import type { SymbolGraph } from "./SymbolGraph";
 import type { DependencyEdge, EdgeKind } from "./types";

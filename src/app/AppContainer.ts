@@ -215,9 +215,9 @@ export class AppContainer {
         const report = await migrator.migrate();
         if (report.ok && __DEV__) {
           console.log('[AppContainer] Chat migration tamamlandı:', {
-            sessions: report.value.sessionsMigrated,
-            messages: report.value.messagesMigrated,
-            duration: `${report.value.durationMs}ms`,
+            sessions: report.data.sessionsMigrated,
+            messages: report.data.messagesMigrated,
+            duration: `${report.data.durationMs}ms`,
           });
         }
       }).catch((e: unknown) => {

@@ -2,14 +2,14 @@ import React from "react";
 import { View, Text, TouchableOpacity } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import type { BottomTabNavigationProp } from "@react-navigation/bottom-tabs";
-import { useAppContext } from "@/app/AppContainer";
+import { useAppContext } from "@/app/App";
 import type { TabParamList } from "@/navigations/types";
 
 type TabNavProp = BottomTabNavigationProp<TabParamList>;
 
 const TabBar = () => {
   const navigation = useNavigation<TabNavProp>();
-  const { state } = useAppContext();
+  useAppContext(); // services available if needed
 
   return (
     <View style={{ flexDirection: "row", justifyContent: "space-around" }}>

@@ -14,7 +14,8 @@
  *      üretilir. updateTitle'a gerek kalmadan iyi UX.
  */
 
-import { ok, err, tryResultAsync, ErrorCode } from "../core/Result";
+import { ok, err, tryResultAsync } from "../core/Result";
+import { ErrorCode } from "../types/core";
 import type { Result } from "../core/Result";
 import type { ISQLiteDriver } from "../storage/ISQLiteDriver";
 import type { UUID } from "../core/Types";

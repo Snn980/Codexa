@@ -163,7 +163,7 @@ async function downloadSingle(
     if (metaRaw) {
       try {
         const meta = JSON.parse(metaRaw) as { etag?: string; bytes: number };
-        const info = await FileSystem.getInfoAsync(partialPath, { size: true }).catch(() => null);
+        const info = await FileSystem.getInfoAsync(partialPath).catch(() => null);
         if (info?.exists && ((info as any).size as number) === meta.bytes) {
           resumeOffset = meta.bytes;
         } else {
@@ -180,7 +180,7 @@ async function downloadSingle(
       resumeOffset > 0
         ? { headers: { Range: `bytes=${resumeOffset}-` } }
         : {},
-      (written, total) => {
+      (dp: { totalBytesWritten: number; totalBytesExpectedToWrite: number }) => { const written = dp.totalBytesWritten; const total = dp.totalBytesExpectedToWrite;
         if (onProgress) {
           onProgress({
             modelId:         download.modelId,
@@ -220,7 +220,7 @@ async function downloadSingle(
 async function verifySha256(filePath: string, expected: string): Promise<boolean> {
   try {
     const { CryptoHasher } = await import('../utils/CryptoHasher');
-    const info = await FileSystem.getInfoAsync(filePath, { size: true });
+    const info = await FileSystem.getInfoAsync(filePath);
     if (!info.exists) return false;
 
     // Büyük dosyalar (>500MB) için hash atlama — CryptoHasher streaming yapar
@@ -241,13 +241,13 @@ export function registerBackgroundDownloadTask(): void {
   TaskManager.defineTask(BACKGROUND_DOWNLOAD_TASK, async () => {
     try {
       const pending = await readPendingDownloads();
-      if (pending.length === 0) return BackgroundFetch.BackgroundFetchResult.NoData;
+      if (pending.length === 0) return BackgroundTask.BackgroundTaskResult.Failed;
 
       const next = pending[0];
 
       if ((next.retryCount ?? 0) >= BG_MAX_RETRY) {
         await removePendingDownload(next.modelId);
-        return BackgroundFetch.BackgroundFetchResult.Failed;
+        return BackgroundTask.BackgroundTaskResult.Failed;
       }
 
       const status = await downloadSingle(next);
@@ -258,7 +258,7 @@ export function registerBackgroundDownloadTask(): void {
           `bg_download_complete_${next.modelId}`,
           JSON.stringify({ modelId: next.modelId, completedAt: Date.now() }),
         );
-        return BackgroundFetch.BackgroundFetchResult.NewData;
+        return BackgroundTask.BackgroundTaskResult.Success;
       }
 
       const retryCount = await incrementRetryCount(next.modelId);
@@ -268,9 +268,9 @@ export function registerBackgroundDownloadTask(): void {
         );
       }
 
-      return BackgroundFetch.BackgroundFetchResult.Failed;
+      return BackgroundTask.BackgroundTaskResult.Failed;
     } catch {
-      return BackgroundFetch.BackgroundFetchResult.Failed;
+      return BackgroundTask.BackgroundTaskResult.Failed;
     }
   });
 }
@@ -288,24 +288,17 @@ export function registerBackgroundDownloadTask(): void {
 
 export async function scheduleBackgroundDownload(): Promise<Result<void>> {
   try {
-    const isRegistered = await BackgroundFetch.getStatusAsync().catch(() => null);
+    const isRegistered = await BackgroundTask.getStatusAsync().catch(() => null);
 
-    if (
-      isRegistered === BackgroundFetch.BackgroundFetchStatus.Restricted ||
-      isRegistered === BackgroundFetch.BackgroundFetchStatus.Denied
-    ) {
+    if (isRegistered !== BackgroundTask.BackgroundTaskStatus.Available) {
       return err('BG_FETCH_UNAVAILABLE', `BackgroundFetch unavailable: ${isRegistered}`);
     }
 
     try {
-      await BackgroundFetch.unregisterTaskAsync(BACKGROUND_DOWNLOAD_TASK);
+      await BackgroundTask.unregisterTaskAsync(BACKGROUND_DOWNLOAD_TASK);
     } catch { /* henüz kayıtlı değil — no-op */ }
 
-    await BackgroundFetch.registerTaskAsync(BACKGROUND_DOWNLOAD_TASK, {
-      minimumInterval: MINIMUM_INTERVAL_SECONDS,
-      stopOnTerminate: false,
-      startOnBoot:     true,
-    });
+    await BackgroundTask.registerTaskAsync(BACKGROUND_DOWNLOAD_TASK, { minimumInterval: MINIMUM_INTERVAL_SECONDS });
 
     return ok(undefined);
   } catch (e) {
@@ -315,7 +308,7 @@ export async function scheduleBackgroundDownload(): Promise<Result<void>> {
 
 export async function unscheduleBackgroundDownload(): Promise<void> {
   try {
-    await BackgroundFetch.unregisterTaskAsync(BACKGROUND_DOWNLOAD_TASK);
+    await BackgroundTask.unregisterTaskAsync(BACKGROUND_DOWNLOAD_TASK);
   } catch { /* best-effort */ }
 }
 

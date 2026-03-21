@@ -111,7 +111,7 @@ export function useChatExportImport(
     }
 
     const filename = `chat-export-${Date.now()}.json`;
-    const shared   = await shareText(result.value, filename);
+    const shared   = await shareText(result.data, filename);
 
     safe(() => setStatus(shared ? 'success' : 'error'));
     if (!shared) {
@@ -131,7 +131,7 @@ export function useChatExportImport(
     }
 
     const filename = `chat-${sessionId.slice(0, 8)}-${Date.now()}.json`;
-    const shared   = await shareText(result.value, filename);
+    const shared   = await shareText(result.data, filename);
 
     safe(() => setStatus(shared ? 'success' : 'error'));
     if (!shared) safe(() => setLastError('Paylaşım başlatılamadı'));
@@ -154,7 +154,7 @@ export function useChatExportImport(
       return;
     }
 
-    safe(() => { setStatus('success'); setLastSummary(result.value); });
+    safe(() => { setStatus('success'); setLastSummary(result.data); });
   }, [exporter, safe]);
 
   // ── importFromJson (programatik) ───────────────────────────────────────────
@@ -171,7 +171,7 @@ export function useChatExportImport(
       return;
     }
 
-    safe(() => { setStatus('success'); setLastSummary(result.value); });
+    safe(() => { setStatus('success'); setLastSummary(result.data); });
   }, [exporter, safe]);
 
   const reset = useCallback(() => {

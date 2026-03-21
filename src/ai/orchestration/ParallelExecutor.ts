@@ -68,9 +68,9 @@ export class ParallelExecutor {
     // Başarılı → döndür
     if (primaryResult.ok) {
       const durationMs = Date.now() - start;
-      opts.onComplete?.(primaryResult.value.fullText, decision.primaryModel);
+      opts.onComplete?.(primaryResult.data.fullText, decision.primaryModel);
       return ok({
-        fullText:  primaryResult.value.fullText,
+        fullText:  primaryResult.data.fullText,
         modelUsed: decision.primaryModel,
         escalated: false,
         durationMs,
@@ -105,9 +105,9 @@ export class ParallelExecutor {
     const durationMs = Date.now() - start;
 
     if (fallbackResult.ok) {
-      opts.onComplete?.(fallbackResult.value.fullText, decision.fallbackModel);
+      opts.onComplete?.(fallbackResult.data.fullText, decision.fallbackModel);
       return ok({
-        fullText:  fallbackResult.value.fullText,
+        fullText:  fallbackResult.data.fullText,
         modelUsed: decision.fallbackModel,
         escalated: true,
         durationMs,

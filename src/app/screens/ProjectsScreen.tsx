@@ -78,7 +78,7 @@ export function ProjectsScreen(): React.ReactElement {
     setLoading(true);
     setError(null);
 
-    const result = await projectService.listProjects();
+    const result = await projectService.getAllProjects();
     if (!result.ok) {
       setError(result.error.message);
       setLoading(false);
@@ -86,9 +86,9 @@ export function ProjectsScreen(): React.ReactElement {
     }
 
     // Aktif projeleri filtrele
-    const active = result.data.filter(p => p.status !== ProjectStatus.PendingGC);
+    const active = result.data.filter((p: import('../../types/core').IProject) => p.status !== ProjectStatus.PendingGC);
 
-    const mapped: ProjectRow[] = active.map(p => ({
+    const mapped: ProjectRow[] = active.map((p: import('../../types/core').IProject) => ({
       project: p,
       pinned:  p.meta?.pinned === true,
     }));

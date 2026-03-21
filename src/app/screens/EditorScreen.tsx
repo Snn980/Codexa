@@ -113,8 +113,8 @@ export function EditorScreen(): React.ReactElement {
         }
         // Yeni tab ekle
         const newTab: ITab = {
-          id:       file.id + "_tab",
-          fileId:   file.id,
+          id:       (file.id + "_tab") as import("../../types/core").UUID,
+          fileId:   file.id as import("../../types/core").UUID,
           title:    file.name,
           isActive: true,
           isDirty:  false,

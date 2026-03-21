@@ -16,8 +16,8 @@
  */
 
 import { ok, err }         from '../utils/result';
-import type { Result }     from '../utils/result';
-import type { IEventBus }  from '../core/Event-bus/EventBus';
+import type { Result }     from '../types/core';
+import type { IEventBus }  from '../types/core';
 import type { AIModelId, GGUFMeta } from '../ai/AIModels';
 import { AI_MODELS }       from '../ai/AIModels';
 
@@ -242,12 +242,12 @@ export class ModelDownloadManager {
       response = await fetch(entry.downloadUrl, { signal, headers });
     } catch (e) {
       if (signal.aborted) return err(DownloadErrorCode.CANCELLED as import("../types/core").ErrorCode, 'Cancelled');
-      return this._emitError(modelId, entry.sizeMB, DownloadErrorCode.NETWORK_ERROR, String(e));
+      return this._emitError(modelId, entry.sizeMB, DownloadErrorCode.NETWORK_ERROR as import("../types/core").ErrorCode, String(e));
     }
 
     const isPartial = response.status === 206;
     if (!response.ok && !isPartial) {
-      return this._emitError(modelId, entry.sizeMB, DownloadErrorCode.NETWORK_ERROR, `HTTP ${response.status}`);
+      return this._emitError(modelId, entry.sizeMB, DownloadErrorCode.NETWORK_ERROR as import("../types/core").ErrorCode, `HTTP ${response.status}`);
     }
 
     const contentLength = parseInt(response.headers.get('content-length') ?? '0', 10);
@@ -262,7 +262,7 @@ export class ModelDownloadManager {
     });
 
     const reader = response.body?.getReader();
-    if (!reader) return this._emitError(modelId, totalMB, DownloadErrorCode.NETWORK_ERROR, 'No body');
+    if (!reader) return this._emitError(modelId, totalMB, DownloadErrorCode.NETWORK_ERROR as import("../types/core").ErrorCode, 'No body');
 
     try {
       while (true) {
@@ -278,7 +278,7 @@ export class ModelDownloadManager {
       }
     } catch (e) {
       if (signal.aborted) return err(DownloadErrorCode.CANCELLED as import("../types/core").ErrorCode, 'Cancelled');
-      return this._emitError(modelId, totalMB, DownloadErrorCode.NETWORK_ERROR, String(e));
+      return this._emitError(modelId, totalMB, DownloadErrorCode.NETWORK_ERROR as import("../types/core").ErrorCode, String(e));
     } finally {
       try { reader.releaseLock(); } catch { /* ignore */ }
     }
@@ -288,7 +288,7 @@ export class ModelDownloadManager {
       this._setState(modelId, { status: 'verifying', receivedMB: totalMB, totalMB, percent: 100 });
       const actual = await this._storage.sha256(entry.filename);
       if (actual && actual.toLowerCase() !== entry.sha256.toLowerCase()) {
-        return this._emitError(modelId, totalMB, DownloadErrorCode.CHECKSUM_MISMATCH,
+        return this._emitError(modelId, totalMB, DownloadErrorCode.CHECKSUM_MISMATCH as import("../types/core").ErrorCode,
           `Checksum mismatch: expected ${entry.sha256}, got ${actual}`);
       }
     }
@@ -337,13 +337,13 @@ export class ModelDownloadManager {
       response = await fetch(url, { signal, headers });
     } catch (e) {
       if (signal.aborted) return err(DownloadErrorCode.CANCELLED as import("../types/core").ErrorCode, 'Cancelled');
-      return this._emitError(modelId, gguf.sizeMB, DownloadErrorCode.NETWORK_ERROR, String(e));
+      return this._emitError(modelId, gguf.sizeMB, DownloadErrorCode.NETWORK_ERROR as import("../types/core").ErrorCode, String(e));
     }
 
     const isPartial = response.status === 206;
     if (!response.ok && !isPartial) {
       return this._emitError(
-        modelId, gguf.sizeMB, DownloadErrorCode.NETWORK_ERROR, `HTTP ${response.status}`,
+        modelId, gguf.sizeMB, DownloadErrorCode.NETWORK_ERROR as import("../types/core").ErrorCode, `HTTP ${response.status}`,
       );
     }
 
@@ -359,7 +359,7 @@ export class ModelDownloadManager {
     });
 
     const reader = response.body?.getReader();
-    if (!reader) return this._emitError(modelId, totalMB, DownloadErrorCode.NETWORK_ERROR, 'No body');
+    if (!reader) return this._emitError(modelId, totalMB, DownloadErrorCode.NETWORK_ERROR as import("../types/core").ErrorCode, 'No body');
 
     try {
       while (true) {
@@ -377,7 +377,7 @@ export class ModelDownloadManager {
       }
     } catch (e) {
       if (signal.aborted) return err(DownloadErrorCode.CANCELLED as import("../types/core").ErrorCode, 'Cancelled');
-      return this._emitError(modelId, totalMB, DownloadErrorCode.NETWORK_ERROR, String(e));
+      return this._emitError(modelId, totalMB, DownloadErrorCode.NETWORK_ERROR as import("../types/core").ErrorCode, String(e));
     } finally {
       try { reader.releaseLock(); } catch { /* ignore */ }
     }
@@ -388,7 +388,7 @@ export class ModelDownloadManager {
       const actual = await this._storage.sha256(gguf.filename);
       if (actual && actual.toLowerCase() !== gguf.sha256.toLowerCase()) {
         const msg = `Checksum mismatch: expected ${gguf.sha256}, got ${actual}`;
-        return this._emitError(modelId, totalMB, DownloadErrorCode.CHECKSUM_MISMATCH, msg);
+        return this._emitError(modelId, totalMB, DownloadErrorCode.CHECKSUM_MISMATCH as import("../types/core").ErrorCode, msg);
       }
     }
 

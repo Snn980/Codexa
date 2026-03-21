@@ -193,7 +193,7 @@ export class AIWorkerClient implements IAIWorkerClient {
           terminationResult = ok({ totalTokens });
         } else {
           terminationResult = err(
-            (msg.payload.errorCode as string) ?? AIErrorCode.WORKER_ERROR,
+            (msg.payload.errorCode as import('../types/core').ErrorCode) ?? AIErrorCode.WORKER_ERROR,
             msg.payload.errorMessage ?? "AI worker error",
           );
         }

@@ -452,7 +452,7 @@ export class LlamaCppRunner implements IModelRunner {
       return err(
         ModelErrorCode.MODEL_NOT_LOADED,
         `Missing model files: ${missing.join(", ")}`,
-        { context: { missing } },
+        { context: { missing: missing.join(',') } },
       );
     }
 

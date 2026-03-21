@@ -127,7 +127,7 @@ export function useInlineCompletionBridge(
     if (abortCtrl.signal.aborted || !mountedRef.current) return;
     if (!result.ok) return;
 
-    const fullText = result.value.fullText.trim();
+    const fullText = result.data.fullText.trim();
     if (!fullText) return;
 
     // Self-critique: § 55 ResponseAggregator

@@ -205,7 +205,7 @@ export class APIKeyStore implements IAPIKeyStoreExtended {
     const errors: string[] = [];
     for (const p of ["anthropic", "openai"] as const) {
       const r = await this.deleteKey(p);
-      if (!r.ok) errors.push(r.message ?? r.code);
+      if (!r.ok) errors.push(r.error.message ?? r.error.code);
     }
     this._cache.clear();
     return errors.length > 0 ? err(APIKeyErrorCode.DELETE_FAILED, errors.join("; ")) : ok(undefined);

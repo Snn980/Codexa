@@ -221,7 +221,7 @@ export class OfflineRuntime implements IAIWorkerRuntime {
   ): Promise<Result<ILlamaCppBinding>> {
     const state = this._states.get(modelId);
     if (state?.status === "ready")   return ok(state.binding);
-    if (state?.status === "error")   return err(state.code, state.message);
+    if (state?.status === "error")   return err(state.code as import("../types/core").ErrorCode, state.message);
     if (state?.status === "loading") return state.promise;
     const promise = this._doLoad(modelId, apiModelId);
     this._states.set(modelId, { status: "loading", promise });

@@ -99,7 +99,7 @@ function ProjectsStack(): React.ReactElement {
 function RootTabs(): React.ReactElement {
   return (
     <Tab.Navigator
-      tabBar={(props) => <TabBar {...props} />}
+      tabBar={(_props) => <TabBar />}
       screenOptions={{
         headerShown: false,
         lazy:        true,   // Tab render edilene kadar mount etme
@@ -174,6 +174,12 @@ const COLORS = {
 
 const NAV_THEME = {
   dark: true,
+  fonts: {
+    regular: { fontFamily: 'System', fontWeight: '400' as const },
+    medium:  { fontFamily: 'System', fontWeight: '500' as const },
+    bold:    { fontFamily: 'System', fontWeight: '700' as const },
+    heavy:   { fontFamily: 'System', fontWeight: '800' as const },
+  },
   colors: {
     primary:      "#3b82f6",
     background:   COLORS.bg,
