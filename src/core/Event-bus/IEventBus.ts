@@ -1,6 +1,6 @@
 /**
- * core/event-bus/IEventBus.ts
- * Genel (AppEventMap'e bağımlı olmayan) IEventBus arayüzü.
+ * core/Event-bus/IEventBus.ts
+ * Genel IEventBus arayüzü — AppEventMap bağımlılığı yok.
  * runtime/ ve language-services/ katmanları bu arayüzü kullanır.
  */
 
