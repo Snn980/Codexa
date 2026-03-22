@@ -100,12 +100,13 @@ export class ModelRouter {
     // Primary: önce offline dene (offline-first politika)
     const offlineModel = this._bestOfflineModel(promptKind, intent);
 
-    // Fallback: offline çalışmazsa cloud
-    const cloudModel = selectModelForPrompt({
-      kind:   promptKind,
-      status: 'CLOUD_ENABLED',
-      estimatedInputTokens: intent.estimatedTokens,
-    });
+    // Fallback: offline çalışmazsa cloud — CLOUD modeli zorunlu
+    const allModels  = AI_MODELS.filter(
+      (m) => m.variant === 'cloud' && isModelAvailable(m.id, 'CLOUD_ENABLED'),
+    );
+    const cloudModel: AIModelId | null = allModels.length > 0
+      ? (allModels[0]!.id as AIModelId)
+      : selectModelForPrompt({ kind: promptKind, status: 'CLOUD_ENABLED' });
 
     // Hiç offline model yoksa direkt cloud
     if (!offlineModel) {

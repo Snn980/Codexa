@@ -8,15 +8,12 @@
  *  • ISQLiteDriver, IEventBus, ILevelDb → mock DI — gerçek DB gerektirmez
  *  • § 3: EventBus unsub cleanup, disposed store güvenliği
  *  • § 2: UPSERT atomic — aynı fileId tekrar gelince edit_count artar
- *  • debounce: vi.useFakeTimers() ile kontrollü zaman ilerletme
+ *  • debounce: jest.useFakeTimers() ile kontrollü zaman ilerletme
  *  • ProjectStructureReader: tree depth, sıralama, deleted filtre, corrupt row
  *
  * Kural § 1: Result<T>.data kullanımı, err() positional args
  */
 
-import {
-  describe, it, expect, vi, beforeEach, afterEach,
-} from "vitest";
 import { SqliteRecencyStore } from "../RecencyStore";
 import type { ISQLiteDriver, IEventBus, UnsubFn } from "../RecencyStore";
 import { DOC_CHANGE_DEBOUNCE_MS, DEFAULT_RECENCY_LIMIT } from "../IRecencyReader";
@@ -42,7 +39,7 @@ function makeMockDb(initialRows: DbState["rows"] = new Map()): {
   const state: DbState = { rows: new Map(initialRows) };
 
   const db: ISQLiteDriver = {
-    run: vi.fn(async (sql: string, params: unknown[] = []) => {
+    run: jest.fn(async (sql: string, params: unknown[] = []) => {
       if (sql.includes("CREATE TABLE")) {
         return { rowsAffected: 0 };
       }
@@ -60,7 +57,7 @@ function makeMockDb(initialRows: DbState["rows"] = new Map()): {
       return { rowsAffected: 0 };
     }),
 
-    get: vi.fn(async (sql: string, params: unknown[] = []) => {
+    get: jest.fn(async (sql: string, params: unknown[] = []) => {
       if (sql.includes("SELECT last_edited FROM file_recency WHERE file_id")) {
         const [fileId] = params as [string];
         return state.rows.get(fileId) ?? null;
@@ -68,7 +65,7 @@ function makeMockDb(initialRows: DbState["rows"] = new Map()): {
       return null;
     }),
 
-    all: vi.fn(async (sql: string, params: unknown[] = []) => {
+    all: jest.fn(async (sql: string, params: unknown[] = []) => {
       if (sql.includes("ORDER BY last_edited DESC LIMIT")) {
         const [limit] = params as [number];
         return [...state.rows.values()]
@@ -91,7 +88,7 @@ function makeMockBus(): { bus: IEventBus; handlers: HandlerMap; emit: IEventBus[
   const handlers: HandlerMap = new Map();
 
   const bus: IEventBus = {
-    on: vi.fn((event: string, handler: (payload: unknown) => void): UnsubFn => {
+    on: jest.fn((event: string, handler: (payload: unknown) => void): UnsubFn => {
       if (!handlers.has(event)) handlers.set(event, []);
       handlers.get(event)!.push(handler);
       return () => {
@@ -102,7 +99,7 @@ function makeMockBus(): { bus: IEventBus; handlers: HandlerMap; emit: IEventBus[
         }
       };
     }),
-    emit: vi.fn((event: string, payload: unknown) => {
+    emit: jest.fn((event: string, payload: unknown) => {
       const list = handlers.get(event) ?? [];
       // Snapshot iteration — § 3
       [...list].forEach((h) => {
@@ -128,7 +125,7 @@ async function makeStore(dbRows?: DbState["rows"]) {
 
 function makeLevelDb(entries: Record<string, FileMeta>): ILevelDb {
   return {
-    scan: vi.fn(async (prefix: string) => {
+    scan: jest.fn(async (prefix: string) => {
       return Object.entries(entries)
         .filter(([k]) => k.startsWith(prefix))
         .sort(([a], [b]) => a.localeCompare(b))
@@ -149,7 +146,7 @@ describe("SqliteRecencyStore.initialize()", () => {
   it("DDL çağrılır, ok döner", async () => {
     const { initResult, db } = await makeStore();
     expect(initResult.ok).toBe(true);
-    expect(db.run).toHaveBeenCalledWith(expect.stringContaining("CREATE TABLE IF NOT EXISTS file_recency"), undefined);
+    expect(db.run).toHaveBeenCalledWith(expect.stringContaining("CREATE TABLE IF NOT EXISTS file_recency"));
   });
 
   it("EventBus'a 'file:saved' ve 'doc:changed' subscribe olur", async () => {
@@ -161,7 +158,7 @@ describe("SqliteRecencyStore.initialize()", () => {
   it("DDL hata → init ok:false döner", async () => {
     const { db, state } = makeMockDb();
     const { bus } = makeMockBus();
-    (db.run as ReturnType<typeof vi.fn>).mockRejectedValueOnce(new Error("DDL fail"));
+    (db.run as jest.Mock).mockRejectedValueOnce(new Error("DDL fail"));
     const store = new SqliteRecencyStore(db, bus);
     const result = await store.initialize();
     expect(result.ok).toBe(false);
@@ -199,7 +196,7 @@ describe("SqliteRecencyStore.recordEdit()", () => {
 
   it("DB hata → RECENCY_DB_WRITE_FAILED", async () => {
     const { db, store } = await makeStore();
-    (db.run as ReturnType<typeof vi.fn>).mockRejectedValueOnce(new Error("disk full"));
+    (db.run as jest.Mock).mockRejectedValueOnce(new Error("disk full"));
     const result = await store.recordEdit("file-1");
     expect(result.ok).toBe(false);
     expect(result.error?.code).toBe("RECENCY_DB_WRITE_FAILED");
@@ -243,7 +240,7 @@ describe("SqliteRecencyStore.getLastEditedAt()", () => {
 
   it("DB hata → null (non-fatal)", async () => {
     const { db, store } = await makeStore();
-    (db.get as ReturnType<typeof vi.fn>).mockRejectedValueOnce(new Error("read error"));
+    (db.get as jest.Mock).mockRejectedValueOnce(new Error("read error"));
     expect(await store.getLastEditedAt("file-1")).toBeNull();
   });
 
@@ -291,7 +288,7 @@ describe("SqliteRecencyStore.getRecentFileIds()", () => {
 
   it("DB hata → [] (non-fatal)", async () => {
     const { db, store } = await makeStore();
-    (db.all as ReturnType<typeof vi.fn>).mockRejectedValueOnce(new Error("fail"));
+    (db.all as jest.Mock).mockRejectedValueOnce(new Error("fail"));
     expect(await store.getRecentFileIds()).toEqual([]);
   });
 
@@ -329,28 +326,28 @@ describe("SqliteRecencyStore — file:saved EventBus", () => {
 // ═══════════════════════════════════════════════════════════════════════════
 
 describe("SqliteRecencyStore — doc:changed debounce (§ 11)", () => {
-  beforeEach(() => { vi.useFakeTimers(); });
-  afterEach(()  => { vi.useRealTimers(); });
+  beforeEach(() => { jest.useFakeTimers(); });
+  afterEach(()  => { jest.useRealTimers(); });
 
   it("doc:changed → DOC_CHANGE_DEBOUNCE_MS sonra kayıt", async () => {
     const { state, emit } = await makeStore();
     emit("doc:changed", { fileId: "f2" });
     expect(state.rows.has("f2")).toBe(false); // henüz yazılmadı
 
-    await vi.advanceTimersByTimeAsync(DOC_CHANGE_DEBOUNCE_MS);
+    await jest.advanceTimersByTimeAsync(DOC_CHANGE_DEBOUNCE_MS);
     expect(state.rows.has("f2")).toBe(true);
   });
 
   it("debounce sırasında aynı fileId yeniden gelirse timer sıfırlanır", async () => {
     const { state, emit } = await makeStore();
     emit("doc:changed", { fileId: "f3" });
-    await vi.advanceTimersByTimeAsync(DOC_CHANGE_DEBOUNCE_MS - 50);
+    await jest.advanceTimersByTimeAsync(DOC_CHANGE_DEBOUNCE_MS - 50);
     emit("doc:changed", { fileId: "f3" }); // sıfırla
 
-    await vi.advanceTimersByTimeAsync(DOC_CHANGE_DEBOUNCE_MS - 50);
+    await jest.advanceTimersByTimeAsync(DOC_CHANGE_DEBOUNCE_MS - 50);
     expect(state.rows.has("f3")).toBe(false); // henüz yok
 
-    await vi.advanceTimersByTimeAsync(100);
+    await jest.advanceTimersByTimeAsync(100);
     expect(state.rows.has("f3")).toBe(true);
   });
 
@@ -359,7 +356,7 @@ describe("SqliteRecencyStore — doc:changed debounce (§ 11)", () => {
     emit("doc:changed", { fileId: "fa" });
     emit("doc:changed", { fileId: "fb" });
 
-    await vi.advanceTimersByTimeAsync(DOC_CHANGE_DEBOUNCE_MS);
+    await jest.advanceTimersByTimeAsync(DOC_CHANGE_DEBOUNCE_MS);
     expect(state.rows.has("fa")).toBe(true);
     expect(state.rows.has("fb")).toBe(true);
   });
@@ -369,7 +366,7 @@ describe("SqliteRecencyStore — doc:changed debounce (§ 11)", () => {
     emit("doc:changed", { fileId: "fx" });
 
     store.dispose(); // dispose → timer clear
-    await vi.advanceTimersByTimeAsync(DOC_CHANGE_DEBOUNCE_MS + 100);
+    await jest.advanceTimersByTimeAsync(DOC_CHANGE_DEBOUNCE_MS + 100);
     expect(state.rows.has("fx")).toBe(false);
   });
 });
@@ -400,7 +397,7 @@ describe("SqliteRecencyStore.dispose() — EventBus cleanup", () => {
 describe("SqliteRecencyStore — EventBus emit() asla throw etmez (§ 3)", () => {
   it("DB write throw etse bile emit() caller'ı çökertmez", async () => {
     const { db, emit } = await makeStore();
-    (db.run as ReturnType<typeof vi.fn>).mockRejectedValue(new Error("disk full"));
+    (db.run as jest.Mock).mockRejectedValue(new Error("disk full"));
     expect(() => {
       emit("file:saved", { fileId: "boom", projectId: "p1", path: "x.ts" });
     }).not.toThrow();
@@ -448,7 +445,7 @@ describe("ProjectStructureReader — temel", () => {
 
   it("corrupt JSON row → atlanır", async () => {
     const db: ILevelDb = {
-      scan: vi.fn(async () => [
+      scan: jest.fn(async () => [
         { key: fmetaKey("p1", "bad.ts"), value: "NOT_JSON{{{" },
         { key: fmetaKey("p1", "ok.ts"),  value: JSON.stringify(makeMeta()) },
       ]),
@@ -458,7 +455,7 @@ describe("ProjectStructureReader — temel", () => {
   });
 
   it("LevelDB scan throw → [] döner (non-fatal)", async () => {
-    const db: ILevelDb = { scan: vi.fn(async () => { throw new Error("db down"); }) };
+    const db: ILevelDb = { scan: jest.fn(async () => { throw new Error("db down"); }) };
     const items = await new ProjectStructureReader(db).getProjectStructure("p1");
     expect(items).toEqual([]);
   });

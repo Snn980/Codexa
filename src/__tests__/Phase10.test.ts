@@ -447,21 +447,21 @@ describe("T-P10-3: OTA Model Versiyon Manifest", () => {
       globalThis.fetch = async () => new Response("not found", { status: 404 }) as Response;
       const r = await fetchManifest("https://cdn.example.com/manifest.json");
       expect(r.ok).toBe(false);
-      expect((r as any).code).toBe(ManifestErrorCode.FETCH_FAILED);
+      expect(r.error?.code).toBe(ManifestErrorCode.FETCH_FAILED);
     });
 
     it("geçersiz JSON → PARSE_FAILED", async () => {
       globalThis.fetch = async () => new Response("not-json", { status: 200 }) as Response;
       const r = await fetchManifest("https://cdn.example.com/manifest.json");
       expect(r.ok).toBe(false);
-      expect((r as any).code).toBe(ManifestErrorCode.PARSE_FAILED);
+      expect(r.error?.code).toBe(ManifestErrorCode.PARSE_FAILED);
     });
 
     it("schemaVersion !== 1 → SCHEMA_MISMATCH", async () => {
       mockFetchManifest({ schemaVersion: 2, models: [] });
       const r = await fetchManifest("https://cdn.example.com/manifest.json");
       expect(r.ok).toBe(false);
-      expect((r as any).code).toBe(ManifestErrorCode.SCHEMA_MISMATCH);
+      expect(r.error?.code).toBe(ManifestErrorCode.SCHEMA_MISMATCH);
     });
 
     it("ağ hatası → FETCH_FAILED", async () => {

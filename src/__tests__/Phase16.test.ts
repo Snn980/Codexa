@@ -497,13 +497,13 @@ describe('T-P16-4: TerminalScreen / useTerminalRuntime', () => {
     const fakeBundler = {
       run: async () => ({
         ok: true,
-        value: { durationMs: 250 },
+        data: { durationMs: 250 },
       }),
     };
 
     const result = await fakeBundler.run();
     if (result.ok) {
-      pushLine('success', `✓ Tamamlandı (${result.value?.durationMs ?? 0}ms)`);
+      pushLine('success', `✓ Tamamlandı (${result.data?.durationMs ?? 0}ms)`);
     }
 
     expect(pushLine).toHaveBeenCalledWith('success', '✓ Tamamlandı (250ms)');

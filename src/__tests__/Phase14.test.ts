@@ -6,7 +6,7 @@ import { makeSequentialIdFactory }    from '../utils/uuid';
 import { ChatHistoryRepository }      from '../storage/chat/ChatHistoryRepository';
 import type { SessionMeta }           from '../storage/chat/ChatHistoryRepository';
 import {
-  addPendingDownload as enqueuePendingDownload,
+  enqueuePendingDownload,
   removePendingDownload,
   readPendingDownloads,
   type PendingDownload,

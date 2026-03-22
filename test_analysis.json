@@ -1,0 +1,564 @@
+[
+  {
+    "path": "src/__tests__/Phase10.test.ts",
+    "name": "Phase10.test.ts",
+    "passed": 51,
+    "failed": 0,
+    "skipped": 0,
+    "status": "PASS",
+    "errors": [],
+    "categories": []
+  },
+  {
+    "path": "src/__tests__/Phase11.test.ts",
+    "name": "Phase11.test.ts",
+    "passed": 0,
+    "failed": 0,
+    "skipped": 0,
+    "status": "CRASH",
+    "errors": [
+      {
+        "title": "Test suite failed to run",
+        "body": "TypeError: Cannot read properties of undefined (reading 'NativeUnimoduleProxy')\n\n      16 | };\n      17 | // eslint-disable-next-line @typescript-eslint/no-var-requires"
+      }
+    ],
+    "categories": [
+      "suite_failed",
+      "undefined_read",
+      "missing_mock"
+    ]
+  },
+  {
+    "path": "src/__tests__/Phase12.test.ts",
+    "name": "Phase12.test.ts",
+    "passed": 31,
+    "failed": 4,
+    "skipped": 0,
+    "status": "FAIL",
+    "errors": [
+      {
+        "title": "useOTAUpdate › checking state › check sırasında checking=true, sonra false",
+        "body": "TypeError: Cannot read properties of undefined (reading 'on')\n\n      144 |     if (!container.isReady) return;\n      145 |"
+      },
+      {
+        "title": "useOTAUpdate › hata durumu › ok:false dönerse lastError set edilir",
+        "body": "TypeError: Cannot read properties of undefined (reading 'on')\n\n      144 |     if (!container.isReady) return;\n      145 |"
+      },
+      {
+        "title": "useOTAUpdate › hata durumu › exception → lastError string olur",
+        "body": "TypeError: Cannot read properties of undefined (reading 'on')\n\n      144 |     if (!container.isReady) return;\n      145 |"
+      },
+      {
+        "title": "useModelSelector — OTA badge entegrasyonu › permission:status:changed → seçim düşer cloud→offline",
+        "body": "expect(received).toBe(expected) // Object.is equality\n\n    Expected: true\n    Received: false"
+      }
+    ],
+    "categories": [
+      "undefined_read"
+    ]
+  },
+  {
+    "path": "src/__tests__/Phase13.test.ts",
+    "name": "Phase13.test.ts",
+    "passed": 37,
+    "failed": 2,
+    "skipped": 0,
+    "status": "FAIL",
+    "errors": [
+      {
+        "title": "T-P13-1: IntentEngine.analyze() › \"dokümantasyon yaz\" → doc_write",
+        "body": "expect(received).toBe(expected) // Object.is equality\n\n    Expected: \"doc_write\"\n    Received: \"general\""
+      },
+      {
+        "title": "T-P13-4: ParallelExecutor.run() › abort → ok:false",
+        "body": "thrown: \"Exceeded timeout of 10000 ms for a test.\n    Add a timeout value to this test to increase the timeout, if this is a long-running test. See https://jestjs.io/docs/api#testname-fn-timeout.\"\n\n      199 |   });"
+      }
+    ],
+    "categories": [
+      "timeout"
+    ]
+  },
+  {
+    "path": "src/__tests__/Phase14.test.ts",
+    "name": "Phase14.test.ts",
+    "passed": 20,
+    "failed": 0,
+    "skipped": 0,
+    "status": "PASS",
+    "errors": [],
+    "categories": []
+  },
+  {
+    "path": "src/__tests__/Phase15.test.ts",
+    "name": "Phase15.test.ts",
+    "passed": 0,
+    "failed": 0,
+    "skipped": 0,
+    "status": "CRASH",
+    "errors": [
+      {
+        "title": "Test suite failed to run",
+        "body": "TypeError: Cannot read properties of undefined (reading 'NativeUnimoduleProxy')\n\n      16 | };\n      17 | // eslint-disable-next-line @typescript-eslint/no-var-requires"
+      }
+    ],
+    "categories": [
+      "suite_failed",
+      "undefined_read",
+      "missing_mock"
+    ]
+  },
+  {
+    "path": "src/__tests__/Phase16.AIChatScreen.test.ts",
+    "name": "Phase16.AIChatScreen.test.ts",
+    "passed": 18,
+    "failed": 0,
+    "skipped": 0,
+    "status": "PASS",
+    "errors": [],
+    "categories": []
+  },
+  {
+    "path": "src/__tests__/Phase16.test.ts",
+    "name": "Phase16.test.ts",
+    "passed": 32,
+    "failed": 1,
+    "skipped": 0,
+    "status": "FAIL",
+    "errors": [
+      {
+        "title": "T-P16-4: TerminalScreen / useTerminalRuntime › Bundler başarı → success satırı eklenir",
+        "body": "expect(jest.fn()).toHaveBeenCalledWith(...expected)\n\n    Expected: \"success\", \"✓ Tamamlandı (250ms)\"\n    Received: \"success\", \"✓ Tamamlandı (0ms)\""
+      }
+    ],
+    "categories": []
+  },
+  {
+    "path": "src/__tests__/Phase17.test.ts",
+    "name": "Phase17.test.ts",
+    "passed": 21,
+    "failed": 4,
+    "skipped": 0,
+    "status": "FAIL",
+    "errors": [
+      {
+        "title": "T-P17-4: TerminalScreen (§ 60) › RingBuffer canonical export mevcut",
+        "body": "Unexpected import statement in CJS module.\n\n      at @:43:8\n      at esmSyntaxErr (node_modules/cjs-module-lexer/lexer.js:1153:24)"
+      },
+      {
+        "title": "T-P17-4: TerminalScreen (§ 60) › RingBuffer push/toArray/clear API",
+        "body": "Unexpected import statement in CJS module.\n\n      at @:43:8\n      at esmSyntaxErr (node_modules/cjs-module-lexer/lexer.js:1153:24)"
+      },
+      {
+        "title": "T-P17-5: AIChatScreen → AIChatScreenV2 (§ 59, § 66) › AIChatScreen barrel export mevcut",
+        "body": "expect(received).toBe(expected) // Object.is equality\n\n    Expected: \"function\"\n    Received: \"object\""
+      },
+      {
+        "title": "T-P17-5: AIChatScreen → AIChatScreenV2 (§ 59, § 66) › AIChatScreenLegacy artık mevcut değil (§ 66)",
+        "body": "expect(received).toBe(expected) // Object.is equality\n\n    Expected: false\n    Received: true"
+      }
+    ],
+    "categories": []
+  },
+  {
+    "path": "src/__tests__/Phase18.test.ts",
+    "name": "Phase18.test.ts",
+    "passed": 23,
+    "failed": 0,
+    "skipped": 0,
+    "status": "PASS",
+    "errors": [],
+    "categories": []
+  },
+  {
+    "path": "src/__tests__/Phase19.test.ts",
+    "name": "Phase19.test.ts",
+    "passed": 37,
+    "failed": 0,
+    "skipped": 0,
+    "status": "PASS",
+    "errors": [],
+    "categories": []
+  },
+  {
+    "path": "src/__tests__/Phase20.test.ts",
+    "name": "Phase20.test.ts",
+    "passed": 0,
+    "failed": 0,
+    "skipped": 0,
+    "status": "CRASH",
+    "errors": [
+      {
+        "title": "Test suite failed to run",
+        "body": "ReferenceError: /data/data/com.termux/files/home/Codexa/src/__tests__/Phase20.test.ts: The module factory of `jest.mock()` is not allowed to reference any out-of-scope variables.\n    Invalid variable access: createMockQJS\n    Allowed objects: AbortController, AbortSignal, AggregateError, Array, ArrayBuffer, AsyncDisposableStack, Atomics, BigInt, BigInt64Array, BigUint64Array, Blob, Boolean, BroadcastChannel, Buffer, ByteLengthQueuingStrategy, CloseEvent, CompressionStream, CountQueuingStrategy, Crypto, CryptoKey, CustomEvent, DOMException, DataView, Date, DecompressionStream, DisposableStack, Error, ErrorEvent, EvalError, Event, EventTarget, File, FinalizationRegistry, Float16Array, Float32Array, Float64Array, FormData, Function, Generator, GeneratorFunction, Headers, Infinity, Int16Array, Int32Array, Int8Array, InternalError, Intl, Iterator, JSON, Map, Math, MessageChannel, MessageEvent, MessagePort, NaN, Navigator, Number, Object, Performance, PerformanceEntry, PerformanceMark, PerformanceMeasure, PerformanceObserver, PerformanceObserverEntryList, PerformanceResourceTiming, Promise, Proxy, RangeError, ReadableByteStreamController, ReadableStream, ReadableStreamBYOBReader, ReadableStreamBYOBRequest, ReadableStreamDefaultController, ReadableStreamDefaultReader, ReferenceError, Reflect, RegExp, Request, Response, Set, SharedArrayBuffer, Storage, String, SubtleCrypto, SuppressedError, Symbol, SyntaxError, TextDecoder, TextDecoderStream, TextEncoder, TextEncoderStream, TransformStream, TransformStreamDefaultController, TypeError, URIError, URL, URLPattern, URLSearchParams, Uint16Array, Uint32Array, Uint8Array, Uint8ClampedArray, WeakMap, WeakRef, WeakSet, WebAssembly, WebSocket, WritableStream, WritableStreamDefaultController, WritableStreamDefaultWriter, __dirname, __filename, arguments, atob, btoa, clearImmediate, clearInterval, clearTimeout, console, crypto, decodeURI, decodeURIComponent, encodeURI, encodeURIComponent, escape, eval, expect, exports, fetch, global, globalThis, isFinite, isNaN, jest, localStorage, module, navigator, parseFloat, parseInt, performance, process, queueMicrotask, require, sessionStorage, setImmediate, setInterval, setTimeout, structuredClone, undefined, unescape.\n    Note: This is a precaution to guard against uninitialized mock variables. If it is ensured that the mock is required lazily, variable names prefixed with `mock` (case insensitive) are permitted."
+      }
+    ],
+    "categories": [
+      "suite_failed",
+      "timeout"
+    ]
+  },
+  {
+    "path": "src/__tests__/Phase6UI.test.ts",
+    "name": "Phase6UI.test.ts",
+    "passed": 43,
+    "failed": 6,
+    "skipped": 0,
+    "status": "FAIL",
+    "errors": [
+      {
+        "title": "AIWorkerClient › streamChat — temel akış › REQUEST mesajı gönderir",
+        "body": "TypeError: Cannot read properties of undefined (reading 'ok')\n\n      199 |       const result = await gen.next();\n      200 |       expect(result.done).toBe(true);"
+      },
+      {
+        "title": "AIWorkerClient › streamChat — temel akış › worker hata yanıtı → err() döner",
+        "body": "expect(received).toBe(expected) // Object.is equality\n\n    Expected: \"MODEL_NOT_LOADED\"\n    Received: undefined"
+      },
+      {
+        "title": "AIWorkerClient › streamChat — temel akış › seq sırası bozulursa SEQ_OUT_OF_ORDER hatası",
+        "body": "expect(received).toBe(expected) // Object.is equality\n\n    Expected: \"AI_SEQ_OUT_OF_ORDER\"\n    Received: undefined"
+      },
+      {
+        "title": "AIWorkerClient › dispose › dispose → disposed client WORKER_NOT_READY döner",
+        "body": "TypeError: Cannot read properties of undefined (reading 'ok')\n\n      358 |       const result = await gen.next();\n      359 |       expect(result.done).toBe(true);"
+      },
+      {
+        "title": "selectModelForPrompt › bilinmeyen kind → fallback › CLOUD_ENABLED bilinmeyen kind → getDefaultModel (Sonnet 4.6)",
+        "body": "TypeError: candidates is not iterable\n\n      470 |\n      471 |   // İlk kullanılabilir model"
+      },
+      {
+        "title": "selectModelForPrompt › bilinmeyen kind → fallback › LOCAL_ONLY bilinmeyen kind → getDefaultModel (Gemma3-1B)",
+        "body": "TypeError: candidates is not iterable\n\n      470 |\n      471 |   // İlk kullanılabilir model"
+      }
+    ],
+    "categories": [
+      "undefined_read"
+    ]
+  },
+  {
+    "path": "src/__tests__/Phase7.test.ts",
+    "name": "Phase7.test.ts",
+    "passed": 67,
+    "failed": 0,
+    "skipped": 1,
+    "status": "PASS",
+    "errors": [],
+    "categories": []
+  },
+  {
+    "path": "src/__tests__/Phase8.test.ts",
+    "name": "Phase8.test.ts",
+    "passed": 88,
+    "failed": 2,
+    "skipped": 0,
+    "status": "FAIL",
+    "errors": [
+      {
+        "title": "WasmBootstrap (deprecated stub) › ExpoLlamaCppLoader — modelId ile oluşturulur, native env dışında rejects",
+        "body": "expect(received).rejects.toBeDefined()\n\n    Received promise resolved instead of rejected\n    Resolved to value: {\"_cfg\": {\"n_ctx\": 4096, \"n_gpu_layers\": 1, \"n_threads\": 4, \"use_mlock\": false}, \"_context\": null, \"_disposed\": false, \"_initLlama\": [Function initLlama], \"_modelId\": \"offline:gemma-3-1b\"}"
+      },
+      {
+        "title": "AIRuntimeFactory › AIRuntimeManager › bridge üzerinden mesaj gönderilir (smoke test)",
+        "body": "expect(received).toBe(expected) // Object.is equality\n\n    Expected: true\n    Received: false"
+      }
+    ],
+    "categories": [
+      "rejected_promise"
+    ]
+  },
+  {
+    "path": "src/__tests__/Phase9.test.ts",
+    "name": "Phase9.test.ts",
+    "passed": 0,
+    "failed": 0,
+    "skipped": 0,
+    "status": "CRASH",
+    "errors": [
+      {
+        "title": "Test suite failed to run",
+        "body": "ReferenceError: /data/data/com.termux/files/home/Codexa/src/__tests__/Phase9.test.ts: The module factory of `jest.mock()` is not allowed to reference any out-of-scope variables.\n    Invalid variable access: callCount\n    Allowed objects: AbortController, AbortSignal, AggregateError, Array, ArrayBuffer, AsyncDisposableStack, Atomics, BigInt, BigInt64Array, BigUint64Array, Blob, Boolean, BroadcastChannel, Buffer, ByteLengthQueuingStrategy, CloseEvent, CompressionStream, CountQueuingStrategy, Crypto, CryptoKey, CustomEvent, DOMException, DataView, Date, DecompressionStream, DisposableStack, Error, ErrorEvent, EvalError, Event, EventTarget, File, FinalizationRegistry, Float16Array, Float32Array, Float64Array, FormData, Function, Generator, GeneratorFunction, Headers, Infinity, Int16Array, Int32Array, Int8Array, InternalError, Intl, Iterator, JSON, Map, Math, MessageChannel, MessageEvent, MessagePort, NaN, Navigator, Number, Object, Performance, PerformanceEntry, PerformanceMark, PerformanceMeasure, PerformanceObserver, PerformanceObserverEntryList, PerformanceResourceTiming, Promise, Proxy, RangeError, ReadableByteStreamController, ReadableStream, ReadableStreamBYOBReader, ReadableStreamBYOBRequest, ReadableStreamDefaultController, ReadableStreamDefaultReader, ReferenceError, Reflect, RegExp, Request, Response, Set, SharedArrayBuffer, Storage, String, SubtleCrypto, SuppressedError, Symbol, SyntaxError, TextDecoder, TextDecoderStream, TextEncoder, TextEncoderStream, TransformStream, TransformStreamDefaultController, TypeError, URIError, URL, URLPattern, URLSearchParams, Uint16Array, Uint32Array, Uint8Array, Uint8ClampedArray, WeakMap, WeakRef, WeakSet, WebAssembly, WebSocket, WritableStream, WritableStreamDefaultController, WritableStreamDefaultWriter, __dirname, __filename, arguments, atob, btoa, clearImmediate, clearInterval, clearTimeout, console, crypto, decodeURI, decodeURIComponent, encodeURI, encodeURIComponent, escape, eval, expect, exports, fetch, global, globalThis, isFinite, isNaN, jest, localStorage, module, navigator, parseFloat, parseInt, performance, process, queueMicrotask, require, sessionStorage, setImmediate, setInterval, setTimeout, structuredClone, undefined, unescape.\n    Note: This is a precaution to guard against uninitialized mock variables. If it is ensured that the mock is required lazily, variable names prefixed with `mock` (case insensitive) are permitted."
+      }
+    ],
+    "categories": [
+      "suite_failed",
+      "timeout"
+    ]
+  },
+  {
+    "path": "src/__tests__/TechnicalDebt.test.ts",
+    "name": "TechnicalDebt.test.ts",
+    "passed": 31,
+    "failed": 13,
+    "skipped": 0,
+    "status": "FAIL",
+    "errors": [
+      {
+        "title": "T-5: ScopeAnalyzer — Tree-sitter AST traversal › boş kaynak → root scope döner",
+        "body": "expect(received).toBe(expected) // Object.is equality\n\n    Expected: \"module\"\n    Received: \"global\""
+      },
+      {
+        "title": "T-5: ScopeAnalyzer — Tree-sitter AST traversal › function_declaration → FUNCTION scope çocuğu",
+        "body": "expect(received).toBe(expected) // Object.is equality\n\n    Expected: \"function\"\n    Received: \"module\""
+      },
+      {
+        "title": "T-5: ScopeAnalyzer — Tree-sitter AST traversal › function scope adı çıkarılır",
+        "body": "expect(received).toBe(expected) // Object.is equality\n\n    Expected: \"bar\"\n    Received: undefined"
+      },
+      {
+        "title": "T-5: ScopeAnalyzer — Tree-sitter AST traversal › class_declaration → CLASS scope",
+        "body": "expect(received).toBe(expected) // Object.is equality\n\n    Expected: \"class\"\n    Received: \"module\""
+      },
+      {
+        "title": "T-5: ScopeAnalyzer — Tree-sitter AST traversal › arrow_function → ARROW_FUNCTION scope",
+        "body": "expect(received).toBe(expected) // Object.is equality\n\n    Expected: \"arrow_function\"\n    Received: \"module\""
+      },
+      {
+        "title": "T-5: ScopeAnalyzer — Tree-sitter AST traversal › iç içe scope — children hiyerarşisi doğru",
+        "body": "expect(received).toBe(expected) // Object.is equality\n\n    Expected: \"arrow_function\"\n    Received: undefined"
+      },
+      {
+        "title": "T-5: ScopeAnalyzer — Tree-sitter AST traversal › scope dışı node'lar (identifier vb.) kök scope'a eklenmez",
+        "body": "expect(received).toHaveLength(expected)\n\n    Expected length: 0\n    Received length: 1"
+      },
+      {
+        "title": "T-5: ScopeAnalyzer — Tree-sitter AST traversal › findScopeAt → içeriden en dar scope döner",
+        "body": "expect(received).toBe(expected) // Object.is equality\n\n    Expected: true\n    Received: false"
+      },
+      {
+        "title": "T-5: ScopeAnalyzer — Tree-sitter AST traversal › findScopeAt — scope dışı koordinat → SYMBOL_NOT_FOUND",
+        "body": "expect(received).toBe(expected) // Object.is equality\n\n    Expected: \"SCOPE_SYMBOL_NOT_FOUND\"\n    Received: \"SYMBOL_NOT_FOUND\""
+      },
+      {
+        "title": "T-5: ScopeAnalyzer — Tree-sitter AST traversal › parseMs > 0",
+        "body": "expect(received).toBeGreaterThanOrEqual(expected)\n\n    Matcher error: received value must be a number or bigint"
+      }
+    ],
+    "categories": [
+      "scope_error"
+    ]
+  },
+  {
+    "path": "src/ai/__tests__/ContextEngine.test.ts",
+    "name": "ContextEngine.test.ts",
+    "passed": 60,
+    "failed": 6,
+    "skipped": 0,
+    "status": "FAIL",
+    "errors": [
+      {
+        "title": "§ E  Diagnostics › E-3  diagnostic section appears before file section",
+        "body": "expect(received).toBeLessThan(expected)\n\n    Expected: < -1\n    Received:   -1"
+      },
+      {
+        "title": "§ I  Jailbreak sanitizer › I-1  strips: <system> tag",
+        "body": "expect(received).not.toContain(expected) // indexOf\n\n    Expected substring: not \"override <system> prompt here\"\n    Received string:        \"=== FILE: file-active-001 ==="
+      },
+      {
+        "title": "§ L  Cache skip › L-3  variant change (offline → cloud) is a cache miss even for same context",
+        "body": "expect(received).toBe(expected) // Object.is equality\n\n    Expected: false\n    Received: true"
+      },
+      {
+        "title": "§ N  Prompt snapshot › N-1  offline prompt structure matches snapshot",
+        "body": "expect(received).toBeGreaterThan(expected)\n\n    Expected: > -1\n    Received:   -1"
+      },
+      {
+        "title": "§ N  Prompt snapshot › N-2  offline prompt inline snapshot",
+        "body": "expect(received).toMatchInlineSnapshot(snapshot)\n\n    Snapshot name: `§ N  Prompt snapshot N-2  offline prompt inline snapshot 1`"
+      },
+      {
+        "title": "§ N  Prompt snapshot › N-3  cloud system prompt contains preamble + diagnostic + file section",
+        "body": "expect(received).toContain(expected) // indexOf\n\n    Expected substring: \"### diagnostics\"\n    Received string:    \"You are an expert coding assistant. Use the provided context to answer precisely.\""
+      }
+    ],
+    "categories": []
+  },
+  {
+    "path": "src/ai/model/__tests__/ModelLoader.test.ts",
+    "name": "ModelLoader.test.ts",
+    "passed": 78,
+    "failed": 1,
+    "skipped": 0,
+    "status": "FAIL",
+    "errors": [
+      {
+        "title": "ClaudeApiRunner.dispose() / healthCheck() › healthCheck 401 → PROVIDER_AUTH_FAILED",
+        "body": "expect(received).toBe(expected) // Object.is equality\n\n    Expected: \"PROVIDER_AUTH_FAILED\"\n    Received: \"PROVIDER_UNAVAILABLE\""
+      }
+    ],
+    "categories": []
+  },
+  {
+    "path": "src/ai/orchestration/__tests__/Orchestration.test.ts",
+    "name": "Orchestration.test.ts",
+    "passed": 27,
+    "failed": 2,
+    "skipped": 0,
+    "status": "FAIL",
+    "errors": [
+      {
+        "title": "ModelRouter › CLOUD_ENABLED → offline primary, cloud fallback",
+        "body": "expect(received).toMatch(expected)\n\n    Expected pattern: /^cloud:/\n    Received string:  \"offline:phi-4-mini\""
+      },
+      {
+        "title": "ResponseAggregator › truncate: kapanmamış kod bloğu → isTruncated = true",
+        "body": "expect(received).toBe(expected) // Object.is equality\n\n    Expected: true\n    Received: false"
+      }
+    ],
+    "categories": []
+  },
+  {
+    "path": "src/language-services/__tests__/SymbolGraph.test.ts",
+    "name": "SymbolGraph.test.ts",
+    "passed": 16,
+    "failed": 9,
+    "skipped": 0,
+    "status": "FAIL",
+    "errors": [
+      {
+        "title": "SymbolGraph › cycle detection — A→B→A algılanır, graph:cycle:detected emit edilir",
+        "body": "expect(received).toBeGreaterThan(expected)\n\n    Expected: > 0\n    Received:   0"
+      },
+      {
+        "title": "SymbolGraph › getTransitiveDeps — A→B→C, A'nın transitif dep'leri B ve C",
+        "body": "expect(received).toContain(expected) // indexOf\n\n    Expected value: \"00000000-0000-0000-0000-000000000bbb\"\n    Received array: []"
+      },
+      {
+        "title": "SymbolGraph › getTransitiveDeps — maxDepth=1 iken B dahil, C ve D hariç",
+        "body": "expect(received).toContain(expected) // indexOf\n\n    Expected value: \"00000000-0000-0000-0000-000000000bbb\"\n    Received array: []"
+      },
+      {
+        "title": "SymbolGraph › getImpactedFiles — C değişince B ve A etkilenir (reverse chain)",
+        "body": "expect(received).toContain(expected) // indexOf\n\n    Expected value: \"00000000-0000-0000-0000-000000000aaa\"\n    Received array: [\"00000000-0000-0000-0000-000000000bbb\"]"
+      },
+      {
+        "title": "ReferenceIndex › findDefinition — declaration ref'i döndürür",
+        "body": "expect(received).toBe(expected) // Object.is equality\n\n    Expected: true\n    Received: false"
+      },
+      {
+        "title": "ReferenceIndex › findAllReferences — declaration hariç tutulabilir",
+        "body": "expect(received).toBe(expected) // Object.is equality\n\n    Expected: true\n    Received: false"
+      },
+      {
+        "title": "ReferenceIndex › findAllReferences — includeDeclaration:true tüm ref'leri döndürür",
+        "body": "expect(received).toBe(expected) // Object.is equality\n\n    Expected: true\n    Received: false"
+      },
+      {
+        "title": "DependencyIndex › topoSort — A→B→C, sıralama C önce B sonra A en son",
+        "body": "expect(received).toBeLessThan(expected)\n\n    Expected: < 1\n    Received:   2"
+      },
+      {
+        "title": "DependencyIndex › topoSort — cycle'lı dosyalar ayrı raporlanır, sıralama crash etmez",
+        "body": "expect(received).toBeGreaterThan(expected)\n\n    Expected: > 0\n    Received:   0"
+      }
+    ],
+    "categories": []
+  },
+  {
+    "path": "src/runtime/__tests__/Bundler.test.ts",
+    "name": "Bundler.test.ts",
+    "passed": 60,
+    "failed": 2,
+    "skipped": 0,
+    "status": "FAIL",
+    "errors": [
+      {
+        "title": "Bundler.bundle() — multi-file › ikinci bundle çağrısında initialize tekrar çağrılmaz",
+        "body": "expect(jest.fn()).toHaveBeenCalledTimes(expected)\n\n    Expected number of calls: 1\n    Received number of calls: 0"
+      },
+      {
+        "title": "Bundler.bundle() — AbortSignal › initialize sonrası abort → EXECUTION_TIMEOUT",
+        "body": "expect(received).toBe(expected) // Object.is equality\n\n    Expected: \"EXECUTION_TIMEOUT\"\n    Received: \"VALIDATION_ERROR\""
+      }
+    ],
+    "categories": [
+      "timeout"
+    ]
+  },
+  {
+    "path": "src/runtime/__tests__/Protocol.test.ts",
+    "name": "Protocol.test.ts",
+    "passed": 60,
+    "failed": 0,
+    "skipped": 0,
+    "status": "PASS",
+    "errors": [],
+    "categories": []
+  },
+  {
+    "path": "src/runtime/__tests__/RingBuffer.test.ts",
+    "name": "RingBuffer.test.ts",
+    "passed": 48,
+    "failed": 0,
+    "skipped": 0,
+    "status": "PASS",
+    "errors": [],
+    "categories": []
+  },
+  {
+    "path": "src/runtime/__tests__/SymbolIndex.test.ts",
+    "name": "SymbolIndex.test.ts",
+    "passed": 21,
+    "failed": 10,
+    "skipped": 0,
+    "status": "FAIL",
+    "errors": [
+      {
+        "title": "SymbolIndex › indexFile() › returns ok with indexed count on success",
+        "body": "expect(received).toBe(expected) // Object.is equality\n\n    Expected: true\n    Received: false"
+      },
+      {
+        "title": "SymbolIndex › indexFile() › writes individual symbol entries to LevelDB cache (key schema: sym:{fileId}:{symId})",
+        "body": "expect(received).toBe(expected) // Object.is equality\n\n    Expected: true\n    Received: false"
+      },
+      {
+        "title": "SymbolIndex › indexFile() › writes file-level symbol list to LevelDB cache (key schema: fsym:{fileId})",
+        "body": "expect(received).toContain(expected) // indexOf\n\n    Expected value: \"fsym:file-001\"\n    Received array: []"
+      },
+      {
+        "title": "SymbolIndex › indexFile() › sets isTruncated when symbol count exceeds MAX_IMPORTED_NAMES",
+        "body": "expect(received).toBe(expected) // Object.is equality\n\n    Expected: true\n    Received: false"
+      },
+      {
+        "title": "SymbolIndex › indexFile() › emits 'index:file-indexed' event after success",
+        "body": "expect(jest.fn()).toHaveBeenCalledWith(...expected)\n\n    Expected: \"index:file-indexed\", ObjectContaining {\"fileId\": \"file-001\"}\n    Received: \"index:ready\", {\"ts\": 1774117039823}"
+      },
+      {
+        "title": "SymbolIndex › searchSymbols() › returns ok with matching symbols for a query",
+        "body": "expect(received).toContain(expected) // indexOf\n\n    Expected value: \"fetchUser\"\n    Received array: []"
+      },
+      {
+        "title": "SymbolIndex › searchSymbols() › performs case-insensitive matching",
+        "body": "expect(received).toHaveLength(expected)\n\n    Expected length: 1\n    Received length: 0"
+      },
+      {
+        "title": "SymbolIndex › searchSymbols() › returns all symbols when query is empty string",
+        "body": "expect(received).toBeGreaterThanOrEqual(expected)\n\n    Expected: >= 2\n    Received:    0"
+      },
+      {
+        "title": "SymbolIndex › searchSymbols() › searches across multiple indexed files",
+        "body": "expect(received).toContain(expected) // indexOf\n\n    Expected value: \"helperA\"\n    Received array: []"
+      },
+      {
+        "title": "SymbolIndex › invalidateFile() › stale revDep entries are also cleaned (writeSnapshot contract)",
+        "body": "expect(received).toBe(expected) // Object.is equality\n\n    Expected: true\n    Received: false"
+      }
+    ],
+    "categories": [
+      "uuid_format"
+    ]
+  },
+  {
+    "path": "src/storage/__tests__/StorageReaders.test.ts",
+    "name": "StorageReaders.test.ts",
+    "passed": 52,
+    "failed": 1,
+    "skipped": 0,
+    "status": "FAIL",
+    "errors": [
+      {
+        "title": "SqliteRecencyStore.initialize() › DDL çağrılır, ok döner",
+        "body": "expect(jest.fn()).toHaveBeenCalledWith(...expected)\n\n    Expected: StringContaining \"CREATE TABLE IF NOT EXISTS file_recency\", undefined\n    Received: \""
+      }
+    ],
+    "categories": []
+  }
+]

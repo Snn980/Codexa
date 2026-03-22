@@ -89,6 +89,11 @@ function makeContainer(results: UpdateCheckResult[] | null = null, intervalMs = 
       if (results === null) return null;
       return { ok: true, data: results };
     }),
+    eventBus: {
+      on:   jest.fn(() => () => {}),
+      off:  jest.fn(),
+      emit: jest.fn(),
+    },
   } as any;
 }
 
@@ -173,6 +178,7 @@ describe("useOTAUpdate", () => {
       const container = {
         isReady: true,
         checkForModelUpdates: jest.fn(() => new Promise<any>((r) => { resolve = () => r({ ok: true, data: [] }); })),
+        eventBus: { on: jest.fn(() => () => {}), off: jest.fn(), emit: jest.fn() },
       } as any;
 
       const { result } = renderHook(() =>
@@ -195,6 +201,7 @@ describe("useOTAUpdate", () => {
         checkForModelUpdates: jest.fn(async () => ({
           ok: false, code: "MANIFEST_FETCH_FAILED", message: "Network hatası",
         })),
+      eventBus: { on: jest.fn(() => () => {}), off: jest.fn(), emit: jest.fn() },
       } as any;
       const { result } = renderHook(() =>
         useOTAUpdate({ container, intervalMs: 0 }),
@@ -207,6 +214,7 @@ describe("useOTAUpdate", () => {
       const container = {
         isReady: true,
         checkForModelUpdates: jest.fn(async () => { throw new Error("Unexpected"); }),
+      eventBus: { on: jest.fn(() => () => {}), off: jest.fn(), emit: jest.fn() },
       } as any;
       const { result } = renderHook(() =>
         useOTAUpdate({ container, intervalMs: 0 }),
@@ -340,7 +348,7 @@ describe("useModelSelector — OTA badge entegrasyonu", () => {
       useModelSelector({ permissionGate: gate, eventBus: eventBus as any }),
     );
     act(() => {
-      eventBus.emit("permission:status:changed", { status: "offline-only" });
+      eventBus.emit("permission:status:changed", { status: "CLOUD_ENABLED" as any });
     });
     // Cloud model artık available değil — default'a düşmeli
     const id = result.current.selectedModelId;

@@ -42,3 +42,4 @@ afterAll(() => {
   console.warn  = originalWarn;
   console.error = originalError;
 });
+global.EXDevLauncher = null;

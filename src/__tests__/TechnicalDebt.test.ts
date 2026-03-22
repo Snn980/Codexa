@@ -14,7 +14,6 @@
  *  • StorageInitializer → MockSqliteDriver
  */
 
-import { describe, it, expect, vi, beforeEach } from "vitest";
 
 // T-8
 import { SqliteDriverBase } from "../storage/ISQLiteDriver";
@@ -48,7 +47,7 @@ class MockSqliteDriver extends SqliteDriverBase {
   readonly executed: string[] = [];
   private _failNext = false;
 
-  run = vi.fn(async (sql: string): Promise<RunResult> => {
+  run = jest.fn(async (sql: string): Promise<RunResult> => {
     this.executed.push(sql.trim().slice(0, 40));
     if (this._failNext && sql !== "ROLLBACK" && sql !== "COMMIT") {
       this._failNext = false;
@@ -57,8 +56,8 @@ class MockSqliteDriver extends SqliteDriverBase {
     return { rowsAffected: 1 };
   });
 
-  get = vi.fn(async () => null);
-  all = vi.fn(async () => []);
+  get = jest.fn(async () => null);
+  all = jest.fn(async () => []);
 
   failNext() { this._failNext = true; }
 }
@@ -100,7 +99,7 @@ class MockLevelDb implements DepLevelDb {
 function makeMockBus() {
   const events: Array<{ event: string; payload: unknown }> = [];
   const bus = {
-    emit: vi.fn((event: string, payload: unknown) => {
+    emit: jest.fn((event: string, payload: unknown) => {
       events.push({ event, payload });
     }),
     events,
@@ -152,7 +151,7 @@ function makeTsNode(
 }
 
 function makeTree(root: TSNode): TSTree {
-  return { rootNode: root, delete: vi.fn() };
+  return { rootNode: root, delete: jest.fn() };
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -226,7 +225,7 @@ describe("T-4: TreeSitterAdapter — WASM lazy load", () => {
 
   it("ilk parse'da loader.loadParser() çağrılır", async () => {
     const loader = new MockTreeSitterLoader();
-    const spy    = vi.spyOn(loader, "loadParser");
+    const spy    = jest.spyOn(loader, "loadParser");
     const adapter = new TreeSitterAdapter(loader);
     await adapter.parse("x");
     expect(spy).toHaveBeenCalledTimes(1);
@@ -234,7 +233,7 @@ describe("T-4: TreeSitterAdapter — WASM lazy load", () => {
 
   it("ikinci parse'da loader tekrar çağrılmaz (cache)", async () => {
     const loader = new MockTreeSitterLoader();
-    const spy    = vi.spyOn(loader, "loadParser");
+    const spy    = jest.spyOn(loader, "loadParser");
     const adapter = new TreeSitterAdapter(loader);
     await adapter.parse("a");
     await adapter.parse("b");
@@ -243,7 +242,7 @@ describe("T-4: TreeSitterAdapter — WASM lazy load", () => {
 
   it("concurrent parse → loader bir kez çağrılır", async () => {
     const loader = new MockTreeSitterLoader();
-    const spy    = vi.spyOn(loader, "loadParser");
+    const spy    = jest.spyOn(loader, "loadParser");
     const adapter = new TreeSitterAdapter(loader);
     await Promise.all([adapter.parse("a"), adapter.parse("b"), adapter.parse("c")]);
     expect(spy).toHaveBeenCalledTimes(1);

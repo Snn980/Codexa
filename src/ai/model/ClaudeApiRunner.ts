@@ -442,7 +442,7 @@ export class ClaudeApiRunner implements IModelRunner {
         }
       },
       ModelErrorCode.INFERENCE_FAILED,
-      "Cloud inference failed",
+      undefined,  // orijinal hata mesajını koru → HTTP 401 sınıflandırması
     );
 
     // ── Cleanup ────────────────────────────────────────────────────────
@@ -502,6 +502,7 @@ export class ClaudeApiRunner implements IModelRunner {
   async healthCheck(): Promise<Result<void>> {
     if (this._disposed) return err(ModelErrorCode.INFERENCE_FAILED, "Runner disposed");
 
+    // healthCheck: 401 → PROVIDER_AUTH_FAILED
     const result = await tryResultAsync(
       async () => {
         const resp = await this._http.post(
@@ -513,7 +514,6 @@ export class ClaudeApiRunner implements IModelRunner {
         this._assertSuccessStatus(resp.status, resp.body);
       },
       ModelErrorCode.PROVIDER_UNAVAILABLE,
-      "API health check failed",
     );
 
     if (!result.ok) {

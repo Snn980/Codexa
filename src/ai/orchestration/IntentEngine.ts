@@ -67,6 +67,8 @@ const RULES: readonly Rule[] = [
     pattern: /describe\(|it\(|expect\(|toBe\(|mock.*function|spy.*on|test.*coverage/i },
 
   // ── doc_write ──────────────────────────────────────────────────────────────
+  { category: IC.DOC_WRITE, weight: 0.97,
+    pattern: /dokümantasyon|yorum\s*yaz|write.*doc/i },
   { category: IC.DOC_WRITE, weight: 0.95,
     pattern: /doc.*yaz|yaz.*doc|jsdoc|tsdoc|readme|comment.*ekle|ekle.*comment|document.*this|açıklama.*ekle/i },
   { category: IC.DOC_WRITE, weight: 0.8,

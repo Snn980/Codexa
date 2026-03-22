@@ -236,9 +236,9 @@ describe("Bundler.bundle() — tek dosya", () => {
 
     expect(result.ok).toBe(true);
     if (!result.ok) return;
-    expect(result.value.bundledCode).toBe(code);
-    expect(result.value.sizeBytes).toBe(code.length);
-    expect(result.value.executionId).toBe(EXEC_ID);
+    expect(result.data.bundledCode).toBe(code);
+    expect(result.data.sizeBytes).toBe(code.length);
+    expect(result.data.executionId).toBe(EXEC_ID);
   });
 
   test("'./' prefix'li entryPath normalize edilir", async () => {
@@ -258,7 +258,7 @@ describe("Bundler.bundle() — tek dosya", () => {
     }));
     expect(result.ok).toBe(true);
     if (!result.ok) return;
-    expect(result.value.bundledCode).toBe("win_code");
+    expect(result.data.bundledCode).toBe("win_code");
   });
 });
 
@@ -336,7 +336,7 @@ describe("Bundler.bundle() — multi-file", () => {
     expect(esbuild.build).toHaveBeenCalledTimes(1);
     expect(result.ok).toBe(true);
     if (!result.ok) return;
-    expect(result.value.bundledCode).toBe("(function(){})()");
+    expect(result.data.bundledCode).toBe("(function(){})()");
   });
 
   test("esbuild.build'e doğru entryPoint geçilir", async () => {
@@ -359,6 +359,7 @@ describe("Bundler.bundle() — multi-file", () => {
     const bundler = new Bundler("test.wasm", makeEsbuildMock());
     expect(bundler.isReady).toBe(false);
     await bundler.bundle(makePayload({
+      entryPath: "a.js",
       files: { "a.js": "1", "b.js": "2" },
     }));
     expect(bundler.isReady).toBe(true);
@@ -368,9 +369,10 @@ describe("Bundler.bundle() — multi-file", () => {
     const esbuild = makeEsbuildMock();
     const bundler = new Bundler("test.wasm", esbuild);
     const files   = { "a.js": "1", "b.js": "2" };
+    const payload = makePayload({ entryPath: "a.js", files });
 
-    await bundler.bundle(makePayload({ files }));
-    await bundler.bundle(makePayload({ files }));
+    await bundler.bundle(payload);
+    await bundler.bundle(payload);
 
     expect(esbuild.initialize).toHaveBeenCalledTimes(1);
   });
@@ -392,6 +394,7 @@ describe("Bundler.bundle() — esbuild hata senaryoları", () => {
     };
     const bundler = new Bundler("test.wasm", esbuild);
     const result  = await bundler.bundle(makePayload({
+      entryPath: "a.js",
       files: { "a.js": "const x =", "b.js": "ok" },
     }));
     expect(result.ok).toBe(false);
@@ -430,6 +433,8 @@ describe("Bundler.bundle() — esbuild hata senaryoları", () => {
     };
     const bundler = new Bundler("test.wasm", esbuild);
     const result  = await bundler.bundle(makePayload({
+      entryPath: "a.js",
+      entryPath: "a.js",
       files: { "a.js": "1", "b.js": "2" },
     }));
     expect(result.ok).toBe(false);
@@ -444,6 +449,8 @@ describe("Bundler.bundle() — esbuild hata senaryoları", () => {
     };
     const bundler = new Bundler("test.wasm", esbuild);
     const result  = await bundler.bundle(makePayload({
+      entryPath: "a.js",
+      entryPath: "a.js",
       files: { "a.js": "1", "b.js": "2" },
     }));
     expect(result.ok).toBe(false);
@@ -484,7 +491,7 @@ describe("Bundler.bundle() — AbortSignal", () => {
     };
     const bundler = new Bundler("test.wasm", esbuild);
     const result  = await bundler.bundle(
-      makePayload({ files: { "a.js": "1", "b.js": "2" } }),
+      makePayload({ entryPath: "a.js", files: { "a.js": "1", "b.js": "2" } }),
       ctrl.signal,
     );
     expect(result.ok).toBe(false);
@@ -592,6 +599,8 @@ describe("Bundler — dispose sonrası işlemler", () => {
     const bundler = new Bundler("test.wasm", makeEsbuildMock());
     bundler.dispose();
     const result = await bundler.bundle(makePayload({
+      entryPath: "a.js",
+      entryPath: "a.js",
       files: { "a.js": "1", "b.js": "2" },
     }));
     expect(result.ok).toBe(false);

@@ -277,7 +277,7 @@ describe("AIWorkerClient", () => {
 
       const result = await promise;
       expect((result as any).ok).toBe(false);
-      expect((result as any).code).toBe("MODEL_NOT_LOADED");
+      expect((result as any).error?.code).toBe("MODEL_NOT_LOADED");
     });
 
     it("seq sırası bozulursa SEQ_OUT_OF_ORDER hatası", async () => {
@@ -305,7 +305,7 @@ describe("AIWorkerClient", () => {
 
       const result = await promise;
       expect((result as any).ok).toBe(false);
-      expect((result as any).code).toBe("AI_SEQ_OUT_OF_ORDER");
+      expect((result as any).error?.code).toBe("AI_SEQ_OUT_OF_ORDER");
     });
   });
 
@@ -358,7 +358,7 @@ describe("AIWorkerClient", () => {
       const result = await gen.next();
       expect(result.done).toBe(true);
       expect((result.value as any).ok).toBe(false);
-      expect((result.value as any).code).toBe("AI_WORKER_NOT_READY");
+      expect((result.value as any).error?.code).toBe("AI_WORKER_NOT_READY");
     });
 
     it("dispose → tekrar dispose güvenli", () => {

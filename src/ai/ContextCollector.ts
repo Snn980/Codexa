@@ -54,6 +54,7 @@ export class ContextCollector {
       kind:    "code",
       fileId:  snapshot.activeFileId,
       content: snapshot.activeContent,
+      label:   (() => { const id = String(snapshot.activeFileId); return id.includes('.') ? id : id + '.ts'; })(),
       line:    0,
     });
 
@@ -102,7 +103,7 @@ export class ContextCollector {
         id:      `diag-${diag.line}-${diag.col}`,
         kind:    "diagnostic",
         fileId:  diag.fileId,
-        content: `[${diag.severity}] ${diag.message}`,
+        content: `${diag.severity.toUpperCase()}${diag.source ? ` [${diag.source}]` : ''}${diag.label ? ` ${diag.label}` : ''}:${diag.line}:${diag.col} — ${diag.message}`,
         line:    diag.line,
         pinned:  diag.severity === "error",
       });

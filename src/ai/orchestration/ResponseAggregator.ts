@@ -131,6 +131,9 @@ export class ResponseAggregator {
   }
 
   private _checkTruncated(response: string): boolean {
+    // Tek sayıda ``` varsa kapanmamış kod bloğu var
+    const fenceCount = (response.match(/```/g) ?? []).length;
+    if (fenceCount % 2 !== 0) return true;
     return TRUNCATION_PATTERNS.some(p => p.test(response));
   }
 }

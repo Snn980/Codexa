@@ -556,9 +556,12 @@ export class RuntimeWorker {
  */
 const worker = new RuntimeWorker();
 
-self.onmessage = (event: MessageEvent) => {
-  worker.handleMessage(event);
-};
+// Jest ortamında self tanımlı değil — sadece Worker context'inde çalıştır
+if (typeof self !== 'undefined' && typeof self.addEventListener === 'function') {
+  self.onmessage = (event: MessageEvent) => {
+    worker.handleMessage(event);
+  };
+}
 
 // `onclose` DedicatedWorkerGlobalScope spec'inde yok — addEventListener zorunlu.
 // `self.onclose = ...` browser'larda sessizce yoksayılır, cleanup çalışmaz.

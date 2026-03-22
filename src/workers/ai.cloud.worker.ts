@@ -3,9 +3,9 @@
  *
  * T-P9-1 KAPANDI
  *
- * DÜZELTME #3 — encryptedKey naming güvenlik tutarsızlığı:
- *   ❌ { type: "SET_KEY", provider, encryptedKey: string }
- *      Alan adı "encryptedKey" → değer aslında plaintext API key.
+ * DÜZELTME #3 — key naming güvenlik tutarsızlığı:
+ *   ❌ { type: "SET_KEY", provider, key: string }
+ *      Alan adı "key" → değer aslında plaintext API key.
  *      Yanlış isim → kod okuyucu "bu değer zaten şifreli, tekrar şifrelemeye gerek yok"
  *      diye düşünebilir → güvenlik açığı riskine yol açar.
  *
@@ -64,7 +64,7 @@ async function createWebWorkerKeyStore() {
     const msg = e.data as {
       type?:     string;
       provider?: string;
-      key?:      string;   // ❌ eskisi: encryptedKey — yanıltıcıydı
+      key?:      string;   // ❌ eskisi: key — düzeltildi
     };
 
     if (msg?.type !== "SET_KEY") return;

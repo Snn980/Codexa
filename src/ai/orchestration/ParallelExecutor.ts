@@ -146,6 +146,11 @@ export class ParallelExecutor {
     const combinedSignal = anySignal(signals);
 
     try {
+      // Sinyal zaten iptal edildiyse başlatma
+      if (combinedSignal.aborted) {
+        return err('ABORTED', 'Request aborted before start');
+      }
+
       let fullText = '';
 
       const gen = this._client.streamChat(

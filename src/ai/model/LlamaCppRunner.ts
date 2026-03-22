@@ -310,7 +310,7 @@ export class LlamaCppRunner implements IModelRunner {
     // ── Prompt büyüklüğü kontrolü ──────────────────────────────────────
     const estimatedInputTokens = this.estimateTokens(request.messages);
     const modelMeta = this.supportedModels.find((m) => m.key === request.modelKey);
-    const contextWindow = modelMeta?.contextWindow ?? this._cfg.contextSize;
+    const contextWindow = Math.min(modelMeta?.contextWindow ?? this._cfg.contextSize, this._cfg.contextSize);
     const maxOutputTokens = request.maxTokens ?? 512;
 
     if (estimatedInputTokens + maxOutputTokens > contextWindow) {

@@ -10,6 +10,32 @@
 
 // ─── Mocks ────────────────────────────────────────────────────────────────────
 
+jest.mock('expo-modules-core', () => ({
+  NativeModulesProxy: {},
+  NativeUnimoduleProxy: {},
+  EventEmitter: jest.fn().mockImplementation(() => ({
+    addListener: jest.fn(),
+    removeAllListeners: jest.fn(),
+  })),
+  requireNativeModule: jest.fn(() => ({})),
+}));
+
+jest.mock('@unimodules/react-native-adapter', () => ({
+  NativeModulesProxy: {},
+  NativeUnimoduleProxy: {},
+}), { virtual: true });
+
+jest.mock('react-native-mmkv', () => ({
+  MMKV: jest.fn().mockImplementation(() => ({
+    set: jest.fn(), get: jest.fn(), delete: jest.fn(),
+    contains: jest.fn(() => false), getAllKeys: jest.fn(() => []),
+  })),
+}));
+
+jest.mock('react-native-nitro-modules', () => ({
+  NativeNitroModules: {},
+}), { virtual: true });
+
 jest.mock('expo-task-manager', () => ({
   isTaskDefined:           jest.fn(() => false),
   defineTask:              jest.fn(),
@@ -32,7 +58,11 @@ jest.mock('@react-native-async-storage/async-storage', () => ({
 }));
 
 jest.mock('react-native', () => ({
-  Platform: { OS: 'ios' },
+  Platform: { OS: 'ios', select: (o) => o.ios ?? o.default },
+  NativeModules: { NativeUnimoduleProxy: {} },
+  StyleSheet: { create: (s) => s, flatten: (s) => s },
+  View: 'View', Text: 'Text', TouchableOpacity: 'TouchableOpacity',
+  FlatList: 'FlatList', ScrollView: 'ScrollView', Pressable: 'Pressable',
 }));
 
 jest.mock('@sentry/react-native', () => ({
@@ -241,13 +271,13 @@ describe('ChatExportImport', () => {
 
   function makeMockRepo(sessions: SessionMeta[], messages: ChatMessage[][]) {
     return {
-      listSessions:   jest.fn(() => ({ ok: true, value: sessions })),
+      listSessions:   jest.fn(() => ({ ok: true, data: sessions })),
       getMessages:    jest.fn((id: string) => {
         const idx = sessions.findIndex(s => s.id === id);
-        return { ok: true, value: messages[idx] ?? [] };
+        return { ok: true, data: messages[idx] ?? [] };
       }),
-      createSession:  jest.fn(() => ({ ok: true, value: sessions[0] })),
-      deleteSession:  jest.fn(() => ({ ok: true, value: undefined })),
+      createSession:  jest.fn(() => ({ ok: true, data: sessions[0] })),
+      deleteSession:  jest.fn(() => ({ ok: true, data: undefined })),
     } as unknown as import('../storage/chat/ChatHistoryRepository').ChatHistoryRepository;
   }
 
@@ -261,7 +291,7 @@ describe('ChatExportImport', () => {
     expect(result.ok).toBe(true);
     if (!result.ok) return;
 
-    const parsed = JSON.parse(result.value);
+    const parsed = JSON.parse(result.data);
     expect(parsed.version).toBe(1);
     expect(parsed.sessions).toHaveLength(1);
     expect(parsed.sessions[0].meta.id).toBe('s1');
@@ -285,8 +315,8 @@ describe('ChatExportImport', () => {
 
     expect(result.ok).toBe(true);
     if (!result.ok) return;
-    expect(result.value.imported).toBe(1);
-    expect(result.value.skipped).toBe(0);
+    expect(result.data.imported).toBe(1);
+    expect(result.data.skipped).toBe(0);
   });
 
   test('yanlış version → IMPORT_VERSION_MISMATCH hatası', async () => {
@@ -323,8 +353,8 @@ describe('ChatExportImport', () => {
     const result = await exporter.importFrom(payload, { onDuplicate: 'skip' });
     expect(result.ok).toBe(true);
     if (!result.ok) return;
-    expect(result.value.skipped).toBe(1);
-    expect(result.value.imported).toBe(0);
+    expect(result.data.skipped).toBe(1);
+    expect(result.data.imported).toBe(0);
   });
 });
 
@@ -397,8 +427,8 @@ describe('SQLiteChatRepository', () => {
 
     expect(result.ok).toBe(true);
     if (!result.ok) return;
-    expect(result.value.id).toBe('s1');
-    expect(result.value.title).toBe('Test Session');
+    expect(result.data.id).toBe('s1');
+    expect(result.data.title).toBe('Test Session');
     expect(driver.transaction).toHaveBeenCalled();
   });
 
@@ -455,10 +485,10 @@ describe('ChatStorageMigrator', () => {
     ).map(s => ({ ...s, messageCount: messagesPerSession }));
 
     return {
-      listSessions: jest.fn(() => ({ ok: true, value: sessions })),
+      listSessions: jest.fn(() => ({ ok: true, data: sessions })),
       getMessages:  jest.fn(() => ({
         ok: true,
-        value: Array.from({ length: messagesPerSession }, () =>
+        data: Array.from({ length: messagesPerSession }, () =>
           makeMessage('user', 'test mesajı'),
         ),
       })),
@@ -503,8 +533,8 @@ describe('ChatStorageMigrator', () => {
 
     expect(result.ok).toBe(true);
     if (!result.ok) return;
-    expect(result.value.sessionsMigrated).toBe(3);
-    expect(result.value.messagesMigrated).toBe(12); // 3 × 4
+    expect(result.data.sessionsMigrated).toBe(3);
+    expect(result.data.messagesMigrated).toBe(12); // 3 × 4
     expect(mmkv.clearAll).toHaveBeenCalled();
     expect(AsyncStorage.setItem).toHaveBeenCalledWith(
       'chat_storage_migrated_to_sqlite',

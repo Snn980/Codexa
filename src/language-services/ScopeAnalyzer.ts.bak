@@ -1,0 +1,154 @@
+// ScopeAnalyzer.ts
+
+export enum ScopeKind {
+  MODULE = "MODULE",
+  FUNCTION = "FUNCTION",
+  CLASS = "CLASS",
+  ARROW_FUNCTION = "ARROW_FUNCTION",
+}
+
+export enum ErrorCode {
+  PARSE_ERROR = "PARSE_ERROR",
+  SCOPE_SYMBOL_NOT_FOUND = "SCOPE_SYMBOL_NOT_FOUND",
+}
+
+type Ok<T> = { ok: true; data: T };
+type Err = { ok: false; error: { code: ErrorCode; message?: string } };
+type Result<T> = Ok<T> | Err;
+
+const ok = <T>(data: T): Ok<T> => ({ ok: true, data });
+const err = (code: ErrorCode, message?: string): Err => ({
+  ok: false,
+  error: { code, message },
+});
+
+// ---- Tree-sitter node tipi (test mock’una uyumlu) ----
+type TSNode = {
+  type: string;
+  startPosition: { row: number };
+  endPosition: { row: number };
+  namedChildren?: TSNode[];
+  childForFieldName?: (name: string) => TSNode | null;
+  text?: string;
+};
+
+type Scope = {
+  kind: ScopeKind;
+  name?: string;
+  startRow: number;
+  endRow: number;
+  children: Scope[];
+};
+
+type AnalyzeResult = {
+  root: Scope;
+  parseMs: number;
+};
+
+export class ScopeAnalyzer {
+  private _adapter: any;
+
+  constructor(adapter: any) {
+    this._adapter = adapter;
+  }
+
+  // 🔥 KRİTİK: node → scope mapping
+  private _nodeTypeToScopeKind(type: string): ScopeKind | null {
+    switch (type) {
+      case "program":
+        return ScopeKind.MODULE;
+      case "function_declaration":
+        return ScopeKind.FUNCTION;
+      case "class_declaration":
+        return ScopeKind.CLASS;
+      case "arrow_function":
+        return ScopeKind.ARROW_FUNCTION;
+      default:
+        return null;
+    }
+  }
+
+  private _createRootScope(): Scope {
+    return {
+      kind: ScopeKind.MODULE,
+      name: undefined,
+      startRow: 0,
+      endRow: Infinity,
+      children: [],
+    };
+  }
+
+  async analyze(source: string): Promise<Result<AnalyzeResult>> {
+    const start = performance.now?.() ?? Date.now();
+
+    if (!this._adapter) {
+      return err(ErrorCode.PARSE_ERROR, "Adapter missing");
+    }
+
+    const parsed = await this._adapter.parse(source);
+    if (!parsed?.ok) {
+      return err(ErrorCode.PARSE_ERROR, "Parse failed");
+    }
+
+    const rootNode: TSNode = parsed.data.rootNode;
+
+    const rootScope = this._createRootScope();
+
+    // ✅ Arrow function → this korunur
+    const walk = (node: TSNode, parent: Scope): void => {
+      const kind = this._nodeTypeToScopeKind(node.type);
+
+      let current = parent;
+
+      if (kind && kind !== ScopeKind.MODULE) {
+        const nameNode = node.childForFieldName?.("name");
+
+        const scope: Scope = {
+          kind,
+          name: nameNode?.text,
+          startRow: node.startPosition.row,
+          endRow: node.endPosition.row,
+          children: [],
+        };
+
+        parent.children.push(scope);
+        current = scope;
+      }
+
+      for (const child of node.namedChildren ?? []) {
+        walk(child, current);
+      }
+    };
+
+    walk(rootNode, rootScope);
+
+    const end = performance.now?.() ?? Date.now();
+
+    return ok({
+      root: rootScope,
+      parseMs: end - start,
+    });
+  }
+
+  // 🔍 Scope bulma (en dar scope)
+  findScopeAt(root: Scope, row: number): Result<Scope> {
+    let found: Scope | null = null;
+
+    const dfs = (scope: Scope) => {
+      if (row >= scope.startRow && row <= scope.endRow) {
+        found = scope;
+        for (const child of scope.children) {
+          dfs(child);
+        }
+      }
+    };
+
+    dfs(root);
+
+    if (!found) {
+      return err(ErrorCode.SCOPE_SYMBOL_NOT_FOUND);
+    }
+
+    return ok(found);
+  }
+}

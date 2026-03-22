@@ -134,28 +134,30 @@ export class DependencyIndex {
       return ok({ order: [triggeredBy], cycleMembers: new Set() });
     }
     try {
-      const visited   = new Set<string>();
-      const order:    string[] = [];
+      const visited      = new Set<string>();
+      const order:       string[] = [];
       const cycleMembers = new Set<string>();
-      const inStack   = new Set<string>();
 
-      const dfs = async (fileId: string): Promise<void> => {
-        if (inStack.has(fileId)) { cycleMembers.add(fileId); return; }
-        if (visited.has(fileId)) return;
-        inStack.add(fileId);
-        // Reverse deps (kimin bu dosyayı import ettiği)
-        const revDeps = await this.getReverseDeps(fileId);
-        for (const dep of revDeps) await dfs(dep);
-        inStack.delete(fileId);
-        visited.add(fileId);
-        order.push(fileId);
-      };
-
-      // triggered node önce
-      order.push(triggeredBy);
+      // BFS: triggered first, then importers level by level
+      // This gives: triggeredBy, direct importers, their importers, etc.
+      const queue: string[] = [triggeredBy];
       visited.add(triggeredBy);
-      const revDeps = await this.getReverseDeps(triggeredBy);
-      for (const dep of revDeps) await dfs(dep);
+
+      while (queue.length > 0) {
+        const fileId = queue.shift()!;
+        order.push(fileId);
+        const revDeps = await this.getReverseDeps(fileId);
+        for (const dep of revDeps) {
+          if (!visited.has(dep)) {
+            visited.add(dep);
+            queue.push(dep);
+          } else if (order.includes(dep)) {
+            // Already in order but we hit it again via different path → cycle
+            cycleMembers.add(dep);
+            cycleMembers.add(fileId);
+          }
+        }
+      }
 
       if (cycleMembers.size > 0) {
         this._bus.emit("index:cycle", { triggeredBy, cycleMembers: Array.from(cycleMembers) });
@@ -184,11 +186,7 @@ export class DependencyIndex {
       const newTargets = new Set(deps.map((d) => d.toFileId));
 
       // Forward yaz
-      if (deps.length > 0) {
-        await db.put(`dep_fwd:${fromFileId}`, JSON.stringify(deps));
-      } else {
-        await db.del(`dep_fwd:${fromFileId}`);
-      }
+      await db.put(`dep_fwd:${fromFileId}`, JSON.stringify(deps));
 
       // Stale reverse dep temizle
       for (const target of oldTargets) {

@@ -45,6 +45,18 @@ export interface ISQLiteDriver {
    */
   transaction<T = void>(fn: () => Promise<T>): Promise<T>;
 
+  /**
+   * execute() — DDL/DML için run() alias'ı (SymbolIndex API uyumu).
+   * Parameterized sorgu çalıştırır; SELECT için DEĞİL.
+   */
+  execute?(sql: string, params?: unknown[]): Promise<RunResult>;
+
+  /**
+   * query<T>() — SELECT için all() alias'ı (SymbolIndex API uyumu).
+   * Sonuç satırlarını dizi olarak döner.
+   */
+  query?<T>(sql: string, params?: unknown[]): Promise<T[]>;
+
   /** DDL + başlangıç verilerini hazırla */
   initialize?(): Promise<void>;
 

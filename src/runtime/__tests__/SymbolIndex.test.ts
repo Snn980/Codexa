@@ -75,7 +75,7 @@ function makeMockLevel(): jest.Mocked<ILevelDB> {
 
 function makeMockSql(): jest.Mocked<ISQLiteDriver> {
   return {
-    execute: jest.fn().mockResolvedValue({ rowsAffected: 0 }),
+    execute: jest.fn().mockResolvedValue({ rowsAffected: 1 }),
     query:   jest.fn().mockResolvedValue([]),
   };
 }
@@ -262,7 +262,7 @@ describe("SymbolIndex", () => {
     });
 
     it("returns err when storage write fails", async () => {
-      level.put.mockRejectedValueOnce(new Error("write error"));
+      level.batch.mockRejectedValueOnce(new Error("write error"));
 
       const result = await index.indexFile(FILE_ID, CONTENT, symbols);
 

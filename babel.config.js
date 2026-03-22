@@ -13,7 +13,7 @@ module.exports = function (api) {
   api.cache(true);
 
   return {
-    presets: ['babel-preset-expo'],
+    presets: [['babel-preset-expo', { unstable_transformImportMeta: true }]],
 
     plugins: [
       // @/ path aliasları (tsconfig.json'daki paths ile eşleşmeli)

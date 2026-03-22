@@ -50,7 +50,7 @@ function makeMockStorage() {
   const refStore     = new Map<string, ReferenceLocation[]>();
 
   return {
-    async init() { return { ok: true, value: undefined } as any; },
+    async init() { return { ok: true, data: undefined } as any; },
     async dispose() {},
 
     async writeSnapshot(snap: FileSnapshot) {
@@ -70,7 +70,7 @@ function makeMockStorage() {
         refStore.set(ref.symbolId, existing);
       }
 
-      return { ok: true, value: undefined } as any;
+      return { ok: true, data: undefined } as any;
     },
 
     async invalidateFile(fileId: UUID) {
@@ -86,32 +86,32 @@ function makeMockStorage() {
       }
       symbolStore.delete(fileId);
       depStore.delete(fileId);
-      return { ok: true, value: undefined } as any;
+      return { ok: true, data: undefined } as any;
     },
 
     async getSymbolsByFile(fileId: UUID) {
-      return { ok: true, value: symbolStore.get(fileId) ?? [] } as any;
+      return { ok: true, data: symbolStore.get(fileId) ?? [] } as any;
     },
     async getDependencies(fileId: UUID) {
-      return { ok: true, value: depStore.get(fileId) ?? [] } as any;
+      return { ok: true, data: depStore.get(fileId) ?? [] } as any;
     },
     async getReverseDependencies(fileId: UUID) {
-      return { ok: true, value: revDepStore.get(fileId) ?? [] } as any;
+      return { ok: true, data: revDepStore.get(fileId) ?? [] } as any;
     },
     async getReferences(symbolId: UUID) {
-      return { ok: true, value: refStore.get(symbolId) ?? [] } as any;
+      return { ok: true, data: refStore.get(symbolId) ?? [] } as any;
     },
     async findDefinitions(symbolId: UUID) {
       const allRefs = refStore.get(symbolId) ?? [];
-      return { ok: true, value: allRefs.filter((r: ReferenceLocation) => r.isDecl) } as any;
+      return { ok: true, data: allRefs.filter((r: ReferenceLocation) => r.isDecl) } as any;
     },
     async findSymbolsByName(name: string) {
       const all: SymbolNode[] = [];
       for (const syms of symbolStore.values()) all.push(...syms);
-      return { ok: true, value: all.filter((s: SymbolNode) => s.name.includes(name)) } as any;
+      return { ok: true, data: all.filter((s: SymbolNode) => s.name.includes(name)) } as any;
     },
     async getStats() {
-      return { ok: true, value: { symbolCount: 0, fileCount: 0, edgeCount: 0, referenceCount: 0, lastUpdated: 0 } } as any;
+      return { ok: true, data: { symbolCount: 0, fileCount: 0, edgeCount: 0, referenceCount: 0, lastUpdated: 0 } } as any;
     },
   } as any;
 }
@@ -406,8 +406,8 @@ describe("ReferenceIndex", () => {
 
     const result = await refs.findDefinition({ fileId: FILE_A, line: 0, col: 1 });
     expect(result.ok).toBe(true);
-    expect(result.ok && result.value?.symbol.id).toBe(SYM_FOO);
-    expect(result.ok && result.value?.location.isDecl).toBe(true);
+    expect(result.ok && result.data?.symbol.id).toBe(SYM_FOO);
+    expect(result.ok && result.data?.location.isDecl).toBe(true);
   });
 
   test("findAllReferences — declaration hariç tutulabilir", async () => {
@@ -427,10 +427,10 @@ describe("ReferenceIndex", () => {
     );
 
     expect(result.ok).toBe(true);
-    if (result.ok && result.value) {
-      expect(result.value.references.every(r => !r.isDecl)).toBe(true);
-      expect(result.value.readCount).toBe(2);
-      expect(result.value.writeCount).toBe(0);
+    if (result.ok && result.data) {
+      expect(result.data.references.every(r => !r.isDecl)).toBe(true);
+      expect(result.data.readCount).toBe(2);
+      expect(result.data.writeCount).toBe(0);
     }
   });
 
@@ -449,8 +449,8 @@ describe("ReferenceIndex", () => {
     );
 
     expect(result.ok).toBe(true);
-    if (result.ok && result.value) {
-      expect(result.value.references).toHaveLength(2);
+    if (result.ok && result.data) {
+      expect(result.data.references).toHaveLength(2);
     }
   });
 });
@@ -494,8 +494,8 @@ describe("DependencyIndex", () => {
 
     expect(result.ok).toBe(true);
     if (result.ok) {
-      expect(result.value[0].toFileId).toBe(FILE_B);
-      expect(result.value[0].isResolved).toBe(true);
+      expect(result.data[0].toFileId).toBe(FILE_B);
+      expect(result.data[0].isResolved).toBe(true);
     }
   });
 
@@ -506,7 +506,7 @@ describe("DependencyIndex", () => {
 
     expect(result.ok).toBe(true);
     if (result.ok) {
-      expect(result.value[0].isResolved).toBe(false);
+      expect(result.data[0].isResolved).toBe(false);
     }
   });
 
@@ -518,8 +518,8 @@ describe("DependencyIndex", () => {
 
     expect(result.ok).toBe(true);
     if (result.ok) {
-      expect(result.value).toHaveLength(2);
-      const kinds = result.value.map(e => e.kind);
+      expect(result.data).toHaveLength(2);
+      const kinds = result.data.map(e => e.kind);
       expect(kinds).toContain(EdgeKind.ImportStatic);
       expect(kinds).toContain(EdgeKind.TypeOnly);
     }
@@ -534,7 +534,7 @@ describe("DependencyIndex", () => {
     expect(result.ok).toBe(true);
 
     if (result.ok) {
-      const { order, cycles } = result.value;
+      const { order, cycles } = result.data;
       expect(cycles).toHaveLength(0);
 
       const idxA = order.indexOf(FILE_A);
@@ -553,7 +553,7 @@ describe("DependencyIndex", () => {
     const result = await deps.topoSort([FILE_A, FILE_B]);
     expect(result.ok).toBe(true);
     if (result.ok) {
-      expect(result.value.cycles.length).toBeGreaterThan(0);
+      expect(result.data.cycles.length).toBeGreaterThan(0);
     }
   });
 
@@ -566,8 +566,8 @@ describe("DependencyIndex", () => {
     const result = await deps.topoSort([FILE_A, FILE_C, FILE_D]);
     expect(result.ok).toBe(true);
     if (result.ok) {
-      expect(result.value.order).toHaveLength(3);
-      expect(result.value.cycles).toHaveLength(0);
+      expect(result.data.order).toHaveLength(3);
+      expect(result.data.cycles).toHaveLength(0);
     }
   });
 });

@@ -115,7 +115,8 @@ export class ContextEngine {
     const prompt = builder.build(limitResult.items, this._sanitizePrompt(opts.userPrompt), opts.variant);
 
     const contextHash = fnv1a(
-      limitResult.items.map((i) => i.id + i.content.slice(0, 50)).join("|"),
+      opts.variant + "|"
+      + limitResult.items.map((i) => i.id + i.content.slice(0, 50)).join("|"),
     );
 
     const cacheHit = this._lastHash === contextHash;
@@ -151,6 +152,7 @@ export class ContextEngine {
       .replace(/act as\b/gi, "[REDACTED]")
       .replace(/pretend to be\b/gi, "[REDACTED]")
       .replace(/<s>/gi, "[REDACTED]")
+      .replace(/<system>/gi, "[REDACTED]")
       .replace(/\u0000/g, "")
       .replace(/[\u202A-\u202E\u2066-\u2069]/g, "");
 
@@ -173,6 +175,7 @@ export class ContextEngine {
       .replace(/act as\b/gi, "[REDACTED]")
       .replace(/pretend to be\b/gi, "[REDACTED]")
       .replace(/<s>/gi, "[REDACTED]")
+      .replace(/<system>/gi, "[REDACTED]")
       .replace(/\u0000/g, "")
       .replace(/[\u202A-\u202E\u2066-\u2069]/g, "");
   }

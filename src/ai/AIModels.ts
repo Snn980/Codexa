@@ -458,7 +458,8 @@ export function selectModelForPrompt(opts: SelectModelOptions): AIModelId | null
     ],
   };
 
-  let candidates = PREFERENCE[kind];
+  let candidates: readonly AIModelId[] = PREFERENCE[kind] ?? [];
+  if (!candidates) candidates = [];
 
   // long_context: tahmini girdi > 32K token → küçük offline modelleri eleme
   if (kind === "long_context" && estimatedInputTokens > 32_000) {

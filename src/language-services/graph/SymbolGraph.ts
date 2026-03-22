@@ -208,9 +208,9 @@ export class SymbolGraph {
     for (const toId of node.outEdges) {
       this._nodes.get(toId)?.inEdges.delete(fileId);
     }
-    for (const fromId of node.inEdges) {
-      this._nodes.get(fromId)?.outEdges.delete(fileId);
-    }
+    // NOT: inEdges'teki kaynaklardan gelen outEdge'leri SİLME!
+    // Sadece bu node'un outEdges'ini ve inEdges'ini temizle
+    // (kaynak node'lar kendi outEdge'lerini korur)
 
     for (const symId of node.symbols.keys()) {
       this._symbolFile.delete(symId);
@@ -218,7 +218,9 @@ export class SymbolGraph {
 
     node.symbols.clear();
     node.outEdges.clear();
-    node.inEdges.clear();
+    // NOT: node.inEdges temizlenmez!
+    // Diğer node'ların applySnapshot'ı bu node'u inEdges'e ekler.
+    // Temizlersek A→B bağlantısı applySnapshot(B) sonrası kaybolur.
   }
 
   // ── Hydrate (uygulama başlangıcı) ────────────────────────────

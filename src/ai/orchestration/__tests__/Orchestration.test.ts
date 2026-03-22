@@ -285,9 +285,9 @@ describe('AIOrchestrator', () => {
 
     expect(result.ok).toBe(true);
     if (result.ok) {
-      expect(result.value.intent.category).toBe(IntentCategory.EXPLAIN);
-      expect(result.value.escalated).toBe(false);
-      expect(result.value.durationMs).toBeGreaterThanOrEqual(0);
+      expect(result.data.intent.category).toBe(IntentCategory.EXPLAIN);
+      expect(result.data.escalated).toBe(false);
+      expect(result.data.durationMs).toBeGreaterThanOrEqual(0);
     }
   });
 
