@@ -10,7 +10,7 @@
 
 import type { Result } from "../core/Result";
 import { ok, err, tryResultAsync } from "../core/Result";
-import type { UUID } from "../core/Types";
+import type { UUID } from "../core/types";
 import type { AIModelId } from "./AIModels";
 
 // ─── IPC Mesaj Tipleri ──────────────────────────────────────────────────────

@@ -18,7 +18,7 @@ import { ok, err, tryResultAsync } from "../core/Result";
 import { ErrorCode } from "../types/core";
 import type { Result } from "../core/Result";
 import type { ISQLiteDriver } from "../storage/ISQLiteDriver";
-import type { UUID } from "../core/Types";
+import type { UUID } from "../core/types";
 import type { AIModelId } from "../ai/AIModels";
 import type { RuntimeMessage } from "../ai/IAIWorkerRuntime";
 

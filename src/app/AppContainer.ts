@@ -42,7 +42,7 @@ import {
 import { AIOrchestrator }           from "../ai/orchestration/AIOrchestrator";
 import { AIWorkerClient }           from "../ai/AIWorkerClient";
 import { generateId }               from "../utils/uuid";
-import type { UUID }                from "../core/Types";
+import type { UUID }                from "../core/types";
 import { sentryService, SentryService } from "../monitoring/SentryService";
 import type { IStorageInfo }         from "../download/ModelDownloadManager";
 import type { IEventBus }            from "../core/EventBus";

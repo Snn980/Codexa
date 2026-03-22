@@ -18,7 +18,7 @@
 import type { IAIWorkerRuntime } from "./IAIWorkerRuntime";
 import type { AIModelId } from "./AIModels";
 import { AI_MODELS } from "./AIModels";
-import type { UUID } from "../core/Types";
+import type { UUID } from "../core/types";
 
 // ─── Protokol tipleri (§ 5) ──────────────────────────────────────────────────
 

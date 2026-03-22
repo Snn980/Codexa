@@ -24,7 +24,7 @@ import type {
   AISessionSummary,
 } from "../storage/AISessionRepository";
 import type { IEventBus } from "../core/EventBus";
-import type { UUID } from "../core/Types";
+import type { UUID } from "../core/types";
 import type { AIModelId } from "../ai/AIModels";
 import type { RuntimeMessage } from "../ai/IAIWorkerRuntime";
 

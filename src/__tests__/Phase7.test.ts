@@ -26,7 +26,7 @@ import { DownloadErrorCode } from "../download/ModelDownloadManager";
 import { AIModelId } from "../ai/AIModels";
 import { ok, err } from "../core/Result";
 import type { Result } from "../core/Result";
-import type { UUID } from "../core/Types";
+import type { UUID } from "../core/types";
 
 // ─── Test helpers ─────────────────────────────────────────────────────────────
 

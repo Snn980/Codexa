@@ -1,14 +1,10 @@
 /**
  * runtime/graph/types.ts
  * language-services/graph/types.ts re-export — runtime katmanı için proxy.
- * SymbolIndex ve ilgili runtime modülleri bu path üzerinden import eder.
  */
 
 export type {
   Checksum32,
-  SymbolKind,
-  SymbolScope,
-  EdgeKind,
   SymbolNode,
   DependencyEdge,
   ReferenceLocation,

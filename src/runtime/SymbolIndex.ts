@@ -231,7 +231,7 @@ export class SymbolIndex {
         endCol:     r["end_col"]     as number,
         parentId:   r["parent_id"]   as UUID | null,
         exportedAs: r["exported_as"] as string | null,
-        checksum:   r["checksum"]    as number,
+        checksum:   r["checksum"]    as unknown as import("../language-services/graph/types").Checksum32,
         version:    r["version"]     as number,
       }));
 

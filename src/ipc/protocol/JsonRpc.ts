@@ -35,7 +35,7 @@ export function createRequest(
   if (params !== undefined) {
     req["params"] = params;
   }
-  return req as JsonRpcRequest;
+  return req as unknown as JsonRpcRequest;
 }
 
 export function createResponse(
@@ -63,7 +63,7 @@ export function createNotification(
 ): JsonRpcNotification {
   const notif: Record<string, unknown> = { jsonrpc: "2.0", method };
   if (params !== undefined) notif["params"] = params;
-  return notif as JsonRpcNotification;
+  return notif as unknown as JsonRpcNotification;
 }
 
 // ── Serialization ─────────────────────────────────────────────────────────────
@@ -77,7 +77,7 @@ export function deserialize(raw: string): JsonRpcRequest | JsonRpcResponse | Jso
     const obj = JSON.parse(raw) as Record<string, unknown>;
     if (typeof obj !== "object" || obj === null) return null;
     if (obj["jsonrpc"] !== "2.0") return null;
-    return obj as JsonRpcRequest | JsonRpcResponse | JsonRpcNotification;
+    return obj as unknown as JsonRpcRequest | JsonRpcResponse | JsonRpcNotification;
   } catch {
     return null;
   }

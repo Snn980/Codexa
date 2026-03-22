@@ -6,4 +6,3 @@
  * REFACTOR (SORUN-9): Duplike AIPermissionState tanımı kaldırıldı.
  */
 export type { AIPermissionState } from '../../types/core';
-export { AIPermissionState } from '../../types/core';
