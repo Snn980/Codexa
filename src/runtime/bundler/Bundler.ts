@@ -251,7 +251,7 @@ export class Bundler {
       }
 
       if (result.warnings.length > 0) {
-        // eslint-disable-next-line no-console
+         
         console.warn("[Bundler] esbuild warnings:", result.warnings);
       }
 

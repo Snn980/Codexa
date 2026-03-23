@@ -86,9 +86,9 @@ async function computeSHA256(
 async function sha256FromStream(stream: ReadableStream<Uint8Array>): Promise<string | null> {
   // noble-hashes varsa streaming SHA-256
   try {
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
+     
     const { sha256 } = require("@noble/hashes/sha256");
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
+     
     const { createHash } = require("@noble/hashes/utils");
 
     const hasher = createHash(sha256);
@@ -281,7 +281,7 @@ export async function createModelStorage(): Promise<IStorageInfo> {
     const { OPFSModelStorage } = await import("./OPFSModelStorage");
     return new OPFSModelStorage();
   }
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
+   
   // SDK 54+ — legacy API expo-file-system/legacy'e taşındı
   const FS = require("expo-file-system/legacy") as IExpoFileSystem;
   return new ExpoModelStorage(FS);

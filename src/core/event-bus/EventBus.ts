@@ -319,7 +319,7 @@ export class EventBus implements IEventBus {
    */
   waitFor<K extends EventKey>(
     event:     K,
-    timeoutMs: number = 5_000,
+    timeoutMs = 5_000,
   ): Promise<AppEventMap[K]> {
     return new Promise((resolve, reject) => {
       let timer: ReturnType<typeof setTimeout> | null = null;

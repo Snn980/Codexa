@@ -66,7 +66,7 @@ export const CryptoHasher = {
 
     // ── 2. Node.js crypto (Jest / test ortamı) ────────────────────────────
     try {
-      // eslint-disable-next-line @typescript-eslint/no-require-imports
+       
       const nodeCrypto = require("crypto") as typeof import("crypto");
       const hash = nodeCrypto.createHash("sha256");
       hash.update(Buffer.from(data));

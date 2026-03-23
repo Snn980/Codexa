@@ -149,10 +149,10 @@ function installConsole(
     },
     /** console.time / timeEnd — milisaniye ölçer. */
     _timers: {} as Record<string, number>,
-    time(label: string = "default"): void {
+    time(label = "default"): void {
       (this._timers as Record<string, number>)[label] = Date.now();
     },
-    timeEnd(label: string = "default"): void {
+    timeEnd(label = "default"): void {
       const start = (this._timers as Record<string, number>)[label];
       if (start === undefined) {
         stderr(`console.timeEnd: label "${label}" bulunamadı`);

@@ -192,7 +192,7 @@ export class ExpoTreeSitterLoader implements ITreeSitterLoader {
 
   async loadParser(): Promise<TSParser> {
     // Dynamic import — web-tree-sitter'ı lazy yükle (bundle splitter için)
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
+     
     const Parser = (await import("web-tree-sitter")).default;
 
     await Parser.init({

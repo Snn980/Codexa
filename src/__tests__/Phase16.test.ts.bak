@@ -121,7 +121,7 @@ function makeMockWorkerClient(completionText = 'completion result') {
 // T-P16-1: useAIPanel
 // ═══════════════════════════════════════════════════════════════════════════
 
-describe.skip('T-P16-1: useAIPanel', () => {
+describe('T-P16-1: useAIPanel', () => {
 
   function setup(opts: Partial<{ responseText: string }> = {}) {
     const eventBus     = makeMockEventBus();
@@ -228,7 +228,7 @@ describe.skip('T-P16-1: useAIPanel', () => {
 // T-P16-2: useInlineCompletionBridge
 // ═══════════════════════════════════════════════════════════════════════════
 
-describe.skip('T-P16-2: useInlineCompletionBridge', () => {
+describe('T-P16-2: useInlineCompletionBridge', () => {
 
   const INLINE_ESCALATION_THRESHOLD    = 0.5;
   const INLINE_ESCALATION_COOLDOWN_MS  = 5_000;
@@ -342,7 +342,7 @@ describe.skip('T-P16-2: useInlineCompletionBridge', () => {
 // T-P16-3: AIChatScreen Orchestrator Migration
 // ═══════════════════════════════════════════════════════════════════════════
 
-describe.skip('T-P16-3: AIChatScreen Orchestrator Migration', () => {
+describe('T-P16-3: AIChatScreen Orchestrator Migration', () => {
 
   test('useOrchestrator default false — sıfır regresyon garantisi', () => {
     // Prop interface kontrolü
@@ -414,7 +414,7 @@ describe.skip('T-P16-3: AIChatScreen Orchestrator Migration', () => {
 // T-P16-4: TerminalScreen / useTerminalRuntime
 // ═══════════════════════════════════════════════════════════════════════════
 
-describe.skip('T-P16-4: TerminalScreen / useTerminalRuntime', () => {
+describe('T-P16-4: TerminalScreen / useTerminalRuntime', () => {
 
   test('RING_CAPACITY = 1000', () => {
     const RING_CAPACITY = 1000;

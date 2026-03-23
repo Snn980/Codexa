@@ -72,10 +72,10 @@ export type RingBufferListener<T extends ConsoleEntry = ConsoleEntry> = (entry: 
 export class RingBuffer<T extends ConsoleEntry = ConsoleEntry> {
   private readonly _capacity: number;
   private readonly _buffer:   (ConsoleEntry | undefined)[];
-  private _head:    number = 0;   // en eski öğenin indeksi
-  private _count:   number = 0;   // mevcut öğe sayısı
-  private _seq:     number = 0;   // global sıra (sıfırlanmaz)
-  private _dropped: number = 0;   // kapasite dolduğu için silinen satır sayısı
+  private _head = 0;   // en eski öğenin indeksi
+  private _count = 0;   // mevcut öğe sayısı
+  private _seq = 0;   // global sıra (sıfırlanmaz)
+  private _dropped = 0;   // kapasite dolduğu için silinen satır sayısı
 
   private readonly _listeners: Set<RingBufferListener> = new Set();
 

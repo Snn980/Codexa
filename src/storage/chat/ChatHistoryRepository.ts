@@ -14,7 +14,7 @@ type MMKVInstance = {
   getAllKeys(): string[];
   clearAll(): void;
 };
-// eslint-disable-next-line @typescript-eslint/no-var-requires
+ 
 const { MMKV } = require('react-native-mmkv') as { MMKV: new (opts?: { id?: string }) => MMKVInstance };
 import { ok, err, type Result }    from '../../core/Result';
 import type { ChatMessage }        from '../../hooks/useAIChat';

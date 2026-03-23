@@ -197,7 +197,7 @@ export class QuickJSSandboxRuntime implements ISandboxRuntime {
   static async create(): Promise<QuickJSSandboxRuntime> {
     // Dynamic import — bundle boyutunu küçük tutar (§ 9)
     // quickjs-emscripten paket ismi package.json'a eklendiğinde aktif olur.
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+     
     // @ts-ignore — quickjs-emscripten opsiyonel bağımlılık, package.json eklenince aktif
     const { getQuickJS } = await import("quickjs-emscripten") as any;
     const module = await getQuickJS();
@@ -336,9 +336,9 @@ export class RuntimeWorker {
   /** İptal veya timeout istekleri buraya eklenir. */
   private _cancelSet:   Set<UUID>   = new Set();
   /** STREAM mesajları için monotonic sıra numarası. */
-  private _seq:         number      = 0;
+  private _seq      = 0;
   /** Interrupt flag — timeout ve CANCEL tarafından set edilir. */
-  private _interrupted: boolean     = false;
+  private _interrupted     = false;
 
   private readonly _runtime: ISandboxRuntime;
 

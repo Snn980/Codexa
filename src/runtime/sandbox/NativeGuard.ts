@@ -176,14 +176,14 @@ function blockProperty(
       enumerable:   false,
       get() {
         if (logBlocked) {
-          // eslint-disable-next-line no-console
+           
           console.warn(`[NativeGuard] blocked access: "${name}"`);
         }
         throw new GuardError(name);
       },
       set() {
         if (logBlocked) {
-          // eslint-disable-next-line no-console
+           
           console.warn(`[NativeGuard] blocked write: "${name}"`);
         }
         throw new GuardError(name);
@@ -199,7 +199,7 @@ function blockProperty(
       });
     } catch {
       // İkinci deneme de başarısız — ortam kısıtlıdır, logla
-      // eslint-disable-next-line no-console
+       
       console.error(
         `[NativeGuard] UYARI: "${name}" bloke edilemedi. ` +
         `Güvenlik açığı riski — ortamı kontrol edin.`,

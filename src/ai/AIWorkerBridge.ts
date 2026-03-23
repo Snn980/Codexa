@@ -40,7 +40,7 @@ export function createMockWorkerFactory(
   offlineRuntime: IAIWorkerRuntime,
   cloudRuntime:   IAIWorkerRuntime,
 ): IWorkerFactory {
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
+   
   const { AIWorker } = require("./AIWorker") as typeof import("./AIWorker");
 
   function makeInProcess(runtime: IAIWorkerRuntime): WorkerLike {
@@ -97,12 +97,12 @@ export class NativeWorkerFactory implements IWorkerFactory {
   }
 
   private _createExpo(kind: "offline" | "cloud"): WorkerLike {
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
+     
     const { createWorker } = require("expo-modules-core/workers");
     const entry = kind === "offline"
-      // eslint-disable-next-line @typescript-eslint/no-require-imports
+       
       ? require("../workers/ai.offline.worker")
-      // eslint-disable-next-line @typescript-eslint/no-require-imports
+       
       : require("../workers/ai.cloud.worker");
     const w = createWorker(entry);
     const msgL: Array<(e: Event) => void> = [];

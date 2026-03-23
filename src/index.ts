@@ -210,7 +210,7 @@ function buildUUIDFactory(): () => UUID {
 
   // 2. expo-crypto — Expo SDK (synchronous, native module)
   try {
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
+     
     const Crypto = require("expo-crypto") as { randomUUID(): string };
     if (typeof Crypto.randomUUID === "function") {
       return () => Crypto.randomUUID() as UUID;

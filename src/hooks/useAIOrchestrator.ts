@@ -240,7 +240,7 @@ export function useAIOrchestrator({
       onEvent?.('low_quality', { score: result.data.qualityScore });
     }
 
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+   
   }, [state.status, orchestrator, permission, safeDispatch, onEvent]);
 
   // ── cancel ────────────────────────────────────────────────────────────────

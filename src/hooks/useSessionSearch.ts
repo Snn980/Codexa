@@ -99,7 +99,7 @@ export function useSessionSearch(
       setResults(allSessions.filter(s => idSet.has(s.id)));
       setIsSearching(false);
     }, DEBOUNCE_MS);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+   
   }, [allSessions]);
 
   const clearQuery = useCallback(() => {
@@ -107,7 +107,7 @@ export function useSessionSearch(
     setQueryRaw('');
     setIsSearching(false);
     setResults(allSessions);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+   
   }, [allSessions]);
 
   // Cleanup debounce on unmount

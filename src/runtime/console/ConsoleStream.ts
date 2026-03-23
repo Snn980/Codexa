@@ -83,8 +83,8 @@ export class ConsoleStream {
 
   private _worker:         IWorkerLike | null = null;
   private _activeExecId:   UUID | null        = null;
-  private _warnFired:      boolean            = false;
-  private _isDisposed:     boolean            = false;
+  private _warnFired            = false;
+  private _isDisposed            = false;
 
   constructor(
     eventBus: IEventBus,

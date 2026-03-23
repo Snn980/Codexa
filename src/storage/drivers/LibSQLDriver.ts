@@ -151,7 +151,7 @@ class LibSQLTransaction implements ITransaction {
 
 export class LibSQLDriver implements IDatabaseDriver {
   private db:                ExpoSQLiteDatabase | null = null;
-  private connected:         boolean                   = false;
+  private connected                   = false;
   private readonly stmtCache = new StatementCache();
   private transactionDepth   = 0;
 

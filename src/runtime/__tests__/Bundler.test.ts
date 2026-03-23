@@ -52,7 +52,7 @@ function makePayload(
  * Başarılı esbuild mock'u.
  * `build()` çağrısında `output` döndürür.
  */
-function makeEsbuildMock(output: string = "bundled_code()"): IEsbuildModule {
+function makeEsbuildMock(output = "bundled_code()"): IEsbuildModule {
   return {
     initialize: jest.fn().mockResolvedValue(undefined),
     build:      jest.fn().mockResolvedValue({
