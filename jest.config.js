@@ -9,13 +9,13 @@ module.exports = {
   forceExit: true,
   detectOpenHandles: true,
 
-  // ─── Paralel worker sayısını sınırla (CI'da bellek taşmasını önler) ───────
+  // ─── Paralel worker sayısını sınırla ──────────────────────────────────────
   maxWorkers: 2,
 
   // ─── Setup dosyası ────────────────────────────────────────────────────────
   setupFilesAfterEnv: ['<rootDir>/jest.setup.ts'],
 
-  // ─── TypeScript — test ortamına özgü tsconfig ─────────────────────────────
+  // ─── Transform ────────────────────────────────────────────────────────────
   transformIgnorePatterns: [
     'node_modules/(?!((jest-)?react-native|@react-native(-community)?)|expo(nent)?|@expo(nent)?/.*|@expo-google-fonts/.*|react-navigation|@react-navigation/.*|@unimodules/.*|unimodules|sentry-expo|native-base|react-native-svg)',
   ],
@@ -24,9 +24,11 @@ module.exports = {
   moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/src/$1',
     'expo-dev-launcher': '<rootDir>/src/__mocks__/expo-dev-launcher.js',
+    // React 19 için test-renderer mock (CI hatasını çözer)
+    '^react-test-renderer$': '<rootDir>/src/__mocks__/react-test-renderer.js',
   },
 
-  // ─── Globals (browser env polyfill) ──────────────────────────────────────
+  // ─── Globals ──────────────────────────────────────────────────────────────
   globals: {
     self: {},
   },
@@ -46,7 +48,6 @@ module.exports = {
     '!src/**/*.spec.{ts,tsx}',
   ],
   
-  // Coverage threshold (CI'da fail olmaması için düşük tutuldu)
   coverageThreshold: {
     global: {
       branches: 20,
@@ -56,9 +57,6 @@ module.exports = {
     },
   },
   
-  // Coverage raporu formatları
   coverageReporters: ['text', 'lcov', 'html'],
-  
-  // ─── Verbose (debug için) ─────────────────────────────────────────────────
   verbose: false,
 };

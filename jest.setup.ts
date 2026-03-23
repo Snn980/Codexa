@@ -2,14 +2,11 @@
  * jest.setup.ts — Jest global test ortamı kurulumu
  *
  * @testing-library/react-native v13.3.3 + React 19.2.4 + Jest 30
- * jest.config.js → setupFilesAfterEnv: ['<rootDir>/jest.setup.ts']
  */
 
 // ─── Global timeout takibi (open handles fix) ─────────────────────────────────
 declare global {
-  // eslint-disable-next-line no-var
   var __activeTimeouts: Set<NodeJS.Timeout> | undefined;
-  // eslint-disable-next-line no-var
   var __activeControllers: Set<AbortController> | undefined;
 }
 
@@ -46,7 +43,6 @@ class TrackedAbortController extends OriginalAbortController {
     }
     global.__activeControllers.add(this);
     
-    // Abort olunca takipten çıkar
     this.signal.addEventListener('abort', () => {
       global.__activeControllers?.delete(this);
     });
@@ -55,19 +51,34 @@ class TrackedAbortController extends OriginalAbortController {
 
 global.AbortController = TrackedAbortController as any;
 
-// ─── 3. Global test timeout ───────────────────────────────────────────────────
+// ─── 3. React 19 test-renderer mock (CI hatasını çözer) ──────────────────────
+jest.mock('react-test-renderer', () => ({
+  create: jest.fn().mockReturnValue({
+    toJSON: jest.fn(),
+    update: jest.fn(),
+    unmount: jest.fn(),
+    root: {
+      find: jest.fn(),
+      findAll: jest.fn(),
+      findByType: jest.fn(),
+      findAllByType: jest.fn(),
+    },
+  }),
+  act: jest.fn((callback: () => void) => callback()),
+}));
+
+// ─── 4. Global test timeout ───────────────────────────────────────────────────
 jest.setTimeout(15_000);
 
-// ─── 4. Console filtresi ──────────────────────────────────────────────────────
+// ─── 5. Console filtresi ──────────────────────────────────────────────────────
 const IGNORED_WARNINGS = [
   'Warning: An update to',
   'Warning: Cannot update a component',
   'Warning: ReactDOM.render is no longer supported',
   'Warning: act(...)',
-  // AIOrchestrator uyarıları (beklenen)
   'Low quality response but no escalation occurred',
-  // BGProcessingTask uyarıları (simulator)
   'Schedule failed (normal in Simulator)',
+  'MAX_RESTARTS', // AIWorkerBridge uyarıları
 ];
 
 const originalWarn = console.warn.bind(console);
@@ -87,21 +98,18 @@ beforeAll(() => {
   };
 });
 
-// ─── 5. Her test öncesi hazırlık ──────────────────────────────────────────────
+// ─── 6. Her test öncesi hazırlık ──────────────────────────────────────────────
 beforeEach(() => {
-  // Timer'ları temizle
   jest.clearAllTimers?.();
 });
 
-// ─── 6. Her test sonrası temizlik ─────────────────────────────────────────────
+// ─── 7. Her test sonrası temizlik ─────────────────────────────────────────────
 afterEach(async () => {
-  // Promise'lerin bitmesi için kısa bekle
   await new Promise(resolve => setTimeout(resolve, 10));
 });
 
-// ─── 7. Tüm testler sonrası open handles temizliği ────────────────────────────
+// ─── 8. Tüm testler sonrası open handles temizliği ────────────────────────────
 afterAll(async () => {
-  // 7.1 Tüm aktif timeout'ları temizle
   if (global.__activeTimeouts) {
     for (const timeout of global.__activeTimeouts) {
       clearTimeout(timeout);
@@ -109,37 +117,29 @@ afterAll(async () => {
     global.__activeTimeouts.clear();
   }
   
-  // 7.2 Tüm aktif AbortController'ları abort et
   if (global.__activeControllers) {
     for (const controller of global.__activeControllers) {
       try {
         controller.abort();
-      } catch (e) {
-        // ignore
-      }
+      } catch (e) {}
     }
     global.__activeControllers.clear();
   }
   
-  // 7.3 Kalan async işlemler için bekle
   await new Promise(resolve => setTimeout(resolve, 100));
   
-  // 7.4 GC çağır (--expose-gc ile çalıştırıldıysa)
   if (global.gc) {
     global.gc();
   }
   
-  // 7.5 Console'ları geri yükle
   console.warn = originalWarn;
   console.error = originalError;
 });
 
-// ─── 8. React Native özel ayarları ───────────────────────────────────────────
-// DevLauncher mock (React Native development)
+// ─── 9. React Native özel ayarları ───────────────────────────────────────────
 global.EXDevLauncher = null;
 
-// ─── 9. Fetch mock (opsiyonel) ───────────────────────────────────────────────
-// Testlerde network istekleri için global fetch mock
+// ─── 10. Fetch mock ──────────────────────────────────────────────────────────
 if (!global.fetch) {
   global.fetch = jest.fn().mockResolvedValue({
     ok: true,
