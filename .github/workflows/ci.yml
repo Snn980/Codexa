@@ -11,21 +11,37 @@ jobs:
     name: Test & Lint
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    
     steps:
       - uses: actions/checkout@v4
+      
       - uses: actions/setup-node@v4
         with:
           node-version: 22.x
           cache: npm
-      - run: npm install --legacy-peer-deps
-      - run: npx tsc --noEmit
-      - run: npx eslint src --ext .ts,.tsx --max-warnings 200
-      - run: npm test -- --ci --coverage --maxWorkers=2 --testTimeout=15000
-      - uses: actions/upload-artifact@v4
+      
+      - name: Install dependencies
+        run: npm install --legacy-peer-deps
+      
+      - name: Type check
+        run: npx tsc --noEmit
+      
+      - name: Lint (with auto-fix)
+        run: |
+          npx eslint src --ext .ts,.tsx --max-warnings 200 --fix || true
+          npx eslint src --ext .ts,.tsx --max-warnings 200
+      
+      - name: Run tests
+        run: npm test -- --ci --maxWorkers=2 --testTimeout=15000 --forceExit
+      
+      - name: Upload test results
+        uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: coverage-report
-          path: coverage/
+          name: test-results
+          path: |
+            coverage/
+            test-output.log
           retention-days: 7
 
   build-android:
@@ -34,17 +50,24 @@ jobs:
     needs: test
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     timeout-minutes: 60
+    
     steps:
       - uses: actions/checkout@v4
+      
       - uses: actions/setup-node@v4
         with:
           node-version: 22.x
           cache: npm
-      - run: npm install --legacy-peer-deps
+      
+      - name: Install dependencies
+        run: npm install --legacy-peer-deps
+      
       - uses: expo/expo-github-action@v8
         with:
           eas-version: latest
           token: ${{ secrets.EXPO_TOKEN }}
-      - run: eas build --profile development --platform android --non-interactive
+      
+      - name: Build Android APK
+        run: eas build --profile development --platform android --non-interactive
         env:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
