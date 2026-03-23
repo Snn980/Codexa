@@ -366,7 +366,7 @@ export class AppContainer {
     //    FileService şu an constructor-only interval alıyor;
     //    Phase 2'de setAutoSaveInterval() metodu eklenecek.
     //    Şimdilik: mevcut fileService instance'ını dispose edip yenisini oluştur.
-    eventBus.on("settings:changed", ({ next }) => {
+    eventBus.on("settings:changed", ({ next: any }) => {
       if (next.autoSaveInterval !== autoSaveIntervalMs) {
         autoSaveIntervalMs = next.autoSaveInterval;
         // FileService'i yeniden oluştur — dispose + recreate
