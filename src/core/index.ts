@@ -7,7 +7,7 @@
  * Canonical kaynaklar:
  *   Tipler (UUID, Result, AppError, IEventBus, AppEventMap, Values …) → types/core.ts
  *   Result builders (ok, err, errFrom, tryResultAsync …)              → utils/result.ts
- *   EventBus (EventBus class, createEventBus, getAppEventBus …)       → core/Event-bus/EventBus.ts
+ *   EventBus (EventBus class, createEventBus, getAppEventBus …)       → core/event-bus/EventBus.ts
  */
 
 // ─── Tipler ───────────────────────────────────────────────────────────────────
@@ -68,4 +68,4 @@ export {
   getAppEventBus,
   createEventBus,
   resetAppEventBus,
-} from './Event-bus/EventBus';
+} from './event-bus/EventBus';

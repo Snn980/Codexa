@@ -19,7 +19,7 @@
 
 import type { ILevelDB }      from "../storage/ILevelDB";
 import type { ISQLiteDriver } from "../storage/ISQLiteDriver";
-import type { IEventBus }     from "../core/Event-bus/IEventBus";
+import type { IEventBus }     from "../core/event-bus/IEventBus";
 import type { IPathResolver } from "../ipc/IPathResolver";
 import type { UUID }          from "../core/types";
 import type { SymbolNode }    from "./graph/types";
