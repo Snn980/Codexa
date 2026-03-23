@@ -43,8 +43,20 @@ export interface ExecutorOptions {
 // ─── ParallelExecutor ─────────────────────────────────────────────────────────
 
 export class ParallelExecutor {
+  // Aktif timeout'ları takip et (open handles fix)
+  private _activeTimeouts = new Set<NodeJS.Timeout>();
 
   constructor(private readonly _client: IAIWorkerClient) {}
+
+  /**
+   * Tüm aktif timeout'ları temizle (test cleanup için)
+   */
+  cleanup(): void {
+    for (const timeout of this._activeTimeouts) {
+      clearTimeout(timeout);
+    }
+    this._activeTimeouts.clear();
+  }
 
   /**
    * Routing kararına göre çalıştır.
@@ -122,6 +134,18 @@ export class ParallelExecutor {
 
   // ── Private ──────────────────────────────────────────────────────────────────
 
+  /**
+   * Timeout'ları takip eden setTimeout wrapper'ı
+   */
+  private _setTimeout(callback: () => void, ms: number): NodeJS.Timeout {
+    const timeout = setTimeout(() => {
+      this._activeTimeouts.delete(timeout);
+      callback();
+    }, ms);
+    this._activeTimeouts.add(timeout);
+    return timeout;
+  }
+
   private async _runWithTimeout(
     modelId:   AIModelId,
     context:   BuiltContext,
@@ -135,10 +159,11 @@ export class ParallelExecutor {
 
     // Timeout controller (0 = timeout yok)
     const timeoutController = timeoutMs > 0 ? new AbortController() : null;
-    let timeoutHandle: ReturnType<typeof setTimeout> | null = null;
+    let timeoutHandle: NodeJS.Timeout | null = null;
 
     if (timeoutController && timeoutMs > 0) {
-      timeoutHandle = setTimeout(() => timeoutController.abort(), timeoutMs);
+      // _setTimeout kullanarak timeout'u takip et
+      timeoutHandle = this._setTimeout(() => timeoutController!.abort(), timeoutMs);
     }
 
     const signals: AbortSignal[] = [opts.signal];
@@ -172,12 +197,9 @@ export class ParallelExecutor {
         }
       }
 
-      if (timeoutHandle) clearTimeout(timeoutHandle);
       return ok({ fullText });
 
     } catch (e: unknown) {
-      if (timeoutHandle) clearTimeout(timeoutHandle);
-
       const isTimeout = timeoutController?.signal.aborted && !opts.signal.aborted;
       if (isTimeout) {
         return err('OFFLINE_TIMEOUT', `Model ${modelId} timed out after ${timeoutMs}ms`);
@@ -188,6 +210,12 @@ export class ParallelExecutor {
 
       const msg = e instanceof Error ? e.message : String(e);
       return err('EXECUTION_ERROR', msg);
+    } finally {
+      // Her durumda timeout'u temizle
+      if (timeoutHandle) {
+        clearTimeout(timeoutHandle);
+        this._activeTimeouts.delete(timeoutHandle);
+      }
     }
   }
 }
