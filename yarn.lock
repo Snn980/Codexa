@@ -1119,15 +1119,13 @@
   resolved "https://registry.yarnpkg.com/@expo/dom-webview/-/dom-webview-55.0.3.tgz#97dfe2ede4a17eb05a44ba65487724192f07a6cf"
   integrity sha512-bY4/rfcZ0f43DvOtMn8/kmPlmo01tex5hRoc5hKbwBwQjqWQuQt0ACwu7akR9IHI4j0WNG48eL6cZB6dZUFrzg==
 
-"@expo/env@2.0.0", "@expo/env@^2.0.11", "@expo/env@~2.1.1":
-  version "2.0.0"
-  resolved "https://registry.yarnpkg.com/@expo/env/-/env-2.0.0.tgz#0dfea7c9a8d37e0107388868e94fd57bf5047a81"
-  integrity sha512-Xi2Ka0+O8JheINynPukqn7v/hOj9Mukr+2VaP1wIFO2vyUzCiCL+xKy8ncxDILqJ90zQ2sQFsRZICyPWiC2psA==
+"@expo/env@^2.0.11", "@expo/env@~2.1.1":
+  version "2.1.1"
+  resolved "https://registry.yarnpkg.com/@expo/env/-/env-2.1.1.tgz#95c047b69dee14a6ebaaa0415c4896ac69f1bf0d"
+  integrity sha512-rVvHC4I6xlPcg+mAO09ydUi2Wjv1ZytpLmHOSzvXzBAz9mMrJggqCe4s4dubjJvi/Ino/xQCLhbaLCnTtLpikg==
   dependencies:
     chalk "^4.0.0"
     debug "^4.3.4"
-    dotenv "~16.4.5"
-    dotenv-expand "~11.0.6"
     getenv "^2.0.0"
 
 "@expo/fingerprint@0.16.6":
@@ -3809,23 +3807,6 @@ domexception@^4.0.0:
   dependencies:
     webidl-conversions "^7.0.0"
 
-dotenv-expand@~11.0.6:
-  version "11.0.7"
-  resolved "https://registry.yarnpkg.com/dotenv-expand/-/dotenv-expand-11.0.7.tgz#af695aea007d6fdc84c86cd8d0ad7beb40a0bd08"
-  integrity sha512-zIHwmZPRshsCdpMDyVsqGmgyP0yT8GAgXUnkdAoJisxvf33k7yO6OuoKmcTGuXPWSsm8Oh88nZicRLA9Y0rUeA==
-  dependencies:
-    dotenv "^16.4.5"
-
-dotenv@^16.4.5:
-  version "16.6.1"
-  resolved "https://registry.yarnpkg.com/dotenv/-/dotenv-16.6.1.tgz#773f0e69527a8315c7285d5ee73c4459d20a8020"
-  integrity sha512-uBq4egWHTcTt33a72vpSG0z3HnPuIl6NqYcTrKEg2azoEyl2hpW0zqlxysq2pK9HlDIHyHyakeYaYnSAwd8bow==
-
-dotenv@~16.4.5:
-  version "16.4.7"
-  resolved "https://registry.yarnpkg.com/dotenv/-/dotenv-16.4.7.tgz#0e20c5b82950140aa99be360a8a5f52335f53c26"
-  integrity sha512-47qPchRCykZC03FhkYAhrvwU4xDBFIj1QPqaarj6mdM/hgUzfPHcpkHJOn3mJAufFeeAxAzeGsr5X0M4k6fLZQ==
-
 dtrace-provider@~0.8:
   version "0.8.8"
   resolved "https://registry.yarnpkg.com/dtrace-provider/-/dtrace-provider-0.8.8.tgz#2996d5490c37e1347be263b423ed7b297fb0d97e"
@@ -6138,10 +6119,10 @@ lines-and-columns@^1.1.6:
   resolved "https://registry.yarnpkg.com/lines-and-columns/-/lines-and-columns-1.2.4.tgz#eca284f75d2965079309dc0ad9255abb2ebc1632"
   integrity sha512-7ylylesZQ/PV29jhEDl3Ufjo6ZX7gCqJr5F7PKrqc93v7fzSymt1BpwEU8nAUXs8qzzvqhbjhK5QZg6Mt/HkBg==
 
-llama.rn@^0.11.2:
-  version "0.11.5"
-  resolved "https://registry.yarnpkg.com/llama.rn/-/llama.rn-0.11.5.tgz#ecaf80867bb53698d4e3b6abc3c6c42b010232b9"
-  integrity sha512-ON4ThybtiPnNEfJHbQcBk5zkm/YyFgjpGzykgEeqOLFZMTVaZqsSQyZ6TOTyvDfKrIQzukIKKglBtCyPLbbBsw==
+llama.rn@^0.12.0-rc.1:
+  version "0.12.0-rc.1"
+  resolved "https://registry.yarnpkg.com/llama.rn/-/llama.rn-0.12.0-rc.1.tgz#153e358c7b3f5ca4d047c98038bca6f83f524ea3"
+  integrity sha512-WbZrYE7uFqplkel9HnHw4yNwiSIc3I4DWF5MIb2Pgl+lVaA6zza62VLarnWVHXD4fY+QZz6oui74TG3Xzpc0Sw==
 
 locate-path@^3.0.0:
   version "3.0.0"
@@ -7466,10 +7447,10 @@ react-native-mmkv@^4.0.0:
   resolved "https://registry.yarnpkg.com/react-native-mmkv/-/react-native-mmkv-4.3.0.tgz#dbb2817b75270194dd231b4290d3c834f7d6d417"
   integrity sha512-D1wB2ViMrm+0rs7FcbLoct/BV+qugASi+XAZT8MzXy5yl0CI0qxToh2LPnw9UENHrNefpfDZgE5FpMhIB37I5Q==
 
-react-native-nitro-modules@^0.23.0:
-  version "0.23.0"
-  resolved "https://registry.yarnpkg.com/react-native-nitro-modules/-/react-native-nitro-modules-0.23.0.tgz#20863f6bf24c74fef7f67ece8f6b325bd9c6a80f"
-  integrity sha512-Kq6hlRuloOg8LguPFvrQsvtmD+8fVWLXKfE0WKbk/15FQRjwkmDD/oMmPmn91k8HN1HTpXnLxhUDmsEoywTUdQ==
+react-native-nitro-modules@^0.35.2:
+  version "0.35.2"
+  resolved "https://registry.yarnpkg.com/react-native-nitro-modules/-/react-native-nitro-modules-0.35.2.tgz#75fbcd42a73d93540c0069d42098d9dc6c12ea7e"
+  integrity sha512-97cZcCh3ZAuWAfutel2Q3qLfc45XXh7F9Ei5tEjahP0kV3q8hQelwLIulKXmjN+f0JI5Zf/wCsfwwdVWYU2tKA==
 
 react-native-permissions@^5.2.0:
   version "5.5.1"
