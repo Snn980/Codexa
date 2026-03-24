@@ -54,4 +54,14 @@ config.resolver.sourceExts = [
   // "cjs" kaldırıldı — llama-cpp-wasm CJS glue artık gerekli değil
 ];
 
+// ─── FIX: expo-modules-core/workers modülünü çözümle ───────────────────────
+
+config.resolver.extraNodeModules = {
+  ...config.resolver.extraNodeModules,
+  'expo-modules-core/workers': path.resolve(__dirname, 'node_modules/expo-modules-core'),
+};
+
+// ─── Hızlı çözüm için Metro cache'i temizle ─────────────────────────────────
+config.cacheStores = [];
+
 module.exports = config;
