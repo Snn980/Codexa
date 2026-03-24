@@ -266,7 +266,7 @@ export class LibSQLDriver implements IDatabaseDriver {
 
   private async openDatabase(): Promise<ExpoSQLiteDatabase> {
     // SDK 54+ — expo-sqlite/legacy (eski sync/callback API korunur)
-    const SQLite = require("expo-sqlite/legacy") as {
+    const SQLite = require("expo-sqlite") as {
       openDatabaseAsync: (path: string) => Promise<ExpoSQLiteDatabase>;
     };
     return SQLite.openDatabaseAsync(this.dbPath);
