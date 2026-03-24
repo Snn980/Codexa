@@ -16,15 +16,10 @@ config.resolver.assetExts = [
   "bin",
 ];
 
-// ÇÖZÜM: expo-modules-core/workers modülünü ana modüle yönlendir
-config.resolver.resolveRequest = (context, moduleName, platform) => {
-  if (moduleName === 'expo-modules-core/workers') {
-    return {
-      filePath: path.resolve(__dirname, 'node_modules/expo-modules-core'),
-      type: 'sourceFile',
-    };
-  }
-  return context.resolveRequest(context, moduleName, platform);
-};
+// SHA-1 hatası için watchFolders'a expo-modules-core'u ekle
+config.watchFolders = [
+  ...(config.watchFolders || []),
+  path.resolve(__dirname, "node_modules/expo-modules-core"),
+];
 
 module.exports = config;
