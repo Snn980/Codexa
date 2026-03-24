@@ -1,6 +1,10 @@
 {
   "name": "codexa",
   "version": "1.0.0",
+  "engines": {
+    "node": ">=20.12.0",
+    "yarn": ">=1.22.0"
+  },
   "main": "index.ts",
   "scripts": {
     "start": "expo start",
