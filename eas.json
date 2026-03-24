@@ -23,7 +23,7 @@
         "buildType": "app-bundle"
       },
       "node": "20.0.0",
-      "autoSubmit": false
+      
     }
   }
 }
