@@ -13,6 +13,8 @@
  *  [2] ITransaction.execute() aynı şekilde ExecuteResult döner.
  */
 
+import * as SQLite from 'expo-sqlite';
+
 import type {
   ExecuteResult,
   IDatabaseDriver,
@@ -265,8 +267,6 @@ export class LibSQLDriver implements IDatabaseDriver {
   }
 
   private async openDatabase(): Promise<ExpoSQLiteDatabase> {
-    // SDK 54+ — expo-sqlite/legacy (eski sync/callback API korunur)
-    import * as SQLite from 'expo-sqlite';
     return SQLite.openDatabaseAsync(this.dbPath);
   }
 }
