@@ -79,7 +79,8 @@
             "ndkVersion": "28.0.12433566",
             "edgeToEdgeEnabled": true,
             "enableProguardInReleaseBuilds": true,
-            "enableShrinkResourcesInReleaseBuilds": true
+            "enableShrinkResourcesInReleaseBuilds": true,
+            "enableMinifyInReleaseBuilds": true
           },
           "ios": {
             "deploymentTarget": "15.1",
@@ -120,8 +121,9 @@
     },
     "extra": {
       "eas": {
-        "projectId": "PLACEHOLDER_REPLACE_WITH_EAS_PROJECT_ID"
+        "projectId": "2a851e5c-1f10-4f0e-b3df-d4677f4dba47"
       }
-    }
+    },
+    "owner": "afsi"
   }
 }

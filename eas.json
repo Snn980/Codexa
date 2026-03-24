@@ -1,6 +1,6 @@
 {
   "cli": {
-    "version": "16.32.0"
+    "version": "18.4.0"
   },
   "build": {
     "development": {
@@ -16,7 +16,7 @@
       "android": {
         "buildType": "apk"
       },
-      "node": "20.0.0"
+      "node": "25.0.0"
     },
     "production": {
       "android": {
