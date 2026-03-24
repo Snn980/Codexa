@@ -1,8 +1,8 @@
 {
   "name": "codexa",
   "version": "1.0.0",
-  "engines": {
-    "node": ">=20.0.0"
+  "resolutions": {
+    "@expo/env": "2.0.0"
   },
   "main": "index.ts",
   "scripts": {
