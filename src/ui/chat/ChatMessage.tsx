@@ -74,7 +74,7 @@ const ChatMessageComponent = ({ message }: ChatMessageProps) => {
 
         {/* Token sayacı — tamamlanan assistant mesajlarında */}
         {!message.isStreaming && message.totalTokens !== null && !isUser && (
-          <TokenCount tokens={message.totalTokens} />
+          <TokenCount tokens={message.totalTokens ?? 0} />
         )}
       </View>
     </View>
