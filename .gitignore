@@ -50,3 +50,8 @@ coverage/
 
 # TypeScript
 *.tsbuildinfo
+
+# Custom Keystore Files
+*.keystore
+*.jks
+*.p12

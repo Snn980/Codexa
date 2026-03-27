@@ -1,6 +1,6 @@
 {
   "cli": {
-    "version": "18.4.0",
+    "version": ">=18.4.0",
     "appVersionSource": "remote"
   },
   "build": {
@@ -21,9 +21,17 @@
     },
     "production": {
       "android": {
-        "buildType": "app-bundle"
+        "buildType": "apk"
       },
-      "node": "20.19.4"
+      "node": "20.19.4",
+      "autoIncrement": true,
+      "env": {
+        "NODE_OPTIONS": "--max-old-space-size=4096"
+      }
     }
+  },
+  "submit": {
+    "production": {}
   }
 }
+   
