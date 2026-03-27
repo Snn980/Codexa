@@ -37,8 +37,7 @@ jobs:
             --platform android \
             --profile production \
             --local \
-            --non-interactive \
-            --verbose
+            --non-interactive
         env:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
           EAS_PROJECT_CONFIG_V2: >
