@@ -97,25 +97,34 @@ export class NativeWorkerFactory implements IWorkerFactory {
   }
 
   private _createExpo(kind: "offline" | "cloud"): WorkerLike {
-     
-    const { createWorker } = require("expo-modules-core/workers");
-    const entry = kind === "offline"
-       
-      ? require("../workers/ai.offline.worker")
-       
-      : require("../workers/ai.cloud.worker");
-    const w = createWorker(entry);
-    const msgL: Array<(e: Event) => void> = [];
-    const errL: Array<(e: Event) => void> = [];
-    w.onmessage = (e: MessageEvent) => { const s = [...msgL]; for (const l of s) try { l(e as unknown as Event); } catch { /* ok */ } };
-    w.onerror   = (e: ErrorEvent)   => { const s = [...errL]; for (const l of s) try { l(e as unknown as Event); } catch { /* ok */ } };
-    return {
-      postMessage: (m) => w.postMessage(m),
-      addEventListener(t, h)    { (t === "message" ? msgL : errL).push(h); },
-      removeEventListener(t, h) { const l = t === "message" ? msgL : errL; const i = l.indexOf(h); if (i >= 0) l.splice(i, 1); },
-      terminate: () => w.terminate(),
-    };
+  // ✅ Dynamic require - bundler static analysis bypassed
+  let createWorker: any;
+  
+  try {
+    const workerModule = require("expo-modules-core" + "/workers"); // ✅ Concat bundler'ı aldatmak için
+    createWorker = workerModule.createWorker;
+  } catch (err) {
+    throw new Error(`Failed to load expo-modules-core/workers: ${err}`);
   }
+  
+  const entry = kind === "offline"
+    ? require("../workers/ai.offline.worker")
+    : require("../workers/ai.cloud.worker");
+  
+  const w = createWorker(entry);
+  const msgL: Array<(e: Event) => void> = [];
+  const errL: Array<(e: Event) => void> = [];
+  w.onmessage = (e: MessageEvent) => { const s = [...msgL]; for (const l of s) try { l(e as unknown as Event); } catch { /* ok */ } };
+  w.onerror   = (e: ErrorEvent)   => { const s = [...errL]; for (const l of s) try { l(e as unknown as Event); } catch { /* ok */ } };
+  
+  return {
+    postMessage: (m) => w.postMessage(m),
+    addEventListener(t, h)    { (t === "message" ? msgL : errL).push(h); },
+    removeEventListener(t, h) { const l = t === "message" ? msgL : errL; const i = l.indexOf(h); if (i >= 0) l.splice(i, 1); },
+    terminate: () => w.terminate(),
+  };
+}
+ 
 
   private _hasExpoWorker(): boolean {
     try { require("expo-modules-core/workers"); return true; } catch { return false; }
@@ -243,7 +252,7 @@ export class AIWorkerBridge implements IWorkerPort {
     }
     if (any.type === "REQUEST") {
       const modelId   = any.payload?.model;
-      const isOffline = modelId !== null && modelId !== undefined && this._variantCache.isOffline(modelId);
+      const isOffline = modelId !== null && this._variantCache.isOffline(modelId);
       try { (isOffline ? this._offlineWorker : this._cloudWorker).postMessage(msg); }
       catch { /* ignore */ }
       return;
