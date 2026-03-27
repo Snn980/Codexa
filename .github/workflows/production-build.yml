@@ -1,8 +1,38 @@
+name: Local Production Build (APK)
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'zulu'
+          java-version: '17'
+
+      - name: Install Dependencies
+        run: |
+          npm install --legacy-peer-deps
+          npm install -g eas-cli
+
+      - name: Decode Keystore
+        run: echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 --decode > ./release.jks
+
       - name: Build Android APK (Local)
         run: |
-          # Gereksiz parmak izi hesaplamasını atlayıp süreci hızlandırır
           export EAS_SKIP_AUTO_FINGERPRINT=1
-          
           eas build \
             --platform android \
             --profile production \
@@ -24,3 +54,10 @@
             }
           NODE_OPTIONS: "--max-old-space-size=4096"
           GRADLE_OPTS: "-Dorg.gradle.jvmargs=-Xmx4096m"
+
+      - name: Upload APK Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: production-apk
+          path: "*.apk"
+          retention-days: 5
