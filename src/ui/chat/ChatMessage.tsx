@@ -73,7 +73,7 @@ const ChatMessageComponent = ({ message }: ChatMessageProps) => {
         {message.errorCode && <ErrorBadge code={message.errorCode} />}
 
         {/* Token sayacı — tamamlanan assistant mesajlarında */}
-        {!message.isStreaming && message.totalTokens != null && !isUser && (
+        {!message.isStreaming && message.totalTokens !== null && !isUser && (
           <TokenCount tokens={message.totalTokens} />
         )}
       </View>

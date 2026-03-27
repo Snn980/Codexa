@@ -123,7 +123,7 @@ export const AIChatScreenV2 = memo(({
     >
       {/* Escalation / kalite bildirimleri */}
       {lastResult?.escalated && <EscalationChip />}
-      {lastResult != null && lastResult.qualityScore < 0.7 && (
+      {lastResult !== null && lastResult.qualityScore < 0.7 && (
         <LowQualityToast score={lastResult.qualityScore} />
       )}
 

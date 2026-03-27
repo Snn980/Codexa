@@ -65,7 +65,7 @@ export class ScopeAnalyzer {
 
   constructor(adapter?: unknown) {
     this._adapter = (
-      adapter != null &&
+      adapter !== null &&
       typeof (adapter as IAdapter).parse === "function"
     ) ? (adapter as IAdapter) : null;
   }
@@ -73,11 +73,11 @@ export class ScopeAnalyzer {
   async analyze(source: string): Promise<Result<AnalyzeResult>> {
     const t0 = Date.now();
     if (!this._adapter) {
-      return err(ScopeErrorCode.PARSE_ERROR as any, "No adapter");
+      return err(ScopeErrorCode.PARSE_ERROR as import("../types/core").ErrorCode, "No adapter");
     }
     const parsed = await this._adapter.parse(source);
     if (!parsed.ok) {
-      return err(ScopeErrorCode.PARSE_ERROR as any, "Parse failed") as any;
+      return err(ScopeErrorCode.PARSE_ERROR as import("../types/core").ErrorCode, "Parse failed");
     }
     const root: ScopeNode = {
       kind: ScopeKind.MODULE, startRow: 0, endRow: Number.MAX_SAFE_INTEGER, children: [],
@@ -106,7 +106,7 @@ export class ScopeAnalyzer {
 
   async findScopeAt(content: string, line: number, _col: number): Promise<Result<ScopeNode>> {
     const analyzed = await this.analyze(content);
-    if (!analyzed.ok) return analyzed as any;
+    if (!analyzed.ok) return analyzed;
     const { root } = analyzed.data;
     const findNarrowest = (node: ScopeNode): ScopeNode | null => {
       if (node.startRow > line || node.endRow < line) return null;
@@ -118,12 +118,12 @@ export class ScopeAnalyzer {
     };
     const found = findNarrowest(root);
     if (!found) {
-      return err(ScopeErrorCode.SYMBOL_NOT_FOUND as any, `No scope at ${line}:${_col}`) as any;
+      return err(ScopeErrorCode.SYMBOL_NOT_FOUND as import("../types/core").ErrorCode, `No scope at ${line}:${_col}`);
     }
     if (found === root && root.children.length === 0 && line > 0) {
-      return err(ScopeErrorCode.SYMBOL_NOT_FOUND as any, `No scope at ${line}:${_col}`) as any;
+      return err(ScopeErrorCode.SYMBOL_NOT_FOUND as import("../types/core").ErrorCode, `No scope at ${line}:${_col}`);
     }
-    return ok(found) as any;
+    return ok(found);
   }
 
   buildScopeTree(_f: unknown, _c: string, _s: unknown[]): unknown {

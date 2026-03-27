@@ -16,6 +16,8 @@ module.exports = function (api) {
     presets: [['babel-preset-expo', { unstable_transformImportMeta: true }]],
 
     plugins: [
+      // Hermes AsyncIterator polyfill — @react-native-ai/mlc streamText için zorunlu
+      '@babel/plugin-transform-async-generator-functions',
       // @/ path aliasları (tsconfig.json'daki paths ile eşleşmeli)
       [
         'module-resolver',

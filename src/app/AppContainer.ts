@@ -299,7 +299,7 @@ export class AppContainer {
    *    Getter'lar private field'ı doğrudan geçirir — getter çağrılmaz.
    */
   private _require<T>(value: T | null, name: string): T {
-    if (value == null) {
+    if (value === null) {
       throw new Error(
         `AppContainer: '${name}' henüz hazır değil. init() çağrıldı mı?`,
       );

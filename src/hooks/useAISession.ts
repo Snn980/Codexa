@@ -200,8 +200,7 @@ export function useAISession(opts: UseAISessionOptions): AISessionState & AISess
 
   useEffect(() => {
     void refreshList();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); // kasıtlı: sadece mount'ta çalışır
+  }, []); // intentional: mount-only, refreshList kasıtlı olarak bağımlılık dışı (stale closure yok — ref kullanıyor)
 
   // ─── EventBus ────────────────────────────────────────────────────────
 

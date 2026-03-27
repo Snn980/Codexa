@@ -4,7 +4,6 @@ import reactHooks from "eslint-plugin-react-hooks";
 import globals from "globals";
 
 export default [
-  // Global ignores
   {
     ignores: [
       "node_modules/**",
@@ -16,10 +15,9 @@ export default [
       "dist/**",
       "build/**",
       ".expo/**",
-    ],
+      ".detoxrc.js"
+    ]
   },
-  
-  // TypeScript/React dosyaları
   {
     files: ["**/*.ts", "**/*.tsx"],
     languageOptions: {
@@ -41,10 +39,9 @@ export default [
       "react-hooks": reactHooks,
     },
     rules: {
-      // TypeScript rules
       "@typescript-eslint/no-explicit-any": "warn",
-      "@typescript-eslint/no-unused-vars": ["warn", { 
-        argsIgnorePattern: "^_", 
+      "@typescript-eslint/no-unused-vars": ["warn", {
+        argsIgnorePattern: "^_",
         varsIgnorePattern: "^_",
         caughtErrorsIgnorePattern: "^_",
         destructuredArrayIgnorePattern: "^_",
@@ -56,12 +53,8 @@ export default [
       "@typescript-eslint/ban-ts-comment": "warn",
       "@typescript-eslint/no-empty-function": "warn",
       "@typescript-eslint/no-inferrable-types": "warn",
-      
-      // React Hooks rules
       "react-hooks/rules-of-hooks": "error",
       "react-hooks/exhaustive-deps": "warn",
-      
-      // JavaScript rules
       "no-console": "off",
       "eqeqeq": ["warn", "always"],
       "no-var": "error",
@@ -69,12 +62,10 @@ export default [
       "no-unused-vars": "off",
     },
   },
-  
-  // Test dosyaları için özel kurallar (unused vars hatasını çözer)
   {
     files: [
-      "**/__tests__/**/*.{ts,tsx}", 
-      "**/*.{spec,test}.{ts,tsx}", 
+      "**/__tests__/**/*.{ts,tsx}",
+      "**/*.{spec,test}.{ts,tsx}",
       "e2e/**/*.ts",
       "**/__mocks__/**/*.{ts,tsx}"
     ],

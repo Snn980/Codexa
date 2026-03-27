@@ -243,7 +243,7 @@ export class AIWorkerBridge implements IWorkerPort {
     }
     if (any.type === "REQUEST") {
       const modelId   = any.payload?.model;
-      const isOffline = modelId != null && this._variantCache.isOffline(modelId);
+      const isOffline = modelId !== null && modelId !== undefined && this._variantCache.isOffline(modelId);
       try { (isOffline ? this._offlineWorker : this._cloudWorker).postMessage(msg); }
       catch { /* ignore */ }
       return;

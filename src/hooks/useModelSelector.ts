@@ -116,7 +116,7 @@ export function useModelSelector(
   // ─── Türetilmiş değerler ──────────────────────────────────────────────────
 
   const availableModels          = getAvailableModels(permissionStatus);
-  const isSelectedModelAvailable = selectedModelId != null &&
+  const isSelectedModelAvailable = selectedModelId !== null &&
     isModelAvailable(selectedModelId, permissionStatus);
 
   return {

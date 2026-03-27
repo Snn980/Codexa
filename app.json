@@ -89,12 +89,15 @@
         }
       ],
       [
-        "llama.rn",
+        "@react-native-ai/mlc",
         {
-          "enableEntitlements": true,
-          "entitlementsProfile": "production",
-          "forceCxx20": true,
-          "enableOpenCLAndHexagon": true
+          "ios": {
+            "enableMetal": true
+          },
+          "android": {
+            "enableOpenCL": true,
+            "enableVulkan": true
+          }
         }
       ],
       [

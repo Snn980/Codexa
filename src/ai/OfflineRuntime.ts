@@ -1,21 +1,17 @@
 /**
- * ai/OfflineRuntime.ts — llama.cpp WASM adapter
+ * ai/OfflineRuntime.ts — llama.cpp adapter
  *
  * § 1  : Result<T>
- * § 11 : Expo asset WASM load
+ * § 11 : Expo asset load
+ *
+ * REFACTOR: llama.rn → @mlc-ai/react-native-mlc-llm
+ *   ExpoLlamaCppLoader artık MlcLlmBinding.ts'ten MlcLlmLoader'a delege eder.
+ *   ILlamaCppBinding / ILlamaCppLoader interface'leri değişmedi.
+ *   OfflineRuntime sınıfı değişmedi.
  *
  * DÜZELTME #4 — getChatTemplate gereksiz çift çağrı:
- *   ❌ const template = getChatTemplate(request.modelId);   // çağrı 1
- *      const prompt   = this._buildPrompt(messages, modelId); // _buildPrompt içinde çağrı 2
- *      → Her request için 2x Map lookup
- *
- *   ✅ _buildPrompt() kaldırıldı.
- *      streamChat içinde tek getChatTemplate() çağrısı:
- *        const template = getChatTemplate(request.modelId);
- *        const prompt   = template.buildPrompt(request.messages);
- *      template.stopTokens → binding.nextToken'a iletilir.
- *
- * T-P9-2 KAPANDI: model-specific template + injection guard + stop tokens.
+ *   ✅ streamChat içinde tek getChatTemplate() çağrısı
+ *   T-P9-2 KAPANDI: model-specific template + injection guard + stop tokens.
  */
 
 import { ok, err }          from "../core/Result";
@@ -63,8 +59,8 @@ export interface ILlamaCppLoader {
 }
 
 // ─── ExpoLlamaCppLoader ───────────────────────────────────────────────────────
-// llama.rn native binding — WASM artık kullanılmıyor.
-// Gerçek implementasyon LlamaCppWasm.ts'te; bu sınıf ona delege eder.
+// MLC LLM native binding — llama.rn kaldırıldı.
+// Gerçek implementasyon MlcLlmBinding.ts'te; bu sınıf ona delege eder.
 
 export class ExpoLlamaCppLoader implements ILlamaCppLoader {
   private readonly _modelId: AIModelId;
@@ -80,7 +76,7 @@ export class ExpoLlamaCppLoader implements ILlamaCppLoader {
     config: {
       n_ctx?: number;
       n_threads?: number;
-      /** 0 = CPU-only, 1+ = Metal (iOS) / OpenCL (Android) */
+      /** 0 = CPU-only, 1+ = Metal (iOS) / OpenCL-Vulkan (Android) */
       n_gpu_layers?: number;
       use_mlock?: boolean;
     } = {},
@@ -90,9 +86,11 @@ export class ExpoLlamaCppLoader implements ILlamaCppLoader {
   }
 
   async loadBinding(): Promise<ILlamaCppBinding> {
-    // llama.rn — Expo Dev Client gerektirir (Expo Go desteklemez)
-    const { ExpoLlamaCppLoader: LlamaRnLoader } = await import("./LlamaCppWasm");
-    const inner = new LlamaRnLoader(this._modelId, this._config);
+    // MLC LLM — Expo Dev Client gerektirir (Expo Go desteklemez)
+    const { MlcLlmLoader } = await import("./MlcLlmBinding");
+    const inner = new MlcLlmLoader(this._modelId, {
+      n_ctx: this._config.n_ctx,
+    });
     return inner.loadBinding();
   }
 }
@@ -181,7 +179,7 @@ export class OfflineRuntime implements IAIWorkerRuntime {
 
     // ✅ DÜZELTME #4: getChatTemplate tek kez çağrılır
     const template = getChatTemplate(request.modelId);
-    const prompt   = template.buildPrompt(request.messages); // ❌ artık _buildPrompt() yok
+    const prompt   = template.buildPrompt(request.messages);
 
     // LRU-2 tokenize cache
     let contextTokenIds = cache.get(prompt);
@@ -196,7 +194,7 @@ export class OfflineRuntime implements IAIWorkerRuntime {
         contextTokenIds,
         request.maxTokens,
         request.signal,
-        template.stopTokens, // stop token'lar binding'e iletilir
+        template.stopTokens,
       )) {
         if (request.signal.aborted)
           return err(RuntimeErrorCode.REQUEST_ABORTED, "Aborted during inference");
@@ -212,9 +210,6 @@ export class OfflineRuntime implements IAIWorkerRuntime {
 
     return ok({ totalTokens: contextTokenIds.length + outputTokenCount });
   }
-
-  // ✅ DÜZELTME #4: _buildPrompt() kaldırıldı — tek çağrı streamChat'te
-  // private _buildPrompt(...) — REMOVED
 
   private async _ensureLoaded(
     modelId: AIModelId, apiModelId: string,

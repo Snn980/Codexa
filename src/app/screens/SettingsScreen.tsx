@@ -219,11 +219,20 @@ export function SettingsScreen(): React.ReactElement {
 
         {/* ── Hakkında ───────────────────────────────────────────── */}
         <SettingsSection title="Hakkında">
-          <InfoRow label="Sürüm"       value="0.2.0-alpha" />
-          <InfoRow label="Mimari"      value="Offline-First" />
-          <InfoRow label="Runtime"     value="QuickJS (Phase 2)" />
-          <InfoRow label="AI"          value="llama.cpp (Phase 4)" />
-          <InfoRow label="Depolama"    value="SQLite (libsql)" />
+          <InfoRow label="Sürüm"      value="0.2.0-alpha" />
+          <InfoRow label="Mimari"     value="Offline-First" />
+          <InfoRow label="Runtime"    value="QuickJS (Phase 2)" />
+          <InfoRow label="Offline AI" value="MLC LLM (@react-native-ai/mlc)" />
+          <InfoRow label="Cloud AI"   value="Claude (Anthropic) · GPT (OpenAI)" />
+          <InfoRow label="Depolama"   value="SQLite (libsql)" />
+          <InfoRow label="Geliştirme" value="Claude (claude.ai) ile geliştirildi" />
+        </SettingsSection>
+
+        {/* ── Bağlantılar ─────────────────────────────────────────── */}
+        <SettingsSection title="Bağlantılar">
+          <InfoRow label="Anthropic"  value="anthropic.com" />
+          <InfoRow label="Claude"     value="claude.ai" />
+          <InfoRow label="Docs"       value="docs.anthropic.com" />
         </SettingsSection>
 
       </ScrollView>

@@ -251,8 +251,8 @@ export const VirtualList = React.memo(function VirtualList({
    * İlk değer: mount anındaki buffer snapshot'ı (filtre uygulanmış).
    */
   const [items, setItems] = useState<ConsoleEntry[]>(() =>
-    executionId != null
-      ? stream.buffer.forExecution(executionId)
+    executionId !== null
+      ? (executionId ? stream.buffer.forExecution(executionId) || [] : [])
       : stream.buffer.toArray(),
   );
 
@@ -341,7 +341,7 @@ export const VirtualList = React.memo(function VirtualList({
   useEffect(() => {
     /** Execution filtresi — null/undefined → tüm satırları kabul et. */
     const accept = (entry: ConsoleEntry): boolean =>
-      executionId == null || entry.executionId === executionId;
+      executionId === null || entry.executionId === executionId;
 
     const unsub = stream.buffer.subscribe((entry) => {
       if (!accept(entry)) return;
@@ -373,8 +373,8 @@ export const VirtualList = React.memo(function VirtualList({
    */
   useEffect(() => {
     setItems(
-      executionId != null
-        ? stream.buffer.forExecution(executionId)
+      executionId !== null
+        ? (executionId ? stream.buffer.forExecution(executionId) || [] : [])
         : stream.buffer.toArray(),
     );
     setDroppedCount(stream.buffer.droppedCount);
@@ -394,7 +394,7 @@ export const VirtualList = React.memo(function VirtualList({
       "runtime:started",
       ({ executionId: incomingId }) => {
         // Filtre aktifse yalnızca ilgili execution'ı işle
-        if (executionId != null && incomingId !== executionId) return;
+        if (executionId !== null && incomingId !== executionId) return;
 
         // Pending flush iptal — eski satırlar karışmasın
         if (flushTimerRef.current !== null) {
@@ -418,7 +418,7 @@ export const VirtualList = React.memo(function VirtualList({
     const unsubFinished = eventBus.on(
       "runtime:finished",
       ({ executionId: incomingId }) => {
-        if (executionId != null && incomingId !== executionId) return;
+        if (executionId !== null && incomingId !== executionId) return;
         setIsRunning(false);
       },
     );
@@ -426,7 +426,7 @@ export const VirtualList = React.memo(function VirtualList({
     const unsubError = eventBus.on(
       "runtime:error",
       ({ executionId: incomingId }) => {
-        if (executionId != null && incomingId !== executionId) return;
+        if (executionId !== null && incomingId !== executionId) return;
         setIsRunning(false);
       },
     );

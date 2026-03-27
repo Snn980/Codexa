@@ -104,8 +104,7 @@ export function useChatHistory(
         setActiveMessages(msgResult.data);
       }
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); // Sadece mount'ta
+  }, []); // intentional: mount-only initialization
 
   // ── Yeni session ──
   const newSession = useCallback((): string => {

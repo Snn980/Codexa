@@ -139,7 +139,7 @@ export const ModelDownloadSheet = ({
   eventBus,
   onClose,
 }: ModelDownloadSheetProps) => {
-  const offlineModels = AI_MODELS.filter((m) => m.gguf != null);
+  const offlineModels = AI_MODELS.filter((m) => m.gguf !== null);
 
   // 💡 GLOBAL STATE: manager ref sabit; mount'ta initialize, eventBus ile güncellenir
   const [states, setStates] = useState<Map<AIModelId, DownloadState>>(() =>

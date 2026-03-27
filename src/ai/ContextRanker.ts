@@ -35,14 +35,14 @@ export class ContextRanker {
       if (String(item.fileId) === String(snapshot.activeFileId)) { score += 5; }
 
       // Recency
-      if (item.fileId != null) {
+      if (item.fileId !== null) {
         const ts = this._recency.getLastEditedAt(item.fileId);
         const ageSec = (now - ts) / 1000;
         score += Math.max(0, 3 - ageSec / 60);
       }
 
       // Import graph hop count
-      if (item.fileId != null && item.fileId !== snapshot.activeFileId) {
+      if (item.fileId !== null && item.fileId !== snapshot.activeFileId) {
         const hops = await this._importGraph.getHopCount(snapshot.activeFileId, item.fileId);
         if (hops !== null) score += Math.max(0, 2 - hops);
       }

@@ -429,4 +429,127 @@ export class ModelDownloadManager {
     };
     this._states.set(modelId, { ...current, ...partial });
   }
+
+  // ─── startMlcDownload ─────────────────────────────────────────────────
+  //
+  // @react-native-ai/mlc SDK'sının kendi download mekanizmasını kullanır.
+  // GGUF dosya indirmesi YOK — MLC kendi cache dizinini yönetir.
+  //
+  // Akış:
+  //   1. Alan kontrolü (gguf.sizeMB üzerinden tahmin)
+  //   2. MlcDownloadHelper.download() — ilerleme eventleri yayar
+  //   3. model:download:progress  → UI güncelle
+  //   4. model:download:complete  → runner'a bildir
+  //
+  // Kullanım (AppContainer / ModelsScreen):
+  //   await downloadManager.startMlcDownload(AIModelId.OFFLINE_GEMMA3_1B);
+
+  async startMlcDownload(modelId: AIModelId): Promise<Result<void>> {
+    if (this._downloadLock.has(modelId)) {
+      return err(
+        DownloadErrorCode.ALREADY_DOWNLOADING as import('../types/core').ErrorCode,
+        'Already downloading',
+      );
+    }
+
+    const model = AI_MODELS.find((m) => m.id === modelId);
+    if (!model) {
+      return err(
+        DownloadErrorCode.MODEL_NOT_FOUND as import('../types/core').ErrorCode,
+        `Unknown model: ${modelId}`,
+      );
+    }
+
+    // MLC model ID — AIModels.MLC_MODEL_IDS eşlemesinden al
+    const { getMlcModelId } = await import('../ai/AIModels');
+    const mlcModelId = getMlcModelId(modelId);
+    if (!mlcModelId) {
+      return err(
+        DownloadErrorCode.NO_GGUF_META as import('../types/core').ErrorCode,
+        `No MLC model ID for: ${modelId}`,
+      );
+    }
+
+    // Alan kontrolü (GGUF sizeMB'den tahmini)
+    const estimatedMB = model.gguf?.sizeMB ?? 1500;
+    const freeSpace   = await this._storage.freeSpaceMB();
+    if (freeSpace < estimatedMB + MIN_FREE_BUFFER_MB) {
+      const msg = `Yetersiz alan: ${freeSpace} MB mevcut, ${estimatedMB + MIN_FREE_BUFFER_MB} MB gerekli`;
+      this._setState(modelId, {
+        status: 'error', receivedMB: 0, totalMB: estimatedMB, percent: 0,
+        errorCode: DownloadErrorCode.INSUFFICIENT_SPACE, errorMessage: msg,
+      });
+      return err(
+        DownloadErrorCode.INSUFFICIENT_SPACE as import('../types/core').ErrorCode,
+        msg,
+      );
+    }
+
+    this._downloadLock.add(modelId);
+    this._setState(modelId, { status: 'downloading', receivedMB: 0, totalMB: estimatedMB, percent: 0 });
+    this._eventBus.emit('model:download:start', { modelId, sizeMB: estimatedMB });
+
+    try {
+      const { MlcDownloadHelper } = await import('../ai/MlcLlmBinding');
+      const helper = new MlcDownloadHelper();
+
+      await helper.download(
+        mlcModelId,
+        (percent, receivedMB, totalMB) => {
+          this._setState(modelId, {
+            status: 'downloading',
+            receivedMB: Math.round(receivedMB),
+            totalMB:    Math.round(totalMB) || estimatedMB,
+            percent:    Math.round(percent),
+          });
+          this._eventBus.emit('model:download:progress', {
+            modelId,
+            percent:    Math.round(percent),
+            receivedMB: Math.round(receivedMB),
+            totalMB:    Math.round(totalMB) || estimatedMB,
+          });
+        },
+      );
+
+      this._setState(modelId, {
+        status: 'complete',
+        receivedMB: estimatedMB,
+        totalMB:    estimatedMB,
+        percent:    100,
+        localPath:  mlcModelId,   // MLC kendi path'ini yönetir; ID yeterli
+      });
+      this._eventBus.emit('model:download:complete', { modelId, localPath: mlcModelId });
+      return ok(undefined);
+
+    } catch (e) {
+      const msg = String(e);
+      this._setState(modelId, {
+        status: 'error', receivedMB: 0, totalMB: estimatedMB, percent: 0,
+        errorCode: DownloadErrorCode.NETWORK_ERROR, errorMessage: msg,
+      });
+      this._eventBus.emit('model:download:error', { modelId, code: 'download_error', message: msg });
+      return err(
+        DownloadErrorCode.NETWORK_ERROR as import('../types/core').ErrorCode,
+        msg,
+      );
+    } finally {
+      this._downloadLock.delete(modelId);
+    }
+  }
+
+  // ─── isMlcModelReady ──────────────────────────────────────────────────
+  // MLC modelinin cihazda kurulu olup olmadığını kontrol eder.
+  // ModelsScreen'de "İndir" / "Hazır" durumu için kullanılır.
+
+  async isMlcModelReady(modelId: AIModelId): Promise<boolean> {
+    try {
+      const { getMlcModelId } = await import('../ai/AIModels');
+      const mlcModelId = getMlcModelId(modelId);
+      if (!mlcModelId) return false;
+      const { MlcDownloadHelper } = await import('../ai/MlcLlmBinding');
+      return new MlcDownloadHelper().isReady(mlcModelId);
+    } catch {
+      return false;
+    }
+  }
 }

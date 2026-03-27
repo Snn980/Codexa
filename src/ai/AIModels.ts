@@ -107,6 +107,33 @@ export interface GGUFMeta {
   quantization: "Q4_K_M" | "IQ4_XS" | "Q5_K_M";
 }
 
+// ─── MLC Model ID Eşleme ──────────────────────────────────────────────────────
+
+/**
+ * AIModelId → @react-native-ai/mlc model string eşlemesi.
+ *
+ * Model seçim kriterleri (Mart 2026, mobil IDE, kodlama ağırlıklı):
+ *   • Gemma 3 1B  — Ultra hafif (~700MB), Google mobil optimize, temel tamamlama
+ *   • Qwen 2.5 Coder 1.5B — Kodlama/matematik odaklı, Qwen3.5 serisinin stabil kolu
+ *   • Phi-4 Mini  — Reasoning-first, Microsoft, TypeScript/JS güçlü (~2.2GB)
+ *
+ * ⚠️ MLC model ID'leri @react-native-ai/mlc'nin prebuilt registry'sine göre
+ *    verilmiştir. Değişiklikler için: https://github.com/callstackincubator/ai
+ */
+export const MLC_MODEL_IDS: Partial<Record<AIModelId, string>> = {
+  [AIModelId.OFFLINE_GEMMA3_1B]: "gemma-3-1b-it-q4f16_1",
+  [AIModelId.OFFLINE_GEMMA3_4B]: "Qwen2.5-Coder-1.5B-Instruct-q4f16_1",
+  [AIModelId.OFFLINE_PHI4_MINI]: "Phi-4-mini-instruct-q4f16_1",
+} as const;
+
+/**
+ * AIModelId için MLC model ID'sini döndürür.
+ * Bilinmiyorsa apiModelId fallback olarak kullanılır.
+ */
+export function getMlcModelId(modelId: AIModelId): string | undefined {
+  return MLC_MODEL_IDS[modelId];
+}
+
 // ─── Model Descriptor ─────────────────────────────────────────────────────────
 
 export interface AIModel {
@@ -152,7 +179,7 @@ export const AI_MODELS: readonly AIModel[] = [
     details: "Google'ın en küçük Gemma 3 modeli. Düşük RAM'li cihazlar için ideal. Temel kod tamamlama ve açıklamalar için yeterli.",
     variant: AIModelVariant.OFFLINE,
     provider: AIProvider.GOOGLE,
-    apiModelId: "gemma-3-1b-it-Q4_K_M.gguf",
+    apiModelId: "gemma-3-1b-it-q4f16_1",  // MLC model ID (@react-native-ai/mlc)
     requiredPermission: "LOCAL_ONLY",
     latencyHint: "~100-300ms",
     requiresNetwork: false,
@@ -167,25 +194,26 @@ export const AI_MODELS: readonly AIModel[] = [
     },
   },
 
-  // ── Offline: Gemma 3 4B ──────────────────────────────────────────────────
+  // ── Offline: Qwen 2.5 Coder 1.5B ────────────────────────────────────────
+  // ⚡ REFACTOR: Gemma 3 4B → Qwen 2.5 Coder 1.5B (kodlama ağırlıklı, daha küçük)
   {
     id: AIModelId.OFFLINE_GEMMA3_4B,
-    displayName: "Gemma 3 4B",
-    description: "Dengeli offline — ~2.5 GB, multimodal",
-    details: "Google'ın 4B Gemma 3 modeli. Kod üretimi, hata ayıklama ve açıklama görevlerinde güçlü. 4 GB+ RAM önerilir.",
+    displayName: "Qwen 2.5 Coder 1.5B",
+    description: "Kodlama odaklı — ~1.2 GB, Qwen serisinin güçlü kodu",
+    details: "Alibaba'nın Qwen 2.5 Coder serisi. 1.5B parametreye rağmen kod üretimi, tamamlama ve debug'da çok üstün. TypeScript, Python, JavaScript güçlü. 3B+ RAM önerilir.",
     variant: AIModelVariant.OFFLINE,
-    provider: AIProvider.GOOGLE,
-    apiModelId: "gemma-3-4b-it-Q4_K_M.gguf",
+    provider: AIProvider.GOOGLE,   // MLC registry'de Google provider altında
+    apiModelId: "Qwen2.5-Coder-1.5B-Instruct-q4f16_1",  // MLC model ID
     requiredPermission: "LOCAL_ONLY",
-    latencyHint: "~300-800ms",
+    latencyHint: "~100-300ms",
     requiresNetwork: false,
-    maxContextTokens: 128_000,
+    maxContextTokens: 32_768,
     maxOutputTokens: 8_192,
     gguf: {
-      huggingFaceRepo: "unsloth/gemma-3-4b-it-GGUF",
-      filename: "gemma-3-4b-it-Q4_K_M.gguf",
-      sizeMB: 2_500,
-      minRamMB: 4_000,
+      huggingFaceRepo: "Qwen/Qwen2.5-Coder-1.5B-Instruct-GGUF",
+      filename: "Qwen2.5-Coder-1.5B-Instruct-Q4_K_M.gguf",
+      sizeMB: 1_200,
+      minRamMB: 3_000,
       quantization: "Q4_K_M",
     },
   },
@@ -198,7 +226,7 @@ export const AI_MODELS: readonly AIModel[] = [
     details: "Microsoft'un Phi-4 Mini modeli. 'Reasoning-first' eğitim ile karmaşık kod görevlerinde 70B modellere rakip. TypeScript & JS desteği güçlü.",
     variant: AIModelVariant.OFFLINE,
     provider: AIProvider.MICROSOFT,
-    apiModelId: "Phi-4-mini-instruct-Q4_K_M.gguf",
+    apiModelId: "Phi-4-mini-instruct-q4f16_1",  // MLC model ID (@react-native-ai/mlc)
     requiredPermission: "LOCAL_ONLY",
     latencyHint: "~300-800ms",
     requiresNetwork: false,
@@ -465,7 +493,7 @@ export function selectModelForPrompt(opts: SelectModelOptions): AIModelId | null
   if (kind === "long_context" && estimatedInputTokens > 32_000) {
     candidates = candidates.filter((id) => {
       const model = getModel(id);
-      return model != null && model.maxContextTokens > 32_000;
+      return model && model.maxContextTokens > 32_000;
     });
   }
 

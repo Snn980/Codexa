@@ -267,6 +267,9 @@ export class LibSQLDriver implements IDatabaseDriver {
   }
 
   private async openDatabase(): Promise<ExpoSQLiteDatabase> {
-    return SQLite.openDatabaseAsync(this.dbPath);
+    // TS FIX: expo-sqlite SQLiteDatabase ile minimal ExpoSQLiteDatabase arayüzümüz
+    // yapısal olarak uyumlu ama SDK'nın tip imzası farklı overload içerir.
+    // unknown cast güvenli — kullandığımız metotların hepsi aşağıda tanımlı.
+    return SQLite.openDatabaseAsync(this.dbPath) as unknown as Promise<ExpoSQLiteDatabase>;
   }
 }

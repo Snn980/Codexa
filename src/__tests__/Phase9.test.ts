@@ -344,7 +344,7 @@ describe("#1 ai.offline.worker.ts — import + constructor düzeltmesi", () => {
   it("ExpoLlamaCppLoader OfflineRuntime'dan export edilir (modelId param)", () => {
     const { ExpoLlamaCppLoader } = require("../ai/OfflineRuntime");
     expect(typeof ExpoLlamaCppLoader).toBe("function");
-    // modelId ile oluşturulabilmeli (llama.rn imzası)
+    // modelId ile oluşturulabilmeli (MLC LLM imzası)
     const loader = new ExpoLlamaCppLoader(AIModelId.OFFLINE_GEMMA3_1B);
     expect(loader).toBeDefined();
   });
@@ -373,17 +373,7 @@ describe("#1 ai.offline.worker.ts — import + constructor düzeltmesi", () => {
     rt.dispose();
   });
 
-  it.skip("worker dosyası AIModelId import etmiyor (artık gerekmez)", () => {
-    const fs   = require("fs");
-    const path = require("path");
-    const workerPath = path.resolve(__dirname, "../workers/ai.offline.worker.ts");
-    if (!fs.existsSync(workerPath)) { expect(true).toBe(true); return; }
-    const content = fs.readFileSync(workerPath, "utf8");
-    // ✅ AIModelId import'u kaldırıldı
-    expect(content).not.toMatch(/import.*AIModelId.*from/);
-    // ✅ LlamaCppWasm import'u kaldırıldı
-    expect(content).not.toContain("from \"../ai/LlamaCppWasm\"");
-  });
+  // T-P9: AIModelId import testi kaldırıldı (refactor sonrası geçersiz)
 });
 
 // ═══════════════════════════════════════════════════════════════════════════════

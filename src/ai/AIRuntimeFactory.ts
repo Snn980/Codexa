@@ -4,10 +4,14 @@
  * § 4  : AppContainer DI pattern
  * § 1  : Result<T>
  *
+ * REFACTOR: llama.rn → @mlc-ai/react-native-mlc-llm
+ *   createOfflineRuntime() artık MlcLlmLoader kullanır.
+ *   Diğer fonksiyonlar değişmedi.
+ *
  * Platform'a ve permission seviyesine göre doğru runtime'ları oluşturur:
  *
  *   createOfflineRuntime(modelId)
- *     └─ ExpoLlamaCppLoader (T-NEW-1) + ChatTemplate (T-NEW-2)
+ *     └─ MlcLlmLoader (MlcLlmBinding.ts) + ChatTemplate
  *          └─ OfflineRuntime → AIWorker (offline worker thread)
  *
  *   createCloudRuntime(keyStore)
@@ -17,15 +21,12 @@
  *   createAIWorkerBridge(offlineRuntime, cloudRuntime)
  *     └─ AIWorkerBridge (IWorkerPort)
  *          └─ AIWorkerClient (useAIChat)
- *
- * Lifecycle:
- *   AppContainer.init() → AIRuntimeFactory.create() → bridge singleton
- *   AppContainer.dispose() → bridge.dispose() → worker.dispose() → runtime.dispose()
  */
 
 import type { IAIWorkerRuntime }    from "./IAIWorkerRuntime";
 import type { ILlamaCppLoader }     from "./OfflineRuntime";
-import { OfflineRuntime }           from "./OfflineRuntime";
+import { OfflineRuntime,
+         MockLlamaCppLoader }       from "./OfflineRuntime";   // static — dynamic import yok
 import { CloudRuntime }             from "./CloudRuntime";
 import { AIWorkerBridge, createMockWorkerFactory } from "./AIWorkerBridge";
 import type { AIModelId }           from "./AIModels";
@@ -38,8 +39,8 @@ import { ok, err }                  from "../core/Result";
 /**
  * Offline runtime oluştur.
  *
- * llama.rn native binding — WASM kaldırıldı.
- * GGUF dosya path'i LlamaCppRunner.setModelPath() ile runtime'da inject edilir.
+ * MLC LLM native binding — llama.rn kaldırıldı.
+ * Model ID MlcLlmLoader üzerinden MLC engine'e iletilir.
  *
  * Gereksinim: Expo Dev Client (npx expo run:ios / run:android)
  *             Expo Go desteklemez — native modül.
@@ -51,13 +52,12 @@ export async function createOfflineRuntime(
     let loader: ILlamaCppLoader;
 
     if (isNativeEnv()) {
-      // llama.rn native loader — iOS Metal / Android OpenCL
-      const { ExpoLlamaCppLoader } = await import("./OfflineRuntime");
-      loader = new ExpoLlamaCppLoader(modelId, { n_gpu_layers: 1 });
+      // MLC LLM native loader — iOS Metal / Android Vulkan/OpenCL
+      const { MlcLlmLoader } = await import("./MlcLlmBinding");
+      loader = new MlcLlmLoader(modelId);
     } else {
       // Test / CI ortamı — native modül yok
-      const { MockLlamaCppLoader } = await import("./OfflineRuntime");
-      loader = new MockLlamaCppLoader();
+      loader = new MockLlamaCppLoader();  // static import
     }
 
     return ok(new OfflineRuntime(loader));
@@ -90,43 +90,27 @@ export async function createAIWorkerBridge(opts: {
   const cloudRuntime = createCloudRuntime(keyStore);
 
   if (useMock) {
-    // Test: in-process factory
     const factory = createMockWorkerFactory(offlineResult.data, cloudRuntime);
     return ok(new AIWorkerBridge(factory));
   }
 
-  // Production: gerçek Worker thread factory
   const factory = createNativeWorkerFactory(offlineResult.data, cloudRuntime);
   return ok(new AIWorkerBridge(factory));
 }
 
 // ─── Native Worker factory ────────────────────────────────────────────────────
 
-/**
- * Gerçek Worker thread'leri oluşturur.
- * Expo: `new Worker(new URL("./ai.offline.worker", import.meta.url))`
- *
- * Her worker thread kendi runtime instance'ına sahiptir.
- * Bridge, main thread'de çalışır ve mesajları yönlendirir.
- *
- * NOT: Worker thread dosyaları (`ai.offline.worker.ts`, `ai.cloud.worker.ts`)
- * ayrı bundle entry point olarak Metro'ya tanıtılmalı.
- * Şimdilik in-process mock kullanılıyor; gerçek thread Phase 9'da.
- */
 function createNativeWorkerFactory(
   offlineRuntime: IAIWorkerRuntime,
   cloudRuntime: IAIWorkerRuntime,
 ) {
   // Gerçek Worker thread desteği Phase 9 — şimdilik mock factory
-  // Ancak runtime'lar gerçek (WASM / cloud API); sadece thread isolation eksik
   return createMockWorkerFactory(offlineRuntime, cloudRuntime);
 }
 
 // ─── Platform detect ──────────────────────────────────────────────────────────
 
 function isNativeEnv(): boolean {
-  // Jest / Node ortamında false döner → MockLlamaCppLoader kullanılır
-  // React Native / Expo ortamında __DEV__ global tanımlı olur
   try {
     return typeof __DEV__ !== "undefined";
   } catch {
@@ -134,12 +118,8 @@ function isNativeEnv(): boolean {
   }
 }
 
-// ─── AIRuntimeManager (AppContainer için) ────────────────────────────────────
+// ─── AIRuntimeManager ────────────────────────────────────────────────────────
 
-/**
- * AppContainer'ın tuttuğu runtime manager.
- * Tek seferlik init, lifecycle yönetimi.
- */
 export class AIRuntimeManager {
   private _bridge: AIWorkerBridge | null = null;
   private _keyStore: IAPIKeyStoreExtended | null = null;
@@ -151,7 +131,7 @@ export class AIRuntimeManager {
     useMock?: boolean;
   }): Promise<Result<void>> {
     if (this._disposed) return err("RUNTIME_UNKNOWN", "Disposed");
-    if (this._bridge)   return ok(undefined); // zaten başlatıldı
+    if (this._bridge)   return ok(undefined);
 
     this._keyStore = opts.keyStore;
     const result = await createAIWorkerBridge(opts);
