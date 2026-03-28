@@ -28,7 +28,7 @@ jobs:
           npm install -g eas-cli
 
       - name: Decode Keystore
-        run: echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 --decode > ./release.jks
+        run: echo "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" | base64 --decode > ./release.jks
 
       - name: Build Android APK (Local)
         run: |
@@ -45,9 +45,9 @@ jobs:
               "android": {
                 "keystore": {
                   "keystorePath": "./release.jks",
-                  "keystorePassword": "${{ secrets.KEYSTORE_PASSWORD }}",
-                  "keyAlias": "${{ secrets.KEYSTORE_ALIAS }}",
-                  "keyPassword": "${{ secrets.KEY_PASSWORD }}"
+                  "keystorePassword": "${{ secrets.ANDROID_KEYSTORE_PASSWORD }}",
+                  "keyAlias": "${{ secrets.ANDROID_KEYSTORE_ALIAS }}",
+                  "keyPassword": "${{ secrets.ANDROID_KEY_PASSWORD }}"
                 }
               }
             }
