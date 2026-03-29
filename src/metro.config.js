@@ -29,7 +29,6 @@ if (process.env.EXPO_GO !== 'false') {
     ...config.resolver.extraNodeModules,
     'react-native-mmkv': path.resolve(__dirname, 'src/mocks/react-native-mmkv.ts'),
     'react-native-nitro-modules': path.resolve(__dirname, 'src/mocks/react-native-nitro-modules.ts'),
-    'react-native-permissions': path.resolve(__dirname, 'src/mocks/react-native-permissions.ts'),
     '@react-native-ai/mlc': path.resolve(__dirname, 'src/mocks/react-native-ai-mlc.ts'),
   };
 }

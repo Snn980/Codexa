@@ -103,14 +103,19 @@ export default function App(): React.ReactElement {
   // ── Başlatma ───────────────────────────────────────────────────
   const initialize = useCallback(async () => {
     setBoot({ phase: "booting" });
+    console.log('[Boot] 1. Başlatılıyor...');
 
     // 0. Sentry — mümkün olan en erken noktada (§ 32, T-P15-4)
     //    DSN yoksa no-op, uygulamayı bloklamaz.
     void sentryService.init();
+    console.log('[Boot] 2. Sentry init tamamlandı');
 
     // 1. Base services (ProjectService, FileService, DB)
+    console.log('[Boot] 3. getApp().initialize() başlıyor...');
     const result = await getApp().initialize();
+    console.log('[Boot] 4. getApp().initialize() tamamlandı, ok:', result.ok);
     if (!result.ok) {
+      console.error('[Boot] HATA:', result.error.message);
       setBoot({ phase: "error", message: result.error.message });
       return;
     }
@@ -118,18 +123,22 @@ export default function App(): React.ReactElement {
     // 2. AI container (KeyStore, ModelStorage, AIRuntime, AppStateManager)
     //    EventBus base services'den alınır — aynı bus her iki katmanı bağlar.
     try {
+      console.log('[Boot] 5. appContainer.init() başlıyor...');
       await appContainer.init({
         eventBus:     getApp().services.eventBus,
         asyncStorage: AsyncStorage,
         // § 37.3 (T-P15-6): SQLite driver — migrate eder veya getDriver throws (henüz bağlı değilse)
         dbDriver:     (() => { try { return Database.getInstance().getDriver(); } catch { return undefined; } })(),
       });
+      console.log('[Boot] 6. appContainer.init() tamamlandı');
     } catch (e) {
       const message = e instanceof Error ? e.message : 'AI container init failed';
+      console.error('[Boot] appContainer HATA:', message, e);
       setBoot({ phase: "error", message });
       return;
     }
 
+    console.log('[Boot] 7. Uygulama hazır!');
     setBoot({ phase: "ready", services: getApp().services });
   }, []);
 

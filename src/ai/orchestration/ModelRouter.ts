@@ -1,29 +1,8 @@
 /**
- * ai/orchestration/ModelRouter.ts
+ * ai/orchestration/ModelRouter.ts — Offline-first model routing.
  *
- * § 53 — Offline-first model routing.
- *
- * Intent + permission seviyesinden RouteDecision üretir.
- * AIRuntimeFactory ve selectModelForPrompt'un ÜSTÜNDE çalışır —
- * ikinci bir routing sistemi değil, orchestration katmanı kararıdır.
- *
- * Routing mantığı:
- *
- *   permission = LOCAL_ONLY
- *     → primary: en iyi offline model
- *     → fallback: null (cloud yasak)
- *
- *   permission = CLOUD_ENABLED
- *     → intent.category → PromptKind mapping
- *     → primary: offline (offline-first politika)
- *     → fallback: uygun cloud model
- *     → timeoutMs: OFFLINE_TIMEOUT_MS (§ 53, AppConfig'den gelir)
- *
- *   permission = DISABLED
- *     → null döner (Orchestrator erken çıkar)
- *
- * § 1  : Result<T>
- * § 14 : TOKEN_BUDGETS
+ * Expo Go değişikliği: CLOUD_ENABLED → direkt cloud (offline model indirili değil)
+ * Native build: offline-first politika korunur
  */
 
 import {
@@ -39,17 +18,7 @@ import type { Intent, RouteDecision } from './types';
 import { IntentCategory }            from './types';
 import type { PromptKind }           from '../AIModels';
 
-// ─── Sabitler ─────────────────────────────────────────────────────────────────
-
-/**
- * § 53 — Offline timeout.
- * Bu süre içinde offline model yanıt üretemezse cloud escalation tetiklenir.
- * Mobil performans testi referansı: Phi-4 Mini 2.4GB @ 512 token ~8-12s.
- * 15s: tüm offline modeller için yeterli, kullanıcı bekleme eşiği altında.
- */
 export const OFFLINE_TIMEOUT_MS = 15_000;
-
-// ─── Intent → PromptKind mapping ─────────────────────────────────────────────
 
 const INTENT_TO_PROMPT_KIND: Record<IntentCategory, PromptKind> = {
   [IntentCategory.CODE_COMPLETE]: 'code',
@@ -62,14 +31,8 @@ const INTENT_TO_PROMPT_KIND: Record<IntentCategory, PromptKind> = {
   [IntentCategory.GENERAL]:       'quick_answer',
 };
 
-// ─── ModelRouter ──────────────────────────────────────────────────────────────
-
 export class ModelRouter {
 
-  /**
-   * Routing kararını üret.
-   * permission = DISABLED → null (Orchestrator abort eder)
-   */
   decide(
     intent:     Intent,
     permission: AIPermissionStatus,
@@ -78,16 +41,13 @@ export class ModelRouter {
 
     const promptKind = INTENT_TO_PROMPT_KIND[intent.category];
 
-    // LOCAL_ONLY: sadece offline modeller
     if (permission === 'LOCAL_ONLY') {
       const offlineModel = selectModelForPrompt({
         kind:   promptKind,
         status: 'LOCAL_ONLY',
         estimatedInputTokens: intent.estimatedTokens,
       });
-
       if (!offlineModel) return null;
-
       return {
         primaryModel:    offlineModel,
         fallbackModel:   null,
@@ -96,68 +56,57 @@ export class ModelRouter {
       };
     }
 
-    // CLOUD_ENABLED: offline-first + cloud fallback
-    // Primary: önce offline dene (offline-first politika)
-    const offlineModel = this._bestOfflineModel(promptKind, intent);
-
-    // Fallback: offline çalışmazsa cloud — CLOUD modeli zorunlu
-    const allModels  = AI_MODELS.filter(
-      (m) => m.variant === 'cloud' && isModelAvailable(m.id, 'CLOUD_ENABLED'),
-    );
-    const cloudModel: AIModelId | null = allModels.length > 0
-      ? (allModels[0]!.id as AIModelId)
-      : selectModelForPrompt({ kind: promptKind, status: 'CLOUD_ENABLED' });
-
-    // Hiç offline model yoksa direkt cloud
-    if (!offlineModel) {
-      if (!cloudModel) return null;
+    // CLOUD_ENABLED: cloud modeli primary olarak kullan
+    // (Expo Go'da offline model indirili değil, native build'de de cloud daha iyi)
+    const cloudModel = this._bestCloudModel(promptKind);
+    if (!cloudModel) {
+      // Cloud model yoksa offline dene
+      const offlineModel = this._bestOfflineModel(promptKind, intent);
+      if (!offlineModel) return null;
       return {
-        primaryModel:    cloudModel,
+        primaryModel:    offlineModel,
         fallbackModel:   null,
-        timeoutMs:       0,
+        timeoutMs:       OFFLINE_TIMEOUT_MS,
         fallbackEnabled: false,
       };
     }
 
     return {
-      primaryModel:    offlineModel,
-      fallbackModel:   cloudModel,
-      timeoutMs:       OFFLINE_TIMEOUT_MS,
-      fallbackEnabled: cloudModel !== null,
+      primaryModel:    cloudModel,
+      fallbackModel:   null,
+      timeoutMs:       0,
+      fallbackEnabled: false,
     };
   }
 
-  // ── Private ──────────────────────────────────────────────────────────────────
+  private _bestCloudModel(promptKind: PromptKind): AIModelId | null {
+    const cloudModels = AI_MODELS.filter(
+      (m) => m.variant === AIModelVariant.CLOUD && isModelAvailable(m.id, 'CLOUD_ENABLED'),
+    );
+    if (cloudModels.length === 0) return null;
 
-  /**
-   * Intent'e göre en uygun offline modeli seç.
-   * file_analysis gibi büyük context gerektiren intent'lerde
-   * küçük modeller elenir (TOKEN_BUDGETS kontrol edilir).
-   */
-  private _bestOfflineModel(
-    promptKind: PromptKind,
-    intent:     Intent,
-  ): AIModelId | null {
-    const offlineModels = AI_MODELS
-      .filter(m =>
-        m.variant === AIModelVariant.OFFLINE &&
-        isModelAvailable(m.id, 'LOCAL_ONLY'),
-      );
+    // kod için Sonnet, genel için Haiku
+    if (promptKind === 'code') {
+      const sonnet = cloudModels.find(m => m.id === AIModelId.CLOUD_CLAUDE_SONNET_46);
+      if (sonnet) return sonnet.id as AIModelId;
+    }
+    const haiku = cloudModels.find(m => m.id === AIModelId.CLOUD_CLAUDE_HAIKU_45);
+    if (haiku) return haiku.id as AIModelId;
 
+    return cloudModels[0]!.id as AIModelId;
+  }
+
+  private _bestOfflineModel(promptKind: PromptKind, intent: Intent): AIModelId | null {
+    const offlineModels = AI_MODELS.filter(
+      m => m.variant === AIModelVariant.OFFLINE && isModelAvailable(m.id, 'LOCAL_ONLY'),
+    );
     if (offlineModels.length === 0) return null;
 
-    // file_analysis: 32K+ token context gerekiyor, küçük modelleri ele
     if (promptKind === 'long_context' && intent.estimatedTokens > 1_000) {
-      const capable = offlineModels.filter(
-        m => m.maxContextTokens >= 32_000,
-      );
-      if (capable.length > 0) {
-        // reasoning-first tercih: Phi-4 Mini → Gemma3-4B → Gemma3-1B
-        return this._preferReasoning(capable.map(m => m.id));
-      }
+      const capable = offlineModels.filter(m => m.maxContextTokens >= 32_000);
+      if (capable.length > 0) return this._preferReasoning(capable.map(m => m.id));
     }
 
-    // Genel: selectModelForPrompt'u offline modele yönlendir
     return selectModelForPrompt({
       kind:   promptKind,
       status: 'LOCAL_ONLY',
@@ -166,12 +115,7 @@ export class ModelRouter {
   }
 
   private _preferReasoning(candidates: AIModelId[]): AIModelId | null {
-    // Phi-4 Mini (reasoning) → Gemma3-4B → Gemma3-1B
-    const preference = [
-      AIModelId.OFFLINE_PHI4_MINI,
-      AIModelId.OFFLINE_GEMMA3_4B,
-      AIModelId.OFFLINE_GEMMA3_1B,
-    ];
+    const preference = [AIModelId.OFFLINE_PHI4_MINI, AIModelId.OFFLINE_GEMMA3_4B, AIModelId.OFFLINE_GEMMA3_1B];
     for (const id of preference) {
       if (candidates.includes(id)) return id;
     }

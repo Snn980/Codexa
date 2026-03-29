@@ -1,17 +1,8 @@
 /**
  * workers/ai.offline.worker.ts — Offline AI Worker thread entry
  *
- * REFACTOR: llama.rn → @react-native-ai/mlc (Callstack, v0.12.0)
- *
- * TS FIX: n_ctx MlcLlmLoader config'inde artık tanımlı (v3 binding).
- *
- * Mimari:
- *   Worker thread
- *     └─ OfflineRuntime(MlcLlmLoader)
- *          └─ MlcLlmBinding → @react-native-ai/mlc
- *               └─ MLCModel (Metal / Vulkan / OpenCL)
- *
- * § 5  : REQUEST / STREAM / RESPONSE / CANCEL protokolü
+ * Expo Go: MLC native modül yok → MockLlamaCppLoader (hata döner → cloud fallback)
+ * Native build: MlcLlmLoader kullanılır
  */
 
 import { bootstrapWorker }    from "../ai/AIWorker";
@@ -23,21 +14,38 @@ import { AIModelId }          from "../ai/AIModels";
 declare const self: DedicatedWorkerGlobalScope;
 
 function createRuntime(): OfflineRuntime {
-  const isNative = (() => {
-    try { return typeof __DEV__ !== "undefined"; } catch { return false; }
-  })();
+  // Expo Go'da @react-native-ai/mlc mock'lanmış → hata döner → cloud fallback
+  // Native build'de EXPO_GO=false env değişkeni set edilir
+  const isExpoGo = typeof process !== 'undefined'
+    ? process.env.EXPO_GO !== 'false'
+    : true;
 
-  if (!isNative) return new OfflineRuntime(new MockLlamaCppLoader());
+  if (isExpoGo) {
+    // Expo Go: boş token yerine hata fırlat → ParallelExecutor cloud'a escalate eder
+    return new OfflineRuntime(new FailingLoader());
+  }
 
-  // TS FIX: n_ctx artık MlcLlmLoader config'inde tanımlı
-  const loader = new MlcLlmLoader(AIModelId.OFFLINE_GEMMA3_1B, {
-    n_ctx: 4096,
-  });
-
+  const loader = new MlcLlmLoader(AIModelId.OFFLINE_GEMMA3_1B, { n_ctx: 4096 });
   return new OfflineRuntime(loader);
 }
 
-const runtime = createRuntime();
-const worker  = bootstrapWorker(runtime, self);
+// Expo Go için: offline model yok hatası → cloud fallback tetiklenir
+import type { ILlamaCppLoader, ILlamaCppBinding } from "../ai/OfflineRuntime";
 
-self.addEventListener("close", () => { worker.dispose(); });
+class FailingLoader implements ILlamaCppLoader {
+  async loadBinding(): Promise<ILlamaCppBinding> {
+    return {
+      async loadModel() {
+        throw new Error('Offline model Expo Go\'da desteklenmiyor. Cloud modeli kullanın.');
+      },
+      tokenize: (text: string) => text.split(' ').map((_: string, i: number) => i),
+      async *nextToken(): AsyncGenerator<string, void, unknown> {
+        throw new Error('Offline model yüklü değil.');
+      },
+      free() {},
+    };
+  }
+}
+
+const runtime = createRuntime();
+bootstrapWorker(runtime, self);

@@ -47,6 +47,7 @@ import { sentryService, SentryService } from "../monitoring/SentryService";
 import type { IStorageInfo }         from "../download/ModelDownloadManager";
 import type { IEventBus }            from "../core/EventBus";
 import type { IPermissionGate }      from "../permission/PermissionGate";
+import { PermissionGate }            from "../permission/PermissionGate";
 import type { IDatabaseDriver }      from "../storage/Database";
 import { createChatStorageMigrator } from "../storage/chat/ChatStorageMigrator";
 import { SQLiteChatRepository }      from "../storage/chat/SQLiteChatRepository";
@@ -200,6 +201,9 @@ export class AppContainer {
       throw new Error(`AIRuntimeManager init failed: ${(runtimeResult as any).error?.message ?? "Unknown error"}`);
     }
     this._bridge = this._runtimeMgr.bridge;
+
+    // 6b. PermissionGate
+    this._permissionGate = new PermissionGate(eventBus);
 
     // 7b. ChatHistoryRepository — MMKV (§ 37, senkron, init gerekmez)
     this._chatHistory = new ChatHistoryRepository();

@@ -89,38 +89,14 @@
         }
       ],
       [
-        "@react-native-ai/mlc",
-        {
-          "ios": {
-            "enableMetal": true
-          },
-          "android": {
-            "enableOpenCL": true,
-            "enableVulkan": true
-          }
-        }
-      ],
-      [
         "expo-task-manager"
       ],
       [
         "expo-background-task"
-      ],
-      [
-        "react-native-permissions",
-        {
-          "iosPermissions": [
-            "Camera",
-            "Microphone",
-            "PhotoLibrary",
-            "PhotoLibraryAddOnly",
-            "Notifications"
-          ]
-        }
       ]
     ],
     "experiments": {
-      "typedRoutes": true
+      "typedRoutes": false
     },
     "extra": {
       "eas": {

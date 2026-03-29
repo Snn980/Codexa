@@ -28,7 +28,6 @@
     "**/*.ts",
     "**/*.tsx",
     ".expo/types/**/*.d.ts",
-    "expo-env.d.ts",
     "src/types/expo-stubs/**/*.d.ts"
   ],
   "exclude": [
