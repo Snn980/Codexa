@@ -212,7 +212,7 @@ export function useAIOrchestrator({
       permission,
       signal:      ctrl.signal,
       onChunk: (chunk) => {
-        // pendingId artık set edilmiş durumda — chunk'lar düşmez
+        if (__DEV__) console.log('[Chat] onChunk:', JSON.stringify(chunk?.slice(0, 30)));
         safeDispatch({ type: 'STREAM_CHUNK', chunk, assistantId });
       },
       onComplete: (_fullText, _modelUsed) => {
@@ -226,6 +226,7 @@ export function useAIOrchestrator({
     }
 
     if (!result.ok) {
+      if (__DEV__) console.error('[Chat] orchestrator error:', result.error.code, result.error.message);
       safeDispatch({ type: 'ERROR', error: result.error.message });
       return;
     }

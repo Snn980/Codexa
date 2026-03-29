@@ -88,11 +88,17 @@ export function SettingsScreen(): React.ReactElement {
       const ks = appContainer.keyStore;
       if (anthropicKey.trim()) {
         const r = await ks.setKey("anthropic", anthropicKey.trim());
-        if (!r.ok) { Alert.alert("Hata", "Anthropic key kaydedilemedi"); return; }
+        if (!r.ok) { 
+          Alert.alert("Hata", `Anthropic key: ${r.error?.message ?? 'kaydedilemedi'}`); 
+          return; 
+        }
       }
       if (openaiKey.trim()) {
         const r = await ks.setKey("openai", openaiKey.trim());
-        if (!r.ok) { Alert.alert("Hata", "OpenAI key kaydedilemedi"); return; }
+        if (!r.ok) { 
+          Alert.alert("Hata", `OpenAI key: ${r.error?.message ?? 'kaydedilemedi'}`); 
+          return; 
+        }
       }
       // Worker'a key'i gönder (foreground simulate)
       try { appContainer.appStateMgr.simulateStateChange('active'); } catch {}
@@ -230,7 +236,7 @@ export function SettingsScreen(): React.ReactElement {
         <SettingsSection title="Hakkında">
           <InfoRow label="Sürüm"      value="0.2.0-alpha" />
           <InfoRow label="Mimari"     value="Offline-First" />
-          <InfoRow label="Cloud AI"   value="Claude · GPT" />
+          <InfoRow label="Codexa"   value="Codexa" />
           <InfoRow label="Depolama"   value="SQLite" />
         </SettingsSection>
 

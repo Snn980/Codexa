@@ -136,9 +136,12 @@ export class CloudRuntime implements IAIWorkerRuntime {
 
     if (!response.ok) {
       const s = response.status;
+      let errBody = '';
+      try { errBody = await response.text(); } catch {}
+      if (__DEV__) console.error('[CloudRuntime] Anthropic error', s, errBody.slice(0, 300));
       if (s === 401) return err(RuntimeErrorCode.API_AUTH_FAILED, "Anthropic 401");
       if (s === 429) return err(RuntimeErrorCode.API_RATE_LIMITED, "Anthropic 429");
-      return err(RuntimeErrorCode.API_NETWORK_ERROR, `Anthropic HTTP ${s}`);
+      return err(RuntimeErrorCode.API_NETWORK_ERROR, `Anthropic HTTP ${s}: ${errBody.slice(0, 200)}`);
     }
 
     let outputTokens = 0;

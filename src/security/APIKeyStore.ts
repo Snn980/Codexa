@@ -125,8 +125,8 @@ export class InMemorySecureStore implements ISecureStore {
 // ─── Format doğrulama ─────────────────────────────────────────────────────────
 
 const KEY_FORMATS: Record<"anthropic" | "openai", RegExp> = {
-  anthropic: /^sk-ant-[a-zA-Z0-9\-_]{20,}$/,
-  openai:    /^sk-[a-zA-Z0-9\-_]{20,}$/,
+  anthropic: /^sk-ant-/,
+  openai:    /^sk-[a-zA-Z0-9\-_]{10,}$/,
 };
 
 export function validateKeyFormat(provider: "anthropic" | "openai", key: string): boolean {
@@ -228,17 +228,13 @@ export class APIKeyStore implements IAPIKeyStoreExtended {
  *   Test                 → InMemorySecureStore
  */
 export async function createAPIKeyStore(): Promise<IAPIKeyStoreExtended> {
-  // Web
-  if (typeof sessionStorage !== "undefined" && typeof crypto?.subtle !== "undefined") {
-    return new APIKeyStore(new WebSecureStore());
-  }
-  // Native
   try {
-     
     const SS = require("expo-secure-store") as ISecureStore;
     return new APIKeyStore(SS);
   } catch {
-    // Test / CI
+    if (typeof sessionStorage !== "undefined" && typeof crypto?.subtle !== "undefined") {
+      return new APIKeyStore(new WebSecureStore());
+    }
     return new APIKeyStore(new InMemorySecureStore());
   }
 }

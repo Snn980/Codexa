@@ -127,8 +127,10 @@ export class NativeWorkerFactory implements IWorkerFactory {
  
 
   private _hasExpoWorker(): boolean {
-    try { require("expo-modules-core/workers"); return true; } catch { return false; }
+  // Termux/Bare RN worker desteklenmiyor
+  return false;
   }
+  ____
 }
 
 export function createWorkerFactory(
@@ -252,7 +254,7 @@ export class AIWorkerBridge implements IWorkerPort {
     }
     if (any.type === "REQUEST") {
       const modelId   = any.payload?.model;
-      const isOffline = modelId !== null && this._variantCache.isOffline(modelId);
+      const isOffline = modelId !== null && modelId !== undefined && this._variantCache.isOffline(modelId);
       try { (isOffline ? this._offlineWorker : this._cloudWorker).postMessage(msg); }
       catch { /* ignore */ }
       return;

@@ -27,20 +27,33 @@
 //   ✅ resolvePermission: Android 16 fotoğraf izni akışı güncellendi
 
 import { Platform, Linking } from 'react-native';
-import {
-  check,
-  request,
-  checkMultiple,
-  requestMultiple,
-  openSettings,
-  PERMISSIONS,
-  RESULTS,
-  type Permission,
-  type PermissionStatus,
-} from 'react-native-permissions';
 import type { IEventBus } from '../core/EventBus';
 import { ok, err, type Result } from '../core/Result';
 
+// Mock permissions for Expo Go
+const PERMISSIONS = {
+  ANDROID: {
+    CAMERA: 'android.permission.CAMERA',
+    RECORD_AUDIO: 'android.permission.RECORD_AUDIO',
+    READ_EXTERNAL_STORAGE: 'android.permission.READ_EXTERNAL_STORAGE',
+  },
+};
+
+const RESULTS = {
+  GRANTED: 'granted',
+  DENIED: 'denied',
+  BLOCKED: 'blocked',
+  LIMITED: 'limited',
+};
+
+type PermissionStatus = typeof RESULTS[keyof typeof RESULTS];
+type Permission = string;
+
+const check = async (p: Permission): Promise<PermissionStatus> => RESULTS.GRANTED;
+const request = async (p: Permission): Promise<PermissionStatus> => RESULTS.GRANTED;
+const checkMultiple = async (p: Permission[]): Promise<Record<Permission, PermissionStatus>> => Object.fromEntries(p.map(x => [x, RESULTS.GRANTED]));
+const requestMultiple = async (p: Permission[]): Promise<Record<Permission, PermissionStatus>> => Object.fromEntries(p.map(x => [x, RESULTS.GRANTED]));
+const openSettings = async (): Promise<void> => {};
 // ─── Sabitler ─────────────────────────────────────────────────────────────────
 
 /** Snapshot TTL: bu süreden eski cache → re-check tetiklenir */

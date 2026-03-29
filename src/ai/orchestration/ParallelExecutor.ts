@@ -190,25 +190,30 @@ export class ParallelExecutor {
         combinedSignal,
       );
 
-      let totalTokens = 0;
+      // Generator yield: string chunks, return: Result<{totalTokens}>
+      let genResult = await gen.next();
+      while (!genResult.done) {
+        const chunk = genResult.value;
+        if (typeof chunk === 'string') {
+          fullText += chunk;
+          opts.onChunk(chunk);
+        }
+        genResult = await gen.next();
+      }
 
-for await (const chunk of gen) {
-  if (typeof chunk === 'string') {
-    fullText += chunk;
-    opts.onChunk(chunk);
-  }
-}
+      // Generator return değeri: Result<{totalTokens}> — hata varsa ilet
+      const streamResult = genResult.value;
+      if (streamResult && typeof streamResult === 'object' && 'ok' in streamResult) {
+        if (!streamResult.ok) {
+          return err(streamResult.error.code, streamResult.error.message);
+        }
+      }
 
-// ✅ Generator'ün return value'sini al
-const genResult = await gen;
+      if (!fullText && !opts.signal.aborted) {
+        return err('EXECUTION_ERROR', 'Model yanıt üretemedi (boş yanıt)');
+      }
 
-if (!genResult.ok) {
-  return err(genResult.error.code, genResult.error.message);
-}
-
-totalTokens = genResult.data.totalTokens;
-
-return ok({ fullText });
+      return ok({ fullText });
 
     } catch (e: unknown) {
       const isTimeout = timeoutController?.signal.aborted && !opts.signal.aborted;

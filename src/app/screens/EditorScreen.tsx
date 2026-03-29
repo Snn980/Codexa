@@ -1,120 +1,76 @@
 /**
- * @file     EditorScreen.tsx
- * @module   app/screens
- * @version  1.0.0
- * @since    Phase 1 — App Shell
- *
- * @description
- *   Editör ekranı — TabManager entegrasyonu + CodeMirror 6 placeholder.
- *
- *   Mimari:
- *     ┌─────────────────────────────────────────┐
- *     │  EditorScreen                           │
- *     │  ├── TabStrip (yatay tab listesi)       │
- *     │  ├── EditorPane (CM6 placeholder)       │
- *     │  ├── MobileKeyboard (özel klavye)       │
- *     │  └── StatusBar (dirty/cursor/dil)       │
- *     └─────────────────────────────────────────┘
- *
- *   CodeMirror 6 entegrasyon stratejisi (TODO — Phase 1 tamamlandığında):
- *     Seçenek A: react-native-webview + CM6 HTML bundle
- *       • WebView içinde tam CM6 kurulumu
- *       • postMessage ile iki yönlü iletişim (content, cursor, events)
- *       • Avantaj: CM6'nın tüm özellikleri (extensions, themes)
- *       • Dezavantaj: WebView overhead, keyboard hizalama zorluğu
- *
- *     Seçenek B: Expo DOM Components (Expo SDK 52+)
- *       • <div> gibi native DOM bileşenleri React Native içinde
- *       • CM6 doğrudan DOM'a mount edilir, WebView olmadan
- *       • Avantaj: Daha az bridge, daha iyi performans
- *       • Dezavantaj: Experimental, Expo bağımlılığı
- *
- *     Mevcut durum: CodeMirrorPlaceholder — stateless textarea
- *     Phase 2 başında gerçek entegrasyon yapılacak.
- *
- *   EventBus entegrasyonu:
- *     emit "editor:tab:opened"    → TabStrip güncellenir
- *     emit "editor:tab:closed"    → TabStrip güncellenir
- *     emit "editor:tab:focused"   → aktif tab değişir
- *     emit "editor:content:changed" → FileService debounce tetiklenir
- *     emit "file:dirty"           → tab dirty flag
- *     emit "file:saved"           → tab dirty flag temizlenir
- *
- *   TabManager sorumlulukları:
- *     openTab(fileId)   — varsa fokus, yoksa yeni tab + LRU eviction
- *     closeTab(fileId)  — tab kaldırılır, bir sonraki fokus alır
- *     focusTab(fileId)  — aktif tab değişir
- *     getTabs()         — mevcut tab listesi
+ * EditorScreen.tsx — Sidebar + Editör + Yeni Dosya/Proje
  */
 
 import React, {
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
+  useCallback, useEffect, useMemo, useRef, useState,
 } from "react";
 import {
-  KeyboardAvoidingView,
-  Platform,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  View,
+  Alert, KeyboardAvoidingView, Modal, Platform, Pressable,
+  ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { useAppContext }   from "@/app/App";
 import { MobileKeyboard } from "@/app/components/MobileKeyboard";
 import { StatusBar }      from "@/app/components/StatusBar";
-import type { IFile, ITab, UUID } from "@/index";
+import type { IFile, IProject, ITab, UUID } from "@/index";
+import { ProjectLanguage, ProjectStatus } from "@/index";
 
-// ─────────────────────────────────────────────────────────────────────────────
-// § 1. EditorScreen
-// ─────────────────────────────────────────────────────────────────────────────
+// ─── EditorScreen ─────────────────────────────────────────────────────────────
 
 export function EditorScreen(): React.ReactElement {
   const insets       = useSafeAreaInsets();
   const { services } = useAppContext();
-  const { fileService, eventBus } = services;
+  const { fileService, projectService, eventBus } = services;
 
-  const [tabs,       setTabs]       = useState<ITab[]>([]);
-  const [activeFile, setActiveFile] = useState<IFile | null>(null);
-  const [content,    setContent]    = useState("");
+  const [tabs,        setTabs]        = useState<ITab[]>([]);
+  const [activeFile,  setActiveFile]  = useState<IFile | null>(null);
+  const [content,     setContent]     = useState("");
+  const [showSidebar, setShowSidebar] = useState(true);
+  const [projects,    setProjects]    = useState<IProject[]>([]);
+  const [activeProj,  setActiveProj]  = useState<IProject | null>(null);
+  const [projFiles,   setProjFiles]   = useState<IFile[]>([]);
+  const [showNewFile, setShowNewFile] = useState(false);
+  const [showNewProj, setShowNewProj] = useState(false);
 
-  // Fix #12: activeFile ref — effect'i yeniden mount etmeden güncel dosyaya erişim
   const activeFileRef   = useRef<IFile | null>(activeFile);
   activeFileRef.current = activeFile;
+  const emitTimeoutRef  = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Content'i EventBus'a emit etmek için debounce ref
-  const emitTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // ── Projeleri yükle ──────────────────────────────────────────────
+  const loadProjects = useCallback(async () => {
+    const r = await projectService.getAllProjects();
+    if (r.ok) {
+      const active = r.data.filter((p: IProject) => p.status !== ProjectStatus.PendingGC);
+      setProjects(active);
+      if (!activeProj && active.length > 0) setActiveProj(active[0]);
+    }
+  }, [projectService, activeProj]);
 
-  // ── Tab listesini EventBus'tan yönet ───────────────────────────
-  // Not: TabManager servis olarak export edilmediği için
-  // şimdilik in-memory state ile çalışıyoruz.
-  // Phase 2'de TabManager.getTabs() + reaktif EventBus entegrasyonu gelecek.
+  // ── Proje dosyalarını yükle ──────────────────────────────────────
+  const loadFiles = useCallback(async (proj: IProject) => {
+    const r = await fileService.getProjectFiles(proj.id);
+    if (r.ok) setProjFiles(r.data);
+  }, [fileService]);
+
+  useEffect(() => { void loadProjects(); }, [loadProjects]);
 
   useEffect(() => {
-    const u1 = eventBus.on("editor:tab:opened", async ({ file }) => {
-      // Dosya içeriğini yükle
-      const result = await fileService.getFile(file.id);
-      if (result.ok) {
-        setActiveFile(result.data);
-        setContent(result.data.content);
-      }
+    if (activeProj) void loadFiles(activeProj);
+  }, [activeProj, loadFiles]);
 
+  // ── EventBus ────────────────────────────────────────────────────
+  useEffect(() => {
+    const u1 = eventBus.on("editor:tab:opened", async ({ file }) => {
+      const result = await fileService.getFile(file.id);
+      if (result.ok) { setActiveFile(result.data); setContent(result.data.content); }
       setTabs(prev => {
         const exists = prev.find(t => t.fileId === file.id);
-        if (exists) {
-          // Fokus değiştir
-          return prev.map(t => ({ ...t, isActive: t.fileId === file.id }));
-        }
-        // Yeni tab ekle
+        if (exists) return prev.map(t => ({ ...t, isActive: t.fileId === file.id }));
         const newTab: ITab = {
-          id:       (file.id + "_tab") as import("../../types/core").UUID,
-          fileId:   file.id as import("../../types/core").UUID,
+          id:       (file.id + "_tab") as UUID,
+          fileId:   file.id as UUID,
           title:    file.name,
           isActive: true,
           isDirty:  false,
@@ -123,266 +79,382 @@ export function EditorScreen(): React.ReactElement {
         return [...prev.map(t => ({ ...t, isActive: false })), newTab];
       });
     });
-
     const u2 = eventBus.on("editor:tab:closed", ({ fileId }) => {
       setTabs(prev => {
-        const filtered  = prev.filter(t => t.fileId !== fileId);
-        // Kapatılan aktif tab ise bir öncekini aktif yap
+        const filtered = prev.filter(t => t.fileId !== fileId);
         const wasActive = prev.find(t => t.fileId === fileId)?.isActive ?? false;
         if (wasActive && filtered.length > 0) {
-          const last = filtered.length - 1;
-          return filtered.map((t, i) => ({ ...t, isActive: i === last }));
+          return filtered.map((t, i) => ({ ...t, isActive: i === filtered.length - 1 }));
         }
         return filtered;
       });
-      if (activeFileRef.current?.id === fileId) {
-        setActiveFile(null);
-        setContent("");
-      }
+      if (activeFileRef.current?.id === fileId) { setActiveFile(null); setContent(""); }
     });
+    const u3 = eventBus.on("file:dirty",  ({ fileId, isDirty }) =>
+      setTabs(prev => prev.map(t => t.fileId === fileId ? { ...t, isDirty } : t)));
+    const u4 = eventBus.on("file:saved",  ({ file }) =>
+      setTabs(prev => prev.map(t => t.fileId === file.id ? { ...t, isDirty: false } : t)));
+    const u5 = eventBus.on("project:created", () => void loadProjects());
 
-    const u3 = eventBus.on("file:dirty", ({ fileId, isDirty }) => {
-      setTabs(prev => prev.map(t =>
-        t.fileId === fileId ? { ...t, isDirty } : t,
-      ));
+    return () => { u1(); u2(); u3(); u4(); u5();
+      if (emitTimeoutRef.current) clearTimeout(emitTimeoutRef.current); };
+  }, [eventBus, fileService, loadProjects]);
+
+  // ── Dosya aç ────────────────────────────────────────────────────
+  const openFile = useCallback(async (file: IFile) => {
+    const result = await fileService.getFile(file.id);
+    if (!result.ok) return;
+    setActiveFile(result.data);
+    setContent(result.data.content);
+    setTabs(prev => {
+      const exists = prev.find(t => t.fileId === file.id);
+      if (exists) return prev.map(t => ({ ...t, isActive: t.fileId === file.id }));
+      const newTab: ITab = {
+        id: (file.id + "_tab") as UUID, fileId: file.id as UUID,
+        title: file.name, isActive: true, isDirty: false, openedAt: Date.now(),
+      };
+      return [...prev.map(t => ({ ...t, isActive: false })), newTab];
     });
+    eventBus.emit("editor:tab:opened", { file });
+  }, [fileService, eventBus]);
 
-    const u4 = eventBus.on("file:saved", ({ file }) => {
-      setTabs(prev => prev.map(t =>
-        t.fileId === file.id ? { ...t, isDirty: false } : t,
-      ));
-    });
-
-    return () => {
-      u1(); u2(); u3(); u4();
-      // Fix #3: activeFile değişince bekleyen emit iptal edilir — stale event önlenir
-      if (emitTimeoutRef.current) clearTimeout(emitTimeoutRef.current);
-    };
-    // Fix #12: activeFile?.id deps'ten çıkarıldı — ref üzerinden erişim yeterli
-    // subscription boşluğu (detach+reattach arası) riski ortadan kalkar
-  }, [eventBus, fileService]);
-
-  // ── İçerik değişimi → FileService + EventBus ───────────────────
+  // ── İçerik değişimi ─────────────────────────────────────────────
   const handleContentChange = useCallback((text: string) => {
     setContent(text);
-
     if (!activeFile) return;
-
-    // Debounce emit — 300ms sonra EventBus'a bildir
-    // FileService kendi debounce'unu yapacak; biz sadece event gönderiyoruz
     if (emitTimeoutRef.current) clearTimeout(emitTimeoutRef.current);
     emitTimeoutRef.current = setTimeout(() => {
       eventBus.emit("editor:content:changed", {
-        fileId:  activeFile.id,
-        content: text,
-        cursor:  { line: 0, column: 0 }, // Placeholder — CM6 gerçek cursor verecek
+        fileId: activeFile.id, content: text, cursor: { line: 0, column: 0 },
       });
     }, 300);
   }, [activeFile, eventBus]);
 
-  // ── Tab kapat ───────────────────────────────────────────────────
-  const handleCloseTab = useCallback((fileId: UUID) => {
-    eventBus.emit("editor:tab:closed", { fileId });
-  }, [eventBus]);
+  const handleCloseTab = useCallback((fileId: UUID) =>
+    eventBus.emit("editor:tab:closed", { fileId }), [eventBus]);
 
-  // ── Tab odaklan ─────────────────────────────────────────────────
   const handleFocusTab = useCallback(async (tab: ITab) => {
     const result = await fileService.getFile(tab.fileId);
-    if (result.ok) {
-      setActiveFile(result.data);
-      setContent(result.data.content);
-    }
+    if (result.ok) { setActiveFile(result.data); setContent(result.data.content); }
     setTabs(prev => prev.map(t => ({ ...t, isActive: t.fileId === tab.fileId })));
-    eventBus.emit("editor:tab:focused", { fileId: tab.fileId });
-  }, [fileService, eventBus]);
+  }, [fileService]);
 
-  // ── MobileKeyboard token enjeksiyonu ───────────────────────────
-  const handleKeyboardToken = useCallback((token: string) => {
-    setContent(prev => prev + token);
-    // Gerçek CM6 entegrasyonunda cursor pozisyonuna insert yapılacak
-  }, []);
+  const handleKeyboardToken = useCallback((token: string) =>
+    setContent(prev => prev + token), []);
 
-  // ─────────────────────────────────────────────────────────────────
   return (
     <KeyboardAvoidingView
-      style={[styles.container, { paddingTop: insets.top }]}
+      style={[styles.root, { paddingTop: insets.top }]}
       behavior={Platform.OS === "ios" ? "padding" : "height"}
-      keyboardVerticalOffset={0}
     >
-      {/* Tab şeridi */}
-      {tabs.length > 0 && (
-        <TabStrip
-          tabs={tabs}
-          onFocus={handleFocusTab}
-          onClose={handleCloseTab}
-        />
-      )}
-
-      {/* Editör alanı */}
-      <View style={styles.editorArea}>
-        {activeFile ? (
-          <CodeMirrorPlaceholder
-            content={content}
-            onChange={handleContentChange}
-            language={activeFile.type}
-          />
-        ) : (
-          <EmptyEditor />
-        )}
+      {/* Toolbar */}
+      <View style={styles.toolbar}>
+        <TouchableOpacity onPress={() => setShowSidebar(v => !v)} style={styles.toolBtn}>
+          <Text style={styles.toolBtnText}>☰</Text>
+        </TouchableOpacity>
+        <Text style={styles.toolbarTitle}>
+          {activeFile ? activeFile.name : "Editör"}
+        </Text>
+        <TouchableOpacity onPress={() => setShowNewFile(true)} style={styles.toolBtn}>
+          <Text style={styles.toolBtnText}>＋</Text>
+        </TouchableOpacity>
       </View>
 
-      {/* Özel mobil klavye */}
-      {activeFile && (
-        <MobileKeyboard onToken={handleKeyboardToken} />
+      {/* Tab şeridi */}
+      {tabs.length > 0 && (
+        <ScrollView horizontal showsHorizontalScrollIndicator={false}
+          style={styles.tabStrip} contentContainerStyle={styles.tabStripContent}>
+          {tabs.map(tab => (
+            <Pressable key={tab.id} onPress={() => handleFocusTab(tab)}
+              style={[styles.tab, tab.isActive && styles.tabActive]}>
+              {tab.isDirty && <View style={styles.dirtyDot} />}
+              <Text style={[styles.tabTitle, tab.isActive && styles.tabTitleActive]}
+                numberOfLines={1}>{tab.title}</Text>
+              <Pressable onPress={() => handleCloseTab(tab.fileId)}
+                style={styles.closeBtn} hitSlop={8}>
+                <Text style={styles.closeBtnText}>×</Text>
+              </Pressable>
+            </Pressable>
+          ))}
+        </ScrollView>
       )}
 
-      {/* Durum çubuğu */}
+      <View style={styles.body}>
+        {/* Sidebar */}
+        {showSidebar && (
+          <View style={styles.sidebar}>
+            {/* Proje seçici */}
+            <View style={styles.sidebarHeader}>
+              <Text style={styles.sidebarTitle}>PROJELER</Text>
+              <TouchableOpacity onPress={() => setShowNewProj(true)}>
+                <Text style={styles.sidebarAction}>＋</Text>
+              </TouchableOpacity>
+            </View>
+            <ScrollView style={styles.projList}>
+              {projects.map(p => (
+                <TouchableOpacity key={p.id}
+                  style={[styles.projItem, activeProj?.id === p.id && styles.projItemActive]}
+                  onPress={() => setActiveProj(p)}>
+                  <Text style={styles.projIcon}>📁</Text>
+                  <Text style={[styles.projName, activeProj?.id === p.id && styles.projNameActive]}
+                    numberOfLines={1}>{p.name}</Text>
+                </TouchableOpacity>
+              ))}
+              {projects.length === 0 && (
+                <Text style={styles.emptyHint}>Proje yok{"\n"}＋ ile ekle</Text>
+              )}
+            </ScrollView>
+
+            {/* Dosya listesi */}
+            {activeProj && (
+              <>
+                <View style={styles.sidebarHeader}>
+                  <Text style={styles.sidebarTitle}>DOSYALAR</Text>
+                  <TouchableOpacity onPress={() => setShowNewFile(true)}>
+                    <Text style={styles.sidebarAction}>＋</Text>
+                  </TouchableOpacity>
+                </View>
+                <ScrollView style={styles.fileList}>
+                  {projFiles.map(f => (
+                    <TouchableOpacity key={f.id} style={[styles.fileItem,
+                      activeFile?.id === f.id && styles.fileItemActive]}
+                      onPress={() => openFile(f)}>
+                      <Text style={styles.fileIcon}>{fileIcon(f.type)}</Text>
+                      <Text style={[styles.fileName,
+                        activeFile?.id === f.id && styles.fileNameActive]}
+                        numberOfLines={1}>{f.name}</Text>
+                    </TouchableOpacity>
+                  ))}
+                  {projFiles.length === 0 && (
+                    <Text style={styles.emptyHint}>Dosya yok{"\n"}＋ ile ekle</Text>
+                  )}
+                </ScrollView>
+              </>
+            )}
+          </View>
+        )}
+
+        {/* Editör alanı */}
+        <View style={styles.editorArea}>
+          {activeFile ? (
+            <CodeEditor content={content} onChange={handleContentChange} language={activeFile.type} />
+          ) : (
+            <EmptyEditor onNewFile={() => setShowNewFile(true)} onNewProj={() => setShowNewProj(true)} />
+          )}
+        </View>
+      </View>
+
+      {activeFile && <MobileKeyboard onToken={handleKeyboardToken} />}
       <StatusBar activeFile={activeFile} />
+
+      {/* Yeni Dosya Modal */}
+      <NewFileModal
+        visible={showNewFile}
+        project={activeProj}
+        onClose={() => setShowNewFile(false)}
+        onCreate={async (name, type) => {
+          if (!activeProj) { Alert.alert("Hata", "Önce bir proje seçin"); return; }
+          // type → FileType enum değeri ve uzantı
+          const TYPE_MAP: Record<string, { ext: string; fileType: string }> = {
+            typescript: { ext: "ts",  fileType: "typescript" },
+            javascript: { ext: "js",  fileType: "javascript" },
+            python:     { ext: "py",  fileType: "unknown" },
+            markdown:   { ext: "md",  fileType: "md" },
+            text:       { ext: "txt", fileType: "txt" },
+            html:       { ext: "html",fileType: "html" },
+            css:        { ext: "css", fileType: "css" },
+            json:       { ext: "json",fileType: "json" },
+          };
+          const mapped = TYPE_MAP[type] ?? { ext: type, fileType: "unknown" };
+          const ext = name.includes(".") ? "" : `.${mapped.ext}`;
+          const finalName = name + ext;
+          const ts = Date.now();
+          const uniquePath = `/${activeProj.id.slice(0,8)}/${ts}_${finalName}`;
+          const r = await fileService.createFile({
+            projectId: activeProj.id as UUID,
+            name: finalName,
+            path: uniquePath,
+            content: "",
+            type: mapped.fileType as any,
+          });
+          if (!r.ok) { Alert.alert("Hata", r.error.message); return; }
+          await loadFiles(activeProj);
+          await openFile(r.data);
+          setShowNewFile(false);
+        }}
+      />
+
+      {/* Yeni Proje Modal */}
+      <NewProjectModal
+        visible={showNewProj}
+        onClose={() => setShowNewProj(false)}
+        onCreate={async (name) => {
+          const r = await projectService.createProject({
+            name, language: ProjectLanguage.TypeScript, description: "",
+          });
+          if (!r.ok) { Alert.alert("Hata", r.error.message); return; }
+          eventBus.emit("project:created", { project: r.data });
+          await loadProjects();
+          setActiveProj(r.data);
+          setShowNewProj(false);
+        }}
+      />
     </KeyboardAvoidingView>
   );
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// § 2. TabStrip
-// ─────────────────────────────────────────────────────────────────────────────
+// ─── Yardımcı fonksiyon ───────────────────────────────────────────────────────
 
-interface TabStripProps {
-  tabs:    ITab[];
-  onFocus: (tab: ITab) => void;
-  onClose: (fileId: UUID) => void;
+function fileIcon(type: string): string {
+  if (type === "typescript" || type === "ts" || type === "tsx") return "📘";
+  if (type === "javascript" || type === "js" || type === "jsx") return "📒";
+  if (type === "python" || type === "py") return "🐍";
+  if (type === "json") return "📋";
+  if (type === "markdown" || type === "md") return "📝";
+  if (type === "html") return "🌐";
+  if (type === "css") return "🎨";
+  return "📄";
 }
 
-function TabStrip({ tabs, onFocus, onClose }: TabStripProps): React.ReactElement {
-  return (
-    <ScrollView
-      horizontal
-      showsHorizontalScrollIndicator={false}
-      style={styles.tabStrip}
-      contentContainerStyle={styles.tabStripContent}
-      bounces={false}
-    >
-      {tabs.map(tab => (
-        <Pressable
-          key={tab.id}
-          onPress={() => onFocus(tab)}
-          style={[styles.tab, tab.isActive && styles.tabActive]}
-          accessibilityRole="tab"
-          accessibilityState={{ selected: tab.isActive }}
-        >
-          {/* Dirty nokta */}
-          {tab.isDirty && <View style={styles.dirtyDot} />}
+// ─── CodeEditor ───────────────────────────────────────────────────────────────
 
-          <Text
-            style={[styles.tabTitle, tab.isActive && styles.tabTitleActive]}
-            numberOfLines={1}
-          >
-            {tab.title}
-          </Text>
-
-          {/* Kapat butonu */}
-          <Pressable
-            onPress={(e) => { e.stopPropagation?.(); onClose(tab.fileId); }}
-            style={styles.closeBtn}
-            hitSlop={8}
-            accessibilityLabel={`${tab.title} sekmesini kapat`}
-          >
-            <Text style={styles.closeBtnText}>×</Text>
-          </Pressable>
-        </Pressable>
-      ))}
-    </ScrollView>
-  );
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// § 3. CodeMirrorPlaceholder
-// ─────────────────────────────────────────────────────────────────────────────
-// TODO: Phase 2 — react-native-webview + CM6 bundle ile değiştirilecek.
-//       Şimdilik: satır numaralı TextInput wrapper.
-
-interface CMPlaceholderProps {
-  content:  string;
-  onChange: (text: string) => void;
-  language: string;
-}
-
-function CodeMirrorPlaceholder({ content, onChange, language }: CMPlaceholderProps): React.ReactElement {
+function CodeEditor({ content, onChange, language }: {
+  content: string; onChange: (t: string) => void; language: string;
+}): React.ReactElement {
   const lines = useMemo(() => content.split("\n").length, [content]);
-
   return (
     <View style={styles.cm}>
-      {/* Satır numaraları */}
       <View style={styles.gutter} pointerEvents="none">
         {Array.from({ length: Math.max(lines, 1) }, (_, i) => (
           <Text key={i} style={styles.lineNo}>{i + 1}</Text>
         ))}
       </View>
-
-      {/* Editör alanı */}
       <View style={styles.cmContent}>
-        {/* Dil badge */}
         <View style={styles.cmBadge}>
-          <Text style={styles.cmBadgeText}>{language.toUpperCase()} · CM6 Placeholder</Text>
+          <Text style={styles.cmBadgeText}>{language.toUpperCase()}</Text>
         </View>
-
         <TextInput
-          style={styles.cmInput}
-          value={content}
-          onChangeText={onChange}
-          multiline
-          autoCapitalize="none"
-          autoCorrect={false}
-          spellCheck={false}
-          scrollEnabled={false}
-          textAlignVertical="top"
-          keyboardType="ascii-capable"
-          returnKeyType="default"
+          style={styles.cmInput} value={content} onChangeText={onChange}
+          multiline autoCapitalize="none" autoCorrect={false} spellCheck={false}
+          scrollEnabled={false} textAlignVertical="top" keyboardType="ascii-capable"
         />
       </View>
     </View>
   );
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// § 4. EmptyEditor
-// ─────────────────────────────────────────────────────────────────────────────
+// ─── EmptyEditor ─────────────────────────────────────────────────────────────
 
-function EmptyEditor(): React.ReactElement {
+function EmptyEditor({ onNewFile, onNewProj }: {
+  onNewFile: () => void; onNewProj: () => void;
+}): React.ReactElement {
   return (
     <View style={styles.emptyEditor}>
-      <Text style={styles.emptyEditorIcon}>◈</Text>
-      <Text style={styles.emptyEditorTitle}>Dosya Açık Değil</Text>
-      <Text style={styles.emptyEditorDesc}>
-        Projeler sekmesinden bir proje açın{"\n"}veya yeni dosya oluşturun
-      </Text>
+      <Text style={styles.emptyIcon}>◈</Text>
+      <Text style={styles.emptyTitle}>Dosya Açık Değil</Text>
+      <TouchableOpacity style={styles.emptyBtn} onPress={onNewProj}>
+        <Text style={styles.emptyBtnText}>＋ Yeni Proje</Text>
+      </TouchableOpacity>
+      <TouchableOpacity style={styles.emptyBtn} onPress={onNewFile}>
+        <Text style={styles.emptyBtnText}>＋ Yeni Dosya</Text>
+      </TouchableOpacity>
     </View>
   );
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// § 5. Stiller
-// ─────────────────────────────────────────────────────────────────────────────
+// ─── NewFileModal ─────────────────────────────────────────────────────────────
+
+function NewFileModal({ visible, project, onClose, onCreate }: {
+  visible: boolean; project: IProject | null;
+  onClose: () => void; onCreate: (name: string, type: string) => void;
+}): React.ReactElement {
+  const [name, setName] = useState("");
+  const [type, setType] = useState("typescript");
+  const types = ["typescript","javascript","python","json","markdown","html","css","text"];
+
+  return (
+    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
+      <View style={styles.modalOverlay}>
+        <View style={styles.modal}>
+          <Text style={styles.modalTitle}>Yeni Dosya</Text>
+          {project && <Text style={styles.modalSub}>📁 {project.name}</Text>}
+          <TextInput style={styles.modalInput} value={name} onChangeText={setName}
+            placeholder="dosya-adı" placeholderTextColor={COLORS.muted}
+            autoCapitalize="none" autoCorrect={false} autoFocus />
+          <ScrollView horizontal showsHorizontalScrollIndicator={false}
+            style={styles.typeList}>
+            {types.map(t => (
+              <TouchableOpacity key={t} style={[styles.typeBtn, type === t && styles.typeBtnActive]}
+                onPress={() => setType(t)}>
+                <Text style={[styles.typeBtnText, type === t && styles.typeBtnTextActive]}>{t}</Text>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+          <View style={styles.modalActions}>
+            <TouchableOpacity style={styles.modalCancel} onPress={onClose}>
+              <Text style={styles.modalCancelText}>İptal</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.modalOk}
+              onPress={() => { if (name.trim()) onCreate(name.trim(), type); }}>
+              <Text style={styles.modalOkText}>Oluştur</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </View>
+    </Modal>
+  );
+}
+
+// ─── NewProjectModal ──────────────────────────────────────────────────────────
+
+function NewProjectModal({ visible, onClose, onCreate }: {
+  visible: boolean; onClose: () => void; onCreate: (name: string) => void;
+}): React.ReactElement {
+  const [name, setName] = useState("");
+  return (
+    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
+      <View style={styles.modalOverlay}>
+        <View style={styles.modal}>
+          <Text style={styles.modalTitle}>Yeni Proje</Text>
+          <TextInput style={styles.modalInput} value={name} onChangeText={setName}
+            placeholder="proje-adı" placeholderTextColor={COLORS.muted}
+            autoCapitalize="none" autoCorrect={false} autoFocus />
+          <View style={styles.modalActions}>
+            <TouchableOpacity style={styles.modalCancel} onPress={onClose}>
+              <Text style={styles.modalCancelText}>İptal</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.modalOk}
+              onPress={() => { if (name.trim()) onCreate(name.trim()); }}>
+              <Text style={styles.modalOkText}>Oluştur</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </View>
+    </Modal>
+  );
+}
+
+// ─── Stiller ─────────────────────────────────────────────────────────────────
 
 const COLORS = {
-  bg:        "#0a0e1a",
-  surface:   "#0d1117",
-  surface2:  "#111827",
-  border:    "rgba(255,255,255,0.06)",
-  accent:    "#3b82f6",
-  text:      "#e2e8f0",
-  muted:     "#475569",
-  dirty:     "#fbbf24",
-  tabActive: "#1e293b",
-  lineNo:    "#1e3a5f",
-  badge:     "rgba(59,130,246,0.1)",
+  bg:       "#0a0e1a", surface: "#0d1117", surface2: "#111827",
+  border:   "rgba(255,255,255,0.06)", accent: "#3b82f6",
+  text:     "#e2e8f0", muted: "#475569", dirty: "#fbbf24",
+  tabActive:"#1e293b", lineNo: "#1e3a5f",
 } as const;
 
 const MONO = Platform.OS === "ios" ? "Menlo" : "monospace";
 
 const styles = StyleSheet.create({
-  container:        { flex: 1, backgroundColor: COLORS.bg },
-
-  // Tab şeridi
+  root:             { flex: 1, backgroundColor: COLORS.bg },
+  toolbar:          { flexDirection: "row", alignItems: "center",
+                       paddingHorizontal: 8, paddingVertical: 8,
+                       borderBottomWidth: 1, borderBottomColor: COLORS.border,
+                       backgroundColor: COLORS.surface },
+  toolBtn:          { padding: 6, minWidth: 36, alignItems: "center" },
+  toolBtnText:      { fontSize: 18, color: COLORS.text },
+  toolbarTitle:     { flex: 1, fontSize: 13, color: COLORS.text, fontFamily: MONO,
+                       textAlign: "center" },
   tabStrip:         { maxHeight: 36, backgroundColor: COLORS.surface,
                        borderBottomWidth: 1, borderBottomColor: COLORS.border },
   tabStripContent:  { alignItems: "stretch" },
@@ -390,32 +462,77 @@ const styles = StyleSheet.create({
                        paddingHorizontal: 12, paddingVertical: 8,
                        borderRightWidth: 1, borderRightColor: COLORS.border },
   tabActive:        { backgroundColor: COLORS.tabActive },
-  tabTitle:         { fontSize: 11, color: COLORS.muted, fontFamily: MONO, maxWidth: 120 },
+  tabTitle:         { fontSize: 11, color: COLORS.muted, fontFamily: MONO, maxWidth: 100 },
   tabTitleActive:   { color: COLORS.text },
   dirtyDot:         { width: 6, height: 6, borderRadius: 3, backgroundColor: COLORS.dirty },
   closeBtn:         { padding: 2 },
-  closeBtnText:     { fontSize: 14, color: COLORS.muted, lineHeight: 16 },
-
-  // Editör
+  closeBtnText:     { fontSize: 14, color: COLORS.muted },
+  body:             { flex: 1, flexDirection: "row" },
+  sidebar:          { width: 160, backgroundColor: COLORS.surface,
+                       borderRightWidth: 1, borderRightColor: COLORS.border },
+  sidebarHeader:    { flexDirection: "row", alignItems: "center", justifyContent: "space-between",
+                       paddingHorizontal: 8, paddingVertical: 6,
+                       borderBottomWidth: 1, borderBottomColor: COLORS.border },
+  sidebarTitle:     { fontSize: 9, color: COLORS.muted, fontFamily: MONO,
+                       letterSpacing: 0.8, textTransform: "uppercase" },
+  sidebarAction:    { fontSize: 16, color: COLORS.accent },
+  projList:         { maxHeight: 120 },
+  fileList:         { flex: 1 },
+  projItem:         { flexDirection: "row", alignItems: "center", gap: 6,
+                       paddingHorizontal: 8, paddingVertical: 7 },
+  projItemActive:   { backgroundColor: "rgba(59,130,246,0.1)" },
+  projIcon:         { fontSize: 12 },
+  projName:         { fontSize: 11, color: COLORS.muted, fontFamily: MONO, flex: 1 },
+  projNameActive:   { color: COLORS.accent },
+  fileItem:         { flexDirection: "row", alignItems: "center", gap: 6,
+                       paddingHorizontal: 8, paddingVertical: 6 },
+  fileItemActive:   { backgroundColor: "rgba(59,130,246,0.08)" },
+  fileIcon:         { fontSize: 11 },
+  fileName:         { fontSize: 11, color: COLORS.muted, fontFamily: MONO, flex: 1 },
+  fileNameActive:   { color: COLORS.text },
+  emptyHint:        { fontSize: 10, color: COLORS.muted, fontFamily: MONO,
+                       textAlign: "center", padding: 12, lineHeight: 16 },
   editorArea:       { flex: 1 },
   cm:               { flex: 1, flexDirection: "row", backgroundColor: COLORS.bg },
-  gutter:           { width: 44, backgroundColor: COLORS.surface, paddingTop: 8,
-                       alignItems: "flex-end", paddingRight: 8,
+  gutter:           { width: 40, backgroundColor: COLORS.surface, paddingTop: 8,
+                       alignItems: "flex-end", paddingRight: 6,
                        borderRightWidth: 1, borderRightColor: COLORS.border },
-  lineNo:           { fontSize: 11, color: COLORS.lineNo, fontFamily: MONO,
-                       lineHeight: 20, paddingVertical: 0 },
+  lineNo:           { fontSize: 11, color: COLORS.lineNo, fontFamily: MONO, lineHeight: 20 },
   cmContent:        { flex: 1 },
   cmBadge:          { paddingHorizontal: 8, paddingVertical: 3,
-                       backgroundColor: COLORS.badge,
+                       backgroundColor: "rgba(59,130,246,0.08)",
                        borderBottomWidth: 1, borderBottomColor: COLORS.border },
   cmBadgeText:      { fontSize: 9, color: COLORS.accent, fontFamily: MONO },
   cmInput:          { flex: 1, padding: 8, color: COLORS.text, fontFamily: MONO,
                        fontSize: 13, lineHeight: 20, backgroundColor: "transparent" },
-
-  // Boş durum
-  emptyEditor:      { flex: 1, alignItems: "center", justifyContent: "center", gap: 10 },
-  emptyEditorIcon:  { fontSize: 36, color: COLORS.muted },
-  emptyEditorTitle: { fontSize: 14, fontWeight: "700", color: COLORS.muted, fontFamily: MONO },
-  emptyEditorDesc:  { fontSize: 11, color: COLORS.lineNo, fontFamily: MONO,
-                       textAlign: "center", lineHeight: 18 },
+  emptyEditor:      { flex: 1, alignItems: "center", justifyContent: "center", gap: 12 },
+  emptyIcon:        { fontSize: 36, color: COLORS.muted },
+  emptyTitle:       { fontSize: 14, fontWeight: "700", color: COLORS.muted, fontFamily: MONO },
+  emptyBtn:         { paddingHorizontal: 20, paddingVertical: 10,
+                       backgroundColor: COLORS.accent, borderRadius: 8 },
+  emptyBtnText:     { fontSize: 13, color: "#fff", fontFamily: MONO },
+  modalOverlay:     { flex: 1, backgroundColor: "rgba(0,0,0,0.7)",
+                       justifyContent: "flex-end" },
+  modal:            { backgroundColor: COLORS.surface2, borderTopLeftRadius: 16,
+                       borderTopRightRadius: 16, padding: 20, gap: 12 },
+  modalTitle:       { fontSize: 16, fontWeight: "700", color: COLORS.text, fontFamily: MONO },
+  modalSub:         { fontSize: 12, color: COLORS.muted, fontFamily: MONO },
+  modalInput:       { backgroundColor: COLORS.surface, borderRadius: 8,
+                       borderWidth: 1, borderColor: COLORS.border,
+                       paddingHorizontal: 12, paddingVertical: 10,
+                       fontSize: 14, color: COLORS.text, fontFamily: MONO },
+  typeList:         { maxHeight: 40 },
+  typeBtn:          { paddingHorizontal: 10, paddingVertical: 6, borderRadius: 6,
+                       backgroundColor: COLORS.surface, marginRight: 6,
+                       borderWidth: 1, borderColor: COLORS.border },
+  typeBtnActive:    { backgroundColor: COLORS.accent, borderColor: COLORS.accent },
+  typeBtnText:      { fontSize: 11, color: COLORS.muted, fontFamily: MONO },
+  typeBtnTextActive:{ color: "#fff" },
+  modalActions:     { flexDirection: "row", gap: 10, paddingTop: 4 },
+  modalCancel:      { flex: 1, paddingVertical: 12, borderRadius: 8,
+                       backgroundColor: COLORS.surface, alignItems: "center" },
+  modalCancelText:  { fontSize: 13, color: COLORS.muted, fontFamily: MONO },
+  modalOk:          { flex: 1, paddingVertical: 12, borderRadius: 8,
+                       backgroundColor: COLORS.accent, alignItems: "center" },
+  modalOkText:      { fontSize: 13, color: "#fff", fontWeight: "700", fontFamily: MONO },
 });
