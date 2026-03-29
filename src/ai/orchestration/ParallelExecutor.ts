@@ -190,14 +190,25 @@ export class ParallelExecutor {
         combinedSignal,
       );
 
-      for await (const chunk of gen) {
-        if (typeof chunk === 'string') {
-          fullText += chunk;
-          opts.onChunk(chunk);
-        }
-      }
+      let totalTokens = 0;
 
-      return ok({ fullText });
+for await (const chunk of gen) {
+  if (typeof chunk === 'string') {
+    fullText += chunk;
+    opts.onChunk(chunk);
+  }
+}
+
+// ✅ Generator'ün return value'sini al
+const genResult = await gen;
+
+if (!genResult.ok) {
+  return err(genResult.error.code, genResult.error.message);
+}
+
+totalTokens = genResult.data.totalTokens;
+
+return ok({ fullText });
 
     } catch (e: unknown) {
       const isTimeout = timeoutController?.signal.aborted && !opts.signal.aborted;
