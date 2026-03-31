@@ -29,7 +29,7 @@ import {
   View,
 } from "react-native";
 
-import { useAppContext }  from "@/app/App";
+import { useAppContext } from "@/app/AppContext";
 import type { IFile, CursorPosition } from "@/index";
 
 // ─────────────────────────────────────────────────────────────────────────────

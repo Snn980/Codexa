@@ -35,7 +35,7 @@ import { createBottomTabNavigator }  from "@react-navigation/bottom-tabs";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { SafeAreaProvider }           from "react-native-safe-area-context";
 
-import { useAppContext }     from "@/app/App";
+import { useAppContext } from "@/app/AppContext";
 import { TabBar }            from "@/app/navigations/TabBar";
 import { ProjectsScreen }    from "@/app/screens/ProjectsScreen";
 import { EditorScreen }      from "@/app/screens/EditorScreen";
