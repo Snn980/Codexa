@@ -490,37 +490,7 @@ export class ModelDownloadManager {
     this._eventBus.emit('model:download:start', { modelId, sizeMB: estimatedMB });
 
     try {
-      const { MlcDownloadHelper } = await import('../ai/MlcLlmBinding');
-      const helper = new MlcDownloadHelper();
-
-      await helper.download(
-        mlcModelId,
-        (percent, receivedMB, totalMB) => {
-          this._setState(modelId, {
-            status: 'downloading',
-            receivedMB: Math.round(receivedMB),
-            totalMB:    Math.round(totalMB) || estimatedMB,
-            percent:    Math.round(percent),
-          });
-          this._eventBus.emit('model:download:progress', {
-            modelId,
-            percent:    Math.round(percent),
-            receivedMB: Math.round(receivedMB),
-            totalMB:    Math.round(totalMB) || estimatedMB,
-          });
-        },
-      );
-
-      this._setState(modelId, {
-        status: 'complete',
-        receivedMB: estimatedMB,
-        totalMB:    estimatedMB,
-        percent:    100,
-        localPath:  mlcModelId,   // MLC kendi path'ini yönetir; ID yeterli
-      });
-      this._eventBus.emit('model:download:complete', { modelId, localPath: mlcModelId });
-      return ok(undefined);
-
+          throw new Error('Offline model download devre dışı');
     } catch (e) {
       const msg = String(e);
       this._setState(modelId, {
@@ -531,7 +501,8 @@ export class ModelDownloadManager {
       return err(
         DownloadErrorCode.NETWORK_ERROR as import('../types/core').ErrorCode,
         msg,
-      );
+      );        
+
     } finally {
       this._downloadLock.delete(modelId);
     }
@@ -546,8 +517,7 @@ export class ModelDownloadManager {
       const { getMlcModelId } = await import('../ai/AIModels');
       const mlcModelId = getMlcModelId(modelId);
       if (!mlcModelId) return false;
-      const { MlcDownloadHelper } = await import('../ai/MlcLlmBinding');
-      return new MlcDownloadHelper().isReady(mlcModelId);
+      return false; // Offline kaldırıldı
     } catch {
       return false;
     }

@@ -10,7 +10,6 @@ import { AIWorkerBridge }            from "@/ai/AIWorkerBridge";
 import { AIOrchestrator }            from "@/ai/orchestration/AIOrchestrator";
 import { AIWorkerClient }            from "@/ai/AIWorkerClient";
 import { AppStateManager }           from "@/lifecycle/AppStateManager";
-import { AIModelId }                 from "@/ai/AIModels";
 import { generateId }                from "@/utils/uuid";
 import type { UUID }                 from "@/types/core";
 import type { IAPIKeyStoreExtended } from "@/security/APIKeyStore";
@@ -43,7 +42,6 @@ export class AIContainer {
 
     this._runtimeMgr = new AIRuntimeManager();
     const result = await this._runtimeMgr.init({
-      offlineModelId: AIModelId.OFFLINE_GEMMA3_1B,
       keyStore,
       useMock: useMockWorkers,
     });
