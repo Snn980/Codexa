@@ -8,7 +8,7 @@
  */
 
 import { createContext, useContext } from "react";
-import type { AppServices } from "@/index";
+import type { AppServices } from "@/app/system/AppServices";
 
 // ─── Context ─────────────────────────────────────────────────────────────────
 

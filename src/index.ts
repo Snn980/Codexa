@@ -514,3 +514,4 @@ export function createApp(): AppContainer {
 export function resetApp(): void {
   appInstance = null;
 }
+export { AIProviderPreference } from "./types/core";

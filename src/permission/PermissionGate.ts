@@ -1,4 +1,4 @@
-// src/permission/PermissionGate.ts
+// wsrc/permission/PermissionGate.ts
 //
 // § 78 — Platform Compatibility Refactor (Mart 2026)
 //
@@ -31,11 +31,20 @@ import type { IEventBus } from '../core/EventBus';
 import { ok, err, type Result } from '../core/Result';
 
 // Mock permissions for Expo Go
+
 const PERMISSIONS = {
+  IOS: {
+    CAMERA: 'ios.permission.CAMERA',
+    MICROPHONE: 'ios.permission.MICROPHONE',
+    PHOTO_LIBRARY: 'ios.permission.PHOTO_LIBRARY',
+    PHOTO_LIBRARY_ADD_ONLY: 'ios.permission.PHOTO_LIBRARY_ADD_ONLY',
+  },
   ANDROID: {
     CAMERA: 'android.permission.CAMERA',
     RECORD_AUDIO: 'android.permission.RECORD_AUDIO',
     READ_EXTERNAL_STORAGE: 'android.permission.READ_EXTERNAL_STORAGE',
+    READ_MEDIA_IMAGES: 'android.permission.READ_MEDIA_IMAGES',
+    POST_NOTIFICATIONS: 'android.permission.POST_NOTIFICATIONS',
   },
 };
 
@@ -44,7 +53,9 @@ const RESULTS = {
   DENIED: 'denied',
   BLOCKED: 'blocked',
   LIMITED: 'limited',
+  UNAVAILABLE: 'unavailable',
 };
+
 
 type PermissionStatus = typeof RESULTS[keyof typeof RESULTS];
 type Permission = string;

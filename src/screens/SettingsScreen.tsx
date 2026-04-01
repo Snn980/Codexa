@@ -11,7 +11,7 @@
  */
 import React from 'react';
 import type { AppContainer } from '../app/AppContainer';
-import { SettingsScreen as SettingsScreenImpl } from '../app/screens/SettingsScreen';
+import { SettingsScreen as SettingsScreenImpl } from '../features/settings/screens/SettingsScreen';
 
 // § 71 — RootNavigator container prop'u geçirebilsin
 export interface SettingsScreenProps {

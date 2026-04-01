@@ -1,20 +1,17 @@
 /**
  * @file  hooks/useAppBoot.ts
  *
- * Uygulama başlatma state machine'i.
- * App.tsx'teki initialize() + BootState buraya taşındı.
- *
- * Sorumluluk: sadece boot — UI yok, lifecycle yok.
+ * Boot state machine — initializeApp() üzerinden çalışır.
+ * AppContainer bağımlılığı kaldırıldı.
  */
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef } from "react";
 
-import AsyncStorage           from "@react-native-async-storage/async-storage";
-import { getApp }             from "@/index";
-import { Database }           from "@/storage/Database";
-import type { AppServices }   from "@/index";
-import { appContainer }       from "@/app/AppContainer";
-import { sentryService }      from "@/monitoring/SentryService";
+import { getApp }              from "@/index";
+import { sentryService }       from "@/monitoring/SentryService";
+import { initializeApp, disposeApp } from "@/app/system/initializeApp";
+
+import type { AppServices }    from "@/app/system/AppServices";
 
 // ─── Tipler ──────────────────────────────────────────────────────────────────
 
@@ -26,17 +23,19 @@ export type BootPhase =
 export interface UseAppBootReturn {
   boot:       BootPhase;
   initialize: () => Promise<void>;
+  dispose:    () => void;
 }
 
 // ─── Hook ────────────────────────────────────────────────────────────────────
 
 export function useAppBoot(): UseAppBootReturn {
-  const [boot, setBoot] = useState<BootPhase>({ phase: "booting" });
+  const [boot, setBoot]       = useState<BootPhase>({ phase: "booting" });
+  const servicesRef           = useRef<AppServices | null>(null);
 
   const initialize = useCallback(async () => {
     setBoot({ phase: "booting" });
 
-    // 1. Sentry — mümkün olan en erken noktada, hataları bloklamaz
+    // 1. Sentry — mümkün olan en erken noktada
     void sentryService.init();
 
     // 2. Base services (ProjectService, FileService, DB)
@@ -46,24 +45,27 @@ export function useAppBoot(): UseAppBootReturn {
       return;
     }
 
-    // 3. AI container
+    // 3. App services
     try {
-      await appContainer.init({
-        eventBus:     getApp().services.eventBus,
-        asyncStorage: AsyncStorage,
-        dbDriver: (() => {
-          try { return Database.getInstance().getDriver(); }
-          catch { return undefined; }
-        })(),
+      const services = await initializeApp({
+        eventBus: getApp().services.eventBus,
       });
-    } catch (e) {
-      const message = e instanceof Error ? e.message : "AI container init failed";
-      setBoot({ phase: "error", message });
-      return;
-    }
 
-    setBoot({ phase: "ready", services: getApp().services });
+      servicesRef.current = services;
+      setBoot({ phase: "ready", services });
+    } catch (e) {
+      const message = e instanceof Error ? e.message : "App init failed";
+      setBoot({ phase: "error", message });
+    }
   }, []);
 
-  return { boot, initialize };
+  const dispose = useCallback(() => {
+    if (servicesRef.current) {
+      disposeApp(servicesRef.current);
+      servicesRef.current = null;
+    }
+    void getApp().dispose();
+  }, []);
+
+  return { boot, initialize, dispose };
 }

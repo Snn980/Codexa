@@ -23,6 +23,7 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 
 import type { TabParamList, ChatStackParamList, EditorStackParamList } from './types';
 import type { AppContainer } from '../di/AppContainer';
+import { useAppContext } from '@/app/AppContext';
 import {
   NavigationErrorBoundary,
   ScreenLoadingFallback,
@@ -119,13 +120,13 @@ function ChatNavigator({ container }: { container: AppContainer }) {
     <ChatStack.Navigator screenOptions={{ headerShown: false }}>
       {/* § 64: useOrchestrator prop yok — default true (Phase 17) */}
       <ChatStack.Screen name="AIChat">
-        {(props) => <AIChatScreen {...props} container={container} />}
+        {(props) => <AIChatScreen {...props} container={container!} />}
       </ChatStack.Screen>
       <ChatStack.Screen
         name="ModelDownload"
         options={{ presentation: 'modal', animation: 'slide_from_bottom' }}
       >
-        {(props) => <ModelDownloadScreen {...props} container={container} />}
+        {(props) => <ModelDownloadScreen {...props} container={container!} />}
       </ChatStack.Screen>
     </ChatStack.Navigator>
   );
@@ -135,10 +136,10 @@ function EditorNavigator({ container }: { container: AppContainer }) {
   return (
     <EditorStack.Navigator screenOptions={{ headerShown: false }}>
       <EditorStack.Screen name="EditorMain">
-        {(props) => <EditorMainScreen {...(props as any)} container={container} />}
+        {(props) => <EditorMainScreen {...(props as any)} container={container!} />}
       </EditorStack.Screen>
       <EditorStack.Screen name="AIPanel">
-        {(props) => <AIPanelScreen {...props} container={container} />}
+        {(props) => <AIPanelScreen {...props} container={container!} />}
       </EditorStack.Screen>
     </EditorStack.Navigator>
   );
@@ -147,29 +148,31 @@ function EditorNavigator({ container }: { container: AppContainer }) {
 // ─── RootNavigator ────────────────────────────────────────────────────────────
 
 interface RootNavigatorProps {
-  container:   AppContainer;
+  container?:  AppContainer;
   onNavError?: (error: Error, info: React.ErrorInfo) => void;
 }
 
-export function RootNavigator({ container, onNavError }: RootNavigatorProps) {
+export function RootNavigator({ container,  onNavError }: RootNavigatorProps) {
   const navReadyRef = useRef(false);
 
   // EventBus programatik navigasyon (§ 9 / § 26)
   useEffect(() => {
-    const unsub = container.eventBus.on(
+    const { services } = useAppContext();
+    const eventBus = container?.eventBus ?? services.eventBus;
+    const unsub = eventBus.on(
       'nav:navigate',
       (payload: { screen: string; params?: unknown }) => {
         safeNavigate(
           payload.screen as keyof TabParamList,
           payload.params as TabParamList[keyof TabParamList],
           (err) => {
-            container.eventBus.emit('nav:error', { error: err.message });
+            eventBus.emit('nav:error', { error: err.message });
           },
         );
       },
     );
     return unsub;
-  }, [container.eventBus]);
+  }, [container]);
 
   const onReady = useCallback(() => {
     navReadyRef.current = true;
@@ -195,14 +198,14 @@ export function RootNavigator({ container, onNavError }: RootNavigatorProps) {
               name="ChatTab"
               options={{ tabBarLabel: 'Chat' }}
             >
-              {() => <ChatNavigator container={container} />}
+              {() => <ChatNavigator container={container!} />}
             </Tab.Screen>
 
             <Tab.Screen
               name="EditorTab"
               options={{ tabBarLabel: 'Editor' }}
             >
-              {() => <EditorNavigator container={container} />}
+              {() => <EditorNavigator container={container!} />}
             </Tab.Screen>
 
             <Tab.Screen
@@ -211,7 +214,7 @@ export function RootNavigator({ container, onNavError }: RootNavigatorProps) {
             >
               {() => (
                 <React.Suspense fallback={<ScreenLoadingFallback />}>
-                  <ModelsScreen container={container} />
+                  <ModelsScreen container={container!} />
                 </React.Suspense>
               )}
             </Tab.Screen>
@@ -223,7 +226,7 @@ export function RootNavigator({ container, onNavError }: RootNavigatorProps) {
             >
               {() => (
                 <React.Suspense fallback={<ScreenLoadingFallback />}>
-                  <TerminalScreen container={container} />
+                  <TerminalScreen container={container!} />
                 </React.Suspense>
               )}
             </Tab.Screen>
@@ -234,7 +237,8 @@ export function RootNavigator({ container, onNavError }: RootNavigatorProps) {
             >
               {() => (
                 <React.Suspense fallback={<ScreenLoadingFallback />}>
-                  <SettingsScreen container={container} />
+                  <SettingsScreen container={container!
+} />
                 </React.Suspense>
               )}
             </Tab.Screen>

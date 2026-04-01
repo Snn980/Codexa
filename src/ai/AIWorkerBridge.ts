@@ -130,7 +130,6 @@ export class NativeWorkerFactory implements IWorkerFactory {
   // Termux/Bare RN worker desteklenmiyor
   return false;
   }
-  ____
 }
 
 export function createWorkerFactory(

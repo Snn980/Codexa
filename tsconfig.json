@@ -6,6 +6,12 @@
     "lib": [
       "ES2022"
     ],
+    "baseUrl": ".",
+    "paths": {
+      "@/*": [
+        "src/*"
+      ]
+    },
     "moduleResolution": "bundler",
     "allowImportingTsExtensions": false,
     "resolveJsonModule": true,
@@ -16,13 +22,7 @@
     "exactOptionalPropertyTypes": false,
     "skipLibCheck": true,
     "allowSyntheticDefaultImports": true,
-    "esModuleInterop": true,
-    "paths": {
-      "@/*": [
-        "./src/*"
-      ]
-    },
-    "baseUrl": "."
+    "esModuleInterop": true
   },
   "include": [
     "**/*.ts",
@@ -43,3 +43,4 @@
     "src/core/Types.ts"
   ]
 }
+

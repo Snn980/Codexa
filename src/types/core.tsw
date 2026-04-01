@@ -384,14 +384,6 @@ export const EditorTheme = {
 } as const;
 export type EditorTheme = Values<typeof EditorTheme>;
 
-export const AIProviderPreference = {
-  Auto:         "auto",
-  OfflineFirst: "offline_first",
-  CloudFirst:   "cloud_first",
-  OfflineOnly:  "offline_only",
-} as const;
-export type AIProviderPreference = Values<typeof AIProviderPreference>;
-
 export const KeyboardLayout = {
   Default: "default",
   Vim:     "vim",
@@ -412,7 +404,6 @@ export type ISettings = DeepReadonly<{
   maxTabs:          number;
   /** § 68 — Terminal otomatik çalıştırma; file:saved → terminal:run */
   autoRun:          boolean;
-  providerPreference: AIProviderPreference;
 }>;
 
 export const DEFAULT_SETTINGS: ISettings = Object.freeze({

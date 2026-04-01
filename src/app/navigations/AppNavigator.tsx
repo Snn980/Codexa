@@ -38,9 +38,9 @@ import { SafeAreaProvider }           from "react-native-safe-area-context";
 import { useAppContext } from "@/app/AppContext";
 import { TabBar }            from "@/app/navigations/TabBar";
 import { ProjectsScreen }    from "@/app/screens/ProjectsScreen";
-import { EditorScreen }      from "@/app/screens/EditorScreen";
+import { EditorScreen }      from "@/features/editor/screens/EditorScreen";
 import { TerminalScreen }    from "@/app/screens/TerminalScreen";
-import { SettingsScreen }    from "@/app/screens/SettingsScreen";
+import { SettingsScreen }    from "@/features/settings/screens/SettingsScreen";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // § 1. Navigasyon tip tanımları

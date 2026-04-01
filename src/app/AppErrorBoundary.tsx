@@ -8,7 +8,7 @@
  */
 
 import React from "react";
-import { ErrorScreen } from "@/app/screens/ErrorScreen";
+import { ErrorScreen } from "@/app/screens/BootScreens";
 
 // ─── Tipler ──────────────────────────────────────────────────────────────────
 

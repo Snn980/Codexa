@@ -16,7 +16,7 @@ import React from "react";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 
 import { AppContext }      from "@/app/AppContext";
-import type { AppServices } from "@/index";
+import type { AppServices } from "@/app/system/AppServices";
 
 // ─── Tipler ──────────────────────────────────────────────────────────────────
 
