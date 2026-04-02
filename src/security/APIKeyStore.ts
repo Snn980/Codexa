@@ -126,7 +126,7 @@ export class InMemorySecureStore implements ISecureStore {
 
 const KEY_FORMATS: Record<"anthropic" | "openai", RegExp> = {
   anthropic: /^sk-ant-/,
-  openai:    /^sk-[a-zA-Z0-9\-_]{10,}$/,
+  openai:    /^sk-/,
 };
 
 export function validateKeyFormat(provider: "anthropic" | "openai", key: string): boolean {

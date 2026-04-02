@@ -1,5 +1,5 @@
 import React from "react";
-import { View, Text, ScrollView, ActivityIndicator, TouchableOpacity } from "react-native";
+import { View, Text, TextInput, ScrollView, Alert, ActivityIndicator, TouchableOpacity } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useSettings } from "../hooks/useSettings";
 import { SettingsSection } from '../components/SettingsSection';
@@ -38,8 +38,41 @@ export function SettingsScreen() {
       </View>
 
       <ScrollView contentContainerStyle={styles.content}>
-        <SettingsSection title="API Anahtarları">
-          {/* inputs simplified */}
+       <SettingsSection title="API Anahtarları">
+          <View style={styles.apiRow}>
+            <Text style={styles.rowLabel}>Anthropic (Claude)</Text>
+            <TextInput
+              style={styles.apiInput}
+              value={anthropicKey}
+              onChangeText={setAnthropicKey}
+              placeholder="sk-ant-..."
+              placeholderTextColor={COLORS.muted}
+              secureTextEntry
+              autoCapitalize="none"
+              autoCorrect={false}
+            />
+          </View>
+          <View style={styles.apiRow}>
+            <Text style={styles.rowLabel}>OpenAI (GPT)</Text>
+            <TextInput
+              style={styles.apiInput}
+              value={openaiKey}
+              onChangeText={setOpenaiKey}
+              placeholder="sk-..."
+              placeholderTextColor={COLORS.muted}
+              secureTextEntry
+              autoCapitalize="none"
+              autoCorrect={false}
+            />
+          </View>
+          <TouchableOpacity style={styles.saveBtn} onPress={async () => {
+            try { await saveKeys(); }
+            catch (e) { Alert.alert("Hata", String(e)); }
+          }}>
+            <Text style={styles.saveBtnText}>
+              {keysSaved ? "✓ Kaydedildi" : "Kaydet"}
+            </Text>
+          </TouchableOpacity>
         </SettingsSection>
 
         <SettingsSection title="AI Provider"></SettingsSection>

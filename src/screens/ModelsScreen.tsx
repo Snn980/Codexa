@@ -369,17 +369,6 @@ export function ModelsScreen({ container }: ModelsScreenProps): React.ReactEleme
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        {/* Offline modeller */}
-        <Text style={styles.sectionTitle}>Cihaz Modelleri</Text>
-        <Text style={styles.sectionSub}>İndirilmiş modeller offline çalışır, API anahtarı gerekmez.</Text>
-
-        <FlatList
-          data={offlineModels}
-          keyExtractor={keyExtractor}
-          renderItem={renderOffline}
-          scrollEnabled={false}
-          ItemSeparatorComponent={() => <View style={styles.separator} />}
-        />
 
         {/* Cloud modeller */}
         {cloudModels.length > 0 && (
