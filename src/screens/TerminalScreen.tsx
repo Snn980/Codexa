@@ -42,6 +42,7 @@ import {
 } from 'react-native';
 
 import type { AppContainer } from '../app/AppContainer';
+import { useAppContext } from '@/app/AppContext';
 import type { BundlePayload } from '../ipc/Protocol';
 // RingBuffer ConsoleEntry tipine bağlı — TerminalLine için plain array kullanıyoruz
 
@@ -68,7 +69,7 @@ function makeLine(kind: LineKind, text: string): TerminalLine {
 // ─── useTerminalRuntime ───────────────────────────────────────────────────────
 
 interface UseTerminalRuntimeOptions {
-  container: AppContainer;
+  container?: AppContainer;
 }
 
 interface UseTerminalRuntimeReturn {
@@ -103,7 +104,8 @@ function useTerminalRuntime({ container }: UseTerminalRuntimeOptions): UseTermin
 
   // ─── EventBus entegrasyonu ─────────────────────────────────────────────────
 
-  const eventBus = container.eventBus;
+  const { services } = useAppContext();
+          const eventBus = container?.eventBus ?? services.eventBus;
 
   useEffect(() => {
     // § 3 — unsub cleanup

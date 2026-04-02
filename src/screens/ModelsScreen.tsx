@@ -47,7 +47,7 @@ import type { AppContainer }         from '../app/AppContainer';
 import { AI_MODELS, AIModelVariant } from '../ai/AIModels';
 import type { AIModel, AIModelId }   from '../ai/AIModels';
 import type { DownloadState }        from '../download/ModelDownloadManager';
-
+import { useAppContext } from '@/app/AppContext';
 // ─── Props ────────────────────────────────────────────────────────────────────
 
 export interface ModelsScreenProps {
@@ -63,9 +63,11 @@ interface ModelsScreenState {
 
 function useModelsScreen(container: AppContainer) {
   // § FIX-5: downloadManager (alias getter) + § FIX-3: getStatus()
-  const downloadManager = container.downloadManager;
-  const permissionGate  = container.permissionGate;
-  const eventBus        = container.eventBus;
+  
+  const { services }    = useAppContext();
+  const downloadManager = container?.downloadManager ?? services.downloadManager;
+  const permissionGate  = container?.permissionGate  ?? services.permissionGate;
+  const eventBus        = container?.eventBus        ?? services.eventBus;
   const permission      = permissionGate.getStatus();
   const mountedRef      = useRef(true);
 

@@ -1,3 +1,4 @@
+
 /**
  * ui/chat/AIChatScreenV2.tsx
  *
@@ -30,7 +31,7 @@ import {
   Platform,
 } from 'react-native';
 
-import type { AppContainer }  from '../../app/AppContainer';
+import { useAppContext } from '@/app/AppContext';
 import { useAIOrchestrator }  from '../../hooks/useAIOrchestrator';
 import { AIWorkerClient }     from '../../ai/AIWorkerClient';
 import type { UUID } from '../../types/core';
@@ -48,19 +49,16 @@ import {
 // ─── Props ────────────────────────────────────────────────────────────────────
 
 export interface AIChatScreenV2Props {
-  container:         AppContainer;
   initialSessionId?: string;
 }
-
 // ─── AIChatScreenV2 ───────────────────────────────────────────────────────────
 
 export const AIChatScreenV2 = memo(({
-  container,
 }: AIChatScreenV2Props): React.ReactElement => {
-
-  const bridge         = container.bridge;
-  const permissionGate = container.permissionGate;
-  const sentryService  = container.sentryService;
+          const { services }   = useAppContext();
+          const bridge         = services.bridge;
+          const permissionGate = services.permissionGate;
+          const sentryService  = services.sentryService;
 
   // § 8 — AIWorkerClient ref pattern
   const workerClientRef = useRef<AIWorkerClient | null>(null);
@@ -81,7 +79,7 @@ export const AIChatScreenV2 = memo(({
     send,
     cancel,
   } = useAIOrchestrator({
-    orchestrator: container.orchestrator,
+    orchestrator: services.orchestrator,
     permission,
     onEvent: (event, detail) => {
       // § 32 ek — Sentry AI panel events

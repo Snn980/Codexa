@@ -84,10 +84,8 @@ export class NativeWorkerFactory implements IWorkerFactory {
   }
 
   private _createWeb(kind: "offline" | "cloud"): WorkerLike {
-    const url = kind === "offline"
-      ? new URL("../workers/ai.offline.worker", import.meta.url)
-      : new URL("../workers/ai.cloud.worker",   import.meta.url);
-    const w = new Worker(url, { type: "module" });
+    const url = new URL("../workers/ai.cloud.worker", import.meta.url);  
+  const w = new Worker(url, { type: "module" });
     return {
       postMessage: (m) => w.postMessage(m),
       addEventListener:    (t, h) => w.addEventListener(t, h as EventListener),
@@ -107,10 +105,7 @@ export class NativeWorkerFactory implements IWorkerFactory {
     throw new Error(`Failed to load expo-modules-core/workers: ${err}`);
   }
   
-  const entry = kind === "offline"
-    ? require("../workers/ai.offline.worker")
-    : require("../workers/ai.cloud.worker");
-  
+  const entry = require("../workers/ai.cloud.worker");
   const w = createWorker(entry);
   const msgL: Array<(e: Event) => void> = [];
   const errL: Array<(e: Event) => void> = [];

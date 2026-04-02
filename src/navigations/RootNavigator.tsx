@@ -120,7 +120,7 @@ function ChatNavigator({ container }: { container: AppContainer }) {
     <ChatStack.Navigator screenOptions={{ headerShown: false }}>
       {/* § 64: useOrchestrator prop yok — default true (Phase 17) */}
       <ChatStack.Screen name="AIChat">
-        {(props) => <AIChatScreen {...props} container={container!} />}
+       {(props) => <AIChatScreen {...props} />}
       </ChatStack.Screen>
       <ChatStack.Screen
         name="ModelDownload"
@@ -156,8 +156,9 @@ export function RootNavigator({ container,  onNavError }: RootNavigatorProps) {
   const navReadyRef = useRef(false);
 
   // EventBus programatik navigasyon (§ 9 / § 26)
+  const { services } = useAppContext();
+
   useEffect(() => {
-    const { services } = useAppContext();
     const eventBus = container?.eventBus ?? services.eventBus;
     const unsub = eventBus.on(
       'nav:navigate',
