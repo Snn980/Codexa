@@ -1,17 +1,11 @@
-
-// src/navigations/RootNavigator.tsx
-//
-// Çözülen sorunlar:
-//   - Navigation error boundary yok → NavigationErrorBoundary sarılır
-//   - Suspense fallback UI yok → ScreenLoadingFallback
-//   - Deep link handler yok → linking config
-//   - Programmatic navigation error logging yok → safeNavigate()
-//   - Circular dependency → screen'ler AppContainer'ı import etmez; prop DI
-//   - Navigation / DI container coupling → container prop, useRef
-//
-// Phase 17 değişiklikleri:
-//   § 62 — TerminalScreen lazy import, TerminalTab screen + linking
-//   § 64 — AIChatScreen useOrchestrator prop kaldırıldı (default true)
+/**
+ * src/navigations/RootNavigator.tsx
+ *
+ * Tema güncellemesi:
+ *   • TabBar renkleri useTheme() ile dinamik
+ *   • StatusBar barStyle isDark'a göre otomatik
+ *   • Tüm sabit hex değerleri kaldırıldı
+ */
 
 import React, { useCallback, useEffect, useRef } from 'react';
 
@@ -28,6 +22,7 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import type { TabParamList, ChatStackParamList, EditorStackParamList } from './types';
 import type { AppContainer } from '../di/AppContainer';
 import { useAppContext } from '@/app/AppContext';
+import { useTheme }      from '@/theme';
 import {
   NavigationErrorBoundary,
   ScreenLoadingFallback,
@@ -45,7 +40,6 @@ const AIPanelScreen       = React.lazy(() =>
   import('../screens/AIPanelScreen').then(m => ({ default: m.AIPanelScreen })));
 const ModelsScreen        = React.lazy(() =>
   import('../screens/ModelsScreen').then(m => ({ default: m.ModelsScreen })));
-// § 62 — TerminalScreen lazy import
 const TerminalScreen      = React.lazy(() =>
   import('../screens/TerminalScreen').then(m => ({ default: m.TerminalScreen })));
 const SettingsScreen      = React.lazy(() =>
@@ -62,12 +56,6 @@ const EditorStack = createNativeStackNavigator<EditorStackParamList>();
 export const navigationRef = createNavigationContainerRef<TabParamList>();
 
 // ─── Deep link config ─────────────────────────────────────────────────────────
-// Scheme: aiide://
-// Örnekler:
-//   aiide://chat              → ChatTab / AIChat
-//   aiide://chat/session-123  → ChatTab / AIChat { sessionId: "session-123" }
-//   aiide://editor            → EditorTab / EditorMain
-//   aiide://terminal          → TerminalTab  (§ 62)
 
 const LINKING_CONFIG: LinkingOptions<TabParamList> = {
   prefixes: ['aiide://', 'https://aiide.app'],
@@ -88,13 +76,13 @@ const LINKING_CONFIG: LinkingOptions<TabParamList> = {
         },
       },
       ModelsTab:   'models',
-      TerminalTab: 'terminal',   // § 62
+      TerminalTab: 'terminal',
       SettingsTab: 'settings',
     },
   },
 };
 
-// ─── Programmatic navigation — error logged ───────────────────────────────────
+// ─── Programmatic navigation ──────────────────────────────────────────────────
 
 export function safeNavigate<T extends keyof TabParamList>(
   screen: T,
@@ -122,9 +110,8 @@ export function safeNavigate<T extends keyof TabParamList>(
 function ChatNavigator({ container }: { container: AppContainer }) {
   return (
     <ChatStack.Navigator screenOptions={{ headerShown: false }}>
-      {/* § 64: useOrchestrator prop yok — default true (Phase 17) */}
       <ChatStack.Screen name="AIChat">
-       {(props) => <AIChatScreen {...props} />}
+        {(props) => <AIChatScreen {...props} />}
       </ChatStack.Screen>
       <ChatStack.Screen
         name="ModelDownload"
@@ -156,13 +143,13 @@ interface RootNavigatorProps {
   onNavError?: (error: Error, info: React.ErrorInfo) => void;
 }
 
-export function RootNavigator({ container,  onNavError }: RootNavigatorProps) {
-  const navReadyRef = useRef(false);
-  const { top } = useSafeAreaInsets();
+export function RootNavigator({ container, onNavError }: RootNavigatorProps) {
+  const navReadyRef        = useRef(false);
+  const { top }            = useSafeAreaInsets();
+  const { services }       = useAppContext();
+  const { colors, isDark } = useTheme();
 
-  // EventBus programatik navigasyon (§ 9 / § 26)
-  const { services } = useAppContext();
-
+  // EventBus programatik navigasyon
   useEffect(() => {
     const eventBus = container?.eventBus ?? services.eventBus;
     const unsub = eventBus.on(
@@ -171,22 +158,22 @@ export function RootNavigator({ container,  onNavError }: RootNavigatorProps) {
         safeNavigate(
           payload.screen as keyof TabParamList,
           payload.params as TabParamList[keyof TabParamList],
-          (err) => {
-            eventBus.emit('nav:error', { error: err.message });
-          },
+          (err) => { eventBus.emit('nav:error', { error: err.message }); },
         );
       },
     );
     return unsub;
-  }, [container]);
+  }, [container, services.eventBus]);
 
-  const onReady = useCallback(() => {
-    navReadyRef.current = true;
-  }, []);
+  const onReady = useCallback(() => { navReadyRef.current = true; }, []);
 
   return (
     <NavigationErrorBoundary onError={onNavError}>
-      <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
+      <StatusBar
+        barStyle={isDark ? 'light-content' : 'dark-content'}
+        backgroundColor="transparent"
+        translucent
+      />
       <NavigationContainer
         ref={navigationRef}
         onReady={onReady}
@@ -196,30 +183,25 @@ export function RootNavigator({ container,  onNavError }: RootNavigatorProps) {
           <Tab.Navigator
             screenOptions={{
               headerShown:             false,
-              tabBarStyle:             { backgroundColor: '#0f0f0f', borderTopColor: '#1e1e1e', paddingTop: 4 },
+              tabBarStyle:             {
+                backgroundColor:  colors.tabBar.bg,
+                borderTopColor:   colors.border,
+                paddingTop:       4,
+              },
               sceneContainerStyle:     { paddingTop: top },
-              tabBarActiveTintColor:   '#7c6af7',
-              tabBarInactiveTintColor: '#666',
+              tabBarActiveTintColor:   colors.tabBar.active,
+              tabBarInactiveTintColor: colors.tabBar.inactive,
             }}
           >
-            <Tab.Screen
-              name="ChatTab"
-              options={{ tabBarLabel: 'Chat' }}
-            >
+            <Tab.Screen name="ChatTab"    options={{ tabBarLabel: 'Chat' }}>
               {() => <ChatNavigator container={container!} />}
             </Tab.Screen>
 
-            <Tab.Screen
-              name="EditorTab"
-              options={{ tabBarLabel: 'Editor' }}
-            >
+            <Tab.Screen name="EditorTab"  options={{ tabBarLabel: 'Editor' }}>
               {() => <EditorNavigator container={container!} />}
             </Tab.Screen>
 
-            <Tab.Screen
-              name="ModelsTab"
-              options={{ tabBarLabel: 'Models' }}
-            >
+            <Tab.Screen name="ModelsTab"  options={{ tabBarLabel: 'Models' }}>
               {() => (
                 <React.Suspense fallback={<ScreenLoadingFallback />}>
                   <ModelsScreen container={container!} />
@@ -227,11 +209,7 @@ export function RootNavigator({ container,  onNavError }: RootNavigatorProps) {
               )}
             </Tab.Screen>
 
-            {/* § 62 — TerminalTab: ModelsTab ile SettingsTab arasına */}
-            <Tab.Screen
-              name="TerminalTab"
-              options={{ tabBarLabel: 'Terminal' }}
-            >
+            <Tab.Screen name="TerminalTab" options={{ tabBarLabel: 'Terminal' }}>
               {() => (
                 <React.Suspense fallback={<ScreenLoadingFallback />}>
                   <TerminalScreen container={container!} />
@@ -239,14 +217,10 @@ export function RootNavigator({ container,  onNavError }: RootNavigatorProps) {
               )}
             </Tab.Screen>
 
-            <Tab.Screen
-              name="SettingsTab"
-              options={{ tabBarLabel: 'Settings' }}
-            >
+            <Tab.Screen name="SettingsTab" options={{ tabBarLabel: 'Settings' }}>
               {() => (
                 <React.Suspense fallback={<ScreenLoadingFallback />}>
-                  <SettingsScreen container={container!
-} />
+                  <SettingsScreen container={container!} />
                 </React.Suspense>
               )}
             </Tab.Screen>
