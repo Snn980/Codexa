@@ -1,10 +1,12 @@
 /**
- * src/screens/TerminalScreen.tsx — Tema güncellemesi
+ * src/screens/TerminalScreen.tsx
  *
- * Değişiklikler:
- *   • useTheme() entegrasyonu — colors.terminal paleti kullanılır
- *   • LINE_COLORS artık sabit değil; colors.terminal'den alınır
- *   • makeStyles(colors) pattern
+ * KONUM: src/screens/TerminalScreen.tsx  ← buraya kopyala
+ * (src/ui/chat/ değil!)
+ *
+ * Düzeltmeler:
+ *   • Tüm relative import'lar @/ aliası ile değiştirildi
+ *   • useTheme() entegrasyonu
  */
 
 import React, {
@@ -13,22 +15,23 @@ import React, {
   useEffect,
   useRef,
   useState,
+  useMemo,
 } from 'react';
 import {
   ActivityIndicator,
   Platform,
   Pressable,
   ScrollView,
-  StyleSheet,
   Text,
   View,
 } from 'react-native';
 
-import type { AppContainer } from '../app/AppContainer';
+import type { AppContainer } from '@/app/AppContainer';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAppContext }      from '@/app/AppContext';
 import { useTheme }          from '@/theme';
 import type { ThemeColors }  from '@/theme';
+import type { UUID }         from '@/types/core';
 
 // ─── Tipler ───────────────────────────────────────────────────────────────────
 
@@ -42,7 +45,7 @@ export interface TerminalLine {
 }
 
 const RING_CAPACITY = 1000;
-let lineCounter = 0;
+let   lineCounter   = 0;
 
 function makeLine(kind: LineKind, text: string): TerminalLine {
   return { id: `tl_${++lineCounter}`, kind, text, timestamp: Date.now() };
@@ -75,7 +78,7 @@ function makeStyles(C: ThemeColors) {
     btnDanger:     { borderColor: T.stderr, backgroundColor: `${T.stderr}18` },
     btnText:       { fontSize: 11, color: C.muted, fontFamily: MONO },
     output:        { flex: 1, backgroundColor: T.bg },
-    outputContent: { padding: 12, gap: 2, minHeight: '100%' as any },
+    outputContent: { padding: 12, gap: 2 },
     lineText:      { fontSize: 11, fontFamily: MONO, lineHeight: 17 },
     timestamp:     { color: C.muted, fontSize: 10 },
     emptyWrap:     { alignItems: 'center' as const, paddingTop: 60, gap: 8 },
@@ -134,15 +137,17 @@ function useTerminalRuntime({ container }: { container?: AppContainer }) {
     pushLine('info', `▶ Çalıştırılıyor${entryFile ? `: ${entryFile}` : ''}…`);
 
     try {
-      const { Bundler } = await import('../runtime/bundler/Bundler');
+      // Bundler dinamik import — bundle olmayan ekranlarda tree-shaken
+      const { Bundler } = await import('@/runtime/bundler/Bundler');
       const bundler = new Bundler('');
       const payload = {
-        executionId: String(Date.now()) as import('../types/core').UUID,
+        executionId: String(Date.now()) as UUID,
         entryPath:   entryFile ?? 'index.js',
         files:       {} as Record<string, string>,
       };
       const result = await bundler.bundle(payload, abortRef.current.signal);
       if (!mountedRef.current) return;
+
       if (result.ok) {
         pushLine('success', `✓ Tamamlandı (${(result.data as any)?.sizeBytes ?? 0} bytes)`);
       } else {
@@ -158,16 +163,14 @@ function useTerminalRuntime({ container }: { container?: AppContainer }) {
   }, [isRunning, pushLine]);
 
   useEffect(() => {
-    const u1 = eventBus.on('terminal:run', ({ entryFile }: { entryFile?: string }) => {
-      void run(entryFile);
-    });
-    const u2 = eventBus.on('terminal:clear', () => { clear(); });
-    const u3 = eventBus.on('file:saved', ({ file }: { file: { name: string } }) => {
+    const u1 = eventBus.on('terminal:run',   ({ entryFile }: { entryFile?: string }) => { void run(entryFile); });
+    const u2 = eventBus.on('terminal:clear', ()                                       => { clear(); });
+    const u3 = eventBus.on('file:saved',     ({ file }: { file: { name: string } }) => {
       const autoRun = (container as any)?.config?.autoRun ?? false;
       if (autoRun) { eventBus.emit('terminal:run', { entryFile: file.name }); }
     });
     return () => { u1(); u2(); u3(); };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [eventBus]);
 
   const stop = useCallback(() => {
@@ -182,15 +185,15 @@ function useTerminalRuntime({ container }: { container?: AppContainer }) {
 // ─── TerminalLineRow ──────────────────────────────────────────────────────────
 
 const TerminalLineRow = memo(({
-  line, lineColors, lineTextStyle, timestampStyle,
+  line, lineColors, textStyle, tsStyle,
 }: {
   line: TerminalLine;
   lineColors: Record<LineKind, string>;
-  lineTextStyle: object;
-  timestampStyle: object;
+  textStyle: object;
+  tsStyle: object;
 }) => (
-  <Text style={[lineTextStyle, { color: lineColors[line.kind] }]} selectable>
-    <Text style={timestampStyle}>{fmtTime(line.timestamp)} </Text>
+  <Text style={[textStyle, { color: lineColors[line.kind] }]} selectable>
+    <Text style={tsStyle}>{fmtTime(line.timestamp)} </Text>
     {line.text}
   </Text>
 ));
@@ -206,7 +209,7 @@ export function TerminalScreen({ container }: TerminalScreenProps): React.ReactE
   const { lines, isRunning, run, clear, stop } = useTerminalRuntime({ container });
   const { top }    = useSafeAreaInsets();
   const { colors } = useTheme();
-  const S          = React.useMemo(() => makeStyles(colors), [colors]);
+  const S          = useMemo(() => makeStyles(colors), [colors]);
   const scrollRef  = useRef<ScrollView>(null);
 
   const prevLenRef = useRef(0);
@@ -266,8 +269,8 @@ export function TerminalScreen({ container }: TerminalScreenProps): React.ReactE
               key={line.id}
               line={line}
               lineColors={S.lineColors}
-              lineTextStyle={S.lineText}
-              timestampStyle={S.timestamp}
+              textStyle={S.lineText}
+              tsStyle={S.timestamp}
             />
           ))
         )}
@@ -276,16 +279,13 @@ export function TerminalScreen({ container }: TerminalScreenProps): React.ReactE
       {/* Status bar */}
       <View style={S.statusBar}>
         {isRunning && (
-          <ActivityIndicator
-            size="small"
-            color={colors.terminal.success}
-            style={{ marginRight: 6 }}
-          />
+          <ActivityIndicator size="small" color={colors.terminal.success} style={{ marginRight: 6 }} />
         )}
         <Text style={S.statusText}>
           {isRunning ? 'Çalışıyor…' : `Kapasite: ${RING_CAPACITY} satır`}
         </Text>
       </View>
+
     </View>
   );
 }

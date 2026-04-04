@@ -1,6 +1,6 @@
-import React from "react";
-import { View, Text, TouchableOpacity } from "react-native";
-import { styles } from "../styles";
+import React from 'react';
+import { View, Text, TouchableOpacity } from 'react-native';
+import { useSettingsStyles } from '../styles';
 
 interface StepperRowProps {
   label:    string;
@@ -13,16 +13,25 @@ interface StepperRowProps {
 }
 
 export function StepperRow({ label, value, min, max, step, format, onChange }: StepperRowProps) {
+  const s = useSettingsStyles();
   return (
-    <View style={styles.row}>
-      <Text style={styles.rowLabel}>{label}</Text>
-      <View style={styles.stepper}>
-        <TouchableOpacity onPress={() => { if (value - step >= min) onChange(parseFloat((value - step).toFixed(2))); }} style={styles.stepBtn} disabled={value <= min}>
-          <Text style={styles.stepBtnText}>−</Text>
+    <View style={s.row}>
+      <Text style={s.rowLabel}>{label}</Text>
+      <View style={s.stepper}>
+        <TouchableOpacity
+          style={s.stepBtn}
+          disabled={value <= min}
+          onPress={() => { if (value - step >= min) onChange(parseFloat((value - step).toFixed(2))); }}
+        >
+          <Text style={[s.stepBtnText, value <= min && s.stepBtnDisabled]}>−</Text>
         </TouchableOpacity>
-        <Text style={styles.stepValue}>{format(value)}</Text>
-        <TouchableOpacity onPress={() => { if (value + step <= max) onChange(parseFloat((value + step).toFixed(2))); }} style={styles.stepBtn} disabled={value >= max}>
-          <Text style={styles.stepBtnText}>+</Text>
+        <Text style={s.stepValue}>{format(value)}</Text>
+        <TouchableOpacity
+          style={s.stepBtn}
+          disabled={value >= max}
+          onPress={() => { if (value + step <= max) onChange(parseFloat((value + step).toFixed(2))); }}
+        >
+          <Text style={[s.stepBtnText, value >= max && s.stepBtnDisabled]}>+</Text>
         </TouchableOpacity>
       </View>
     </View>

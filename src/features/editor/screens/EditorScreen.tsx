@@ -211,7 +211,7 @@ function FileModal({
 
 function Sidebar({
   projects, activeProject, projectFiles, activeTabId,
-  onSelectProject, onOpenFile, onNewFile, onNewProject, S,
+  onSelectProject, onOpenFile, onNewFile, onNewProject, onNewFolder, S,
 }: {
   projects:        IProject[];
   activeProject:   IProject | null;
@@ -221,6 +221,7 @@ function Sidebar({
   onOpenFile:      (f: IFile) => void;
   onNewFile:       () => void;
   onNewProject:    () => void;
+  onNewFolder:     () => void;
   S: ReturnType<typeof makeStyles>;
 }) {
   const [projectsExpanded, setProjectsExpanded] = useState(true);
@@ -234,8 +235,11 @@ function Sidebar({
           <TouchableOpacity style={sb.iconBtn} onPress={onNewFile} hitSlop={6}>
             <Text style={sb.iconBtnText}>+📄</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={sb.iconBtn} onPress={onNewProject} hitSlop={6}>
+          <TouchableOpacity style={sb.iconBtn} onPress={onNewFolder} hitSlop={6}>
             <Text style={sb.iconBtnText}>+📁</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={sb.iconBtn} onPress={onNewProject} hitSlop={6}>
+            <Text style={sb.iconBtnText}>+🗂️</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -478,6 +482,7 @@ export const EditorScreen: React.FC = () => {
   const [sidebarOpen,    setSidebarOpen]    = useState(true);
   const [showNewFile,    setShowNewFile]    = useState(false);
   const [showNewProject, setShowNewProject] = useState(false);
+  const [showNewFolder,  setShowNewFolder]  = useState(false);
 
   useEffect(() => {
     if (!editor.activeTab) return;
@@ -493,6 +498,11 @@ export const EditorScreen: React.FC = () => {
   const handleNewProject = useCallback(async (name: string) => {
     setShowNewProject(false);
     await editor.newProject(name);
+  }, [editor]);
+
+  const handleNewFolder = useCallback(async (name: string) => {
+    setShowNewFolder(false);
+    await editor.newFolder(name);
   }, [editor]);
 
   const toggleMode = useCallback(() => {
@@ -553,6 +563,7 @@ export const EditorScreen: React.FC = () => {
             onOpenFile={editor.openFile}
             onNewFile={() => setShowNewFile(true)}
             onNewProject={() => setShowNewProject(true)}
+            onNewFolder={() => setShowNewFolder(true)}
           />
         )}
 
@@ -608,6 +619,14 @@ export const EditorScreen: React.FC = () => {
         placeholder="my-project"
         onConfirm={handleNewProject}
         onCancel={() => setShowNewProject(false)}
+      />
+      <FileModal
+        S={S}
+        visible={showNewFolder}
+        title="Yeni Klasör"
+        placeholder="utils"
+        onConfirm={handleNewFolder}
+        onCancel={() => setShowNewFolder(false)}
       />
     </View>
   );

@@ -1,12 +1,13 @@
-import React from "react";
-import { View, Text } from "react-native";
-import { styles } from "../styles";
+import React from 'react';
+import { View, Text } from 'react-native';
+import { useSettingsStyles } from '../styles';
 
 export function SettingsSection({ title, children }: { title: string; children: React.ReactNode }) {
+  const s = useSettingsStyles();
   return (
-    <View style={styles.section}>
-      <Text style={styles.sectionTitle}>{title}</Text>
-      <View style={styles.sectionCard}>{children}</View>
+    <View style={s.section}>
+      <Text style={s.sectionTitle}>{title}</Text>
+      <View style={s.sectionCard}>{children}</View>
     </View>
   );
 }

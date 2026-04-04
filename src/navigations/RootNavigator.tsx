@@ -1,10 +1,11 @@
 /**
  * src/navigations/RootNavigator.tsx
  *
- * Tema güncellemesi:
- *   • TabBar renkleri useTheme() ile dinamik
- *   • StatusBar barStyle isDark'a göre otomatik
- *   • Tüm sabit hex değerleri kaldırıldı
+ * Düzeltmeler:
+ *   1. sceneContainerStyle → @react-navigation/bottom-tabs v7'de yok, kaldırıldı
+ *      paddingTop yerine her ekran kendi useSafeAreaInsets() kullanıyor (zaten öyle yapıyor)
+ *   2. AIChatScreen spread props → ChatStack.Screen route/navigation proplarını yayma,
+ *      AIChatScreenV2Props bunları kabul etmiyor; boş render edildi
  */
 
 import React, { useCallback, useEffect, useRef } from 'react';
@@ -110,8 +111,13 @@ export function safeNavigate<T extends keyof TabParamList>(
 function ChatNavigator({ container }: { container: AppContainer }) {
   return (
     <ChatStack.Navigator screenOptions={{ headerShown: false }}>
+      {/*
+        FIX #2: AIChatScreen props spread kaldırıldı.
+        ChatStack.Screen'in route/navigation prop'ları AIChatScreenV2Props ile çakışıyor.
+        AIChatScreenV2Props sadece initialSessionId? alıyor → ekstra prop yok.
+      */}
       <ChatStack.Screen name="AIChat">
-        {(props) => <AIChatScreen {...props} />}
+        {() => <AIChatScreen />}
       </ChatStack.Screen>
       <ChatStack.Screen
         name="ModelDownload"
@@ -145,11 +151,9 @@ interface RootNavigatorProps {
 
 export function RootNavigator({ container, onNavError }: RootNavigatorProps) {
   const navReadyRef        = useRef(false);
-  const { top }            = useSafeAreaInsets();
   const { services }       = useAppContext();
   const { colors, isDark } = useTheme();
 
-  // EventBus programatik navigasyon
   useEffect(() => {
     const eventBus = container?.eventBus ?? services.eventBus;
     const unsub = eventBus.on(
@@ -180,6 +184,10 @@ export function RootNavigator({ container, onNavError }: RootNavigatorProps) {
         linking={LINKING_CONFIG}
       >
         <React.Suspense fallback={<ScreenLoadingFallback />}>
+          {/*
+            FIX #1: sceneContainerStyle kaldırıldı — @react-navigation/bottom-tabs v7'de yok.
+            Her ekran kendi useSafeAreaInsets() ile padding yönetiyor.
+          */}
           <Tab.Navigator
             screenOptions={{
               headerShown:             false,
@@ -188,20 +196,19 @@ export function RootNavigator({ container, onNavError }: RootNavigatorProps) {
                 borderTopColor:   colors.border,
                 paddingTop:       4,
               },
-              sceneContainerStyle:     { paddingTop: top },
               tabBarActiveTintColor:   colors.tabBar.active,
               tabBarInactiveTintColor: colors.tabBar.inactive,
             }}
           >
-            <Tab.Screen name="ChatTab"    options={{ tabBarLabel: 'Chat' }}>
+            <Tab.Screen name="ChatTab"     options={{ tabBarLabel: 'Chat' }}>
               {() => <ChatNavigator container={container!} />}
             </Tab.Screen>
 
-            <Tab.Screen name="EditorTab"  options={{ tabBarLabel: 'Editor' }}>
+            <Tab.Screen name="EditorTab"   options={{ tabBarLabel: 'Editor' }}>
               {() => <EditorNavigator container={container!} />}
             </Tab.Screen>
 
-            <Tab.Screen name="ModelsTab"  options={{ tabBarLabel: 'Models' }}>
+            <Tab.Screen name="ModelsTab"   options={{ tabBarLabel: 'Models' }}>
               {() => (
                 <React.Suspense fallback={<ScreenLoadingFallback />}>
                   <ModelsScreen container={container!} />
