@@ -1,3 +1,4 @@
+
 // src/navigations/RootNavigator.tsx
 //
 // Çözülen sorunlar:
@@ -13,6 +14,9 @@
 //   § 64 — AIChatScreen useOrchestrator prop kaldırıldı (default true)
 
 import React, { useCallback, useEffect, useRef } from 'react';
+
+import { StatusBar } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
   createNavigationContainerRef,
   NavigationContainer,
@@ -154,6 +158,7 @@ interface RootNavigatorProps {
 
 export function RootNavigator({ container,  onNavError }: RootNavigatorProps) {
   const navReadyRef = useRef(false);
+  const { top } = useSafeAreaInsets();
 
   // EventBus programatik navigasyon (§ 9 / § 26)
   const { services } = useAppContext();
@@ -181,6 +186,7 @@ export function RootNavigator({ container,  onNavError }: RootNavigatorProps) {
 
   return (
     <NavigationErrorBoundary onError={onNavError}>
+      <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
       <NavigationContainer
         ref={navigationRef}
         onReady={onReady}
@@ -190,7 +196,8 @@ export function RootNavigator({ container,  onNavError }: RootNavigatorProps) {
           <Tab.Navigator
             screenOptions={{
               headerShown:             false,
-              tabBarStyle:             { backgroundColor: '#0f0f0f', borderTopColor: '#1e1e1e' },
+              tabBarStyle:             { backgroundColor: '#0f0f0f', borderTopColor: '#1e1e1e', paddingTop: 4 },
+              sceneContainerStyle:     { paddingTop: top },
               tabBarActiveTintColor:   '#7c6af7',
               tabBarInactiveTintColor: '#666',
             }}

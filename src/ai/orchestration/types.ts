@@ -66,6 +66,8 @@ export interface OrchestrationRequest {
   history:     readonly ChatMessage[];
   /** İzin durumu — ModelRouter için */
   permission:  AIPermissionStatus;
+  /** Kullanıcının seçtiği provider — null = otomatik */
+  preferredProvider?: 'anthropic' | 'openai' | null;
   /** İptal sinyali */
   signal:      AbortSignal;
   /** Chunk callback — streaming UI güncellemesi */

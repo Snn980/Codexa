@@ -48,7 +48,7 @@ export const AIModelId = {
 
   // ── Cloud — OpenAI ────────────────────────────────────────────────────────
   CLOUD_GPT41_MINI: "cloud:gpt-4-1-mini",
-  CLOUD_GPT54: "cloud:gpt-5-4",
+  CLOUD_GPT54: "cloud:o4-mini",
 } as const;
 
 export type AIModelId = (typeof AIModelId)[keyof typeof AIModelId];
@@ -308,12 +308,12 @@ export const AI_MODELS: readonly AIModel[] = [
   // ── Cloud: GPT-5.4 ───────────────────────────────────────────────────────
   {
     id: AIModelId.CLOUD_GPT54,
-    displayName: "GPT-5.4",
+    displayName: "o4-mini",
     description: "OpenAI flagship — 1M ctx, computer use",
     details: "OpenAI'ın 5 Mart 2026'da yayınlanan en güçlü modeli. 1M token context, native computer control, OSWorld-Verified'da insan performansını geçti. GDPval %83.0.",
     variant: AIModelVariant.CLOUD,
     provider: AIProvider.OPENAI,
-    apiModelId: "gpt-5.4",
+    apiModelId: "o4-mini",
     requiredPermission: "CLOUD_ENABLED",
     latencyHint: "~2-5s",
     requiresNetwork: true,

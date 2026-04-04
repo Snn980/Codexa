@@ -31,6 +31,7 @@
     "expo-build-properties": "~55.0.0",
     "expo-constants": "~55.0.0",
     "expo-file-system": "~55.0.0",
+    "expo-secure-store": "~55.0.9",
     "expo-sqlite": "~55.0.0",
     "expo-system-ui": "~55.0.0",
     "expo-task-manager": "~55.0.0",

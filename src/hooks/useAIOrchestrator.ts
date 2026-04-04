@@ -155,7 +155,7 @@ export interface UseAIOrchestratorReturn {
   // Computed
   isBusy:      boolean;
   // Actions
-  send:        (message: string) => Promise<void>;
+  send:        (message: string, provider?: 'anthropic' | 'openai' | null) => Promise<void>;
   cancel:      () => void;
   clear:       () => void;
 }
@@ -184,8 +184,34 @@ export function useAIOrchestrator({
     if (mountedRef.current) dispatch(action);
   }, []);
 
+  // ── Hata mesajı temizleme — ham JSON → okunabilir Türkçe ─────────────────
+  const parseErrorMessage = useCallback((raw: string): string => {
+    try {
+      const parsed = JSON.parse(raw) as Record<string, unknown>;
+      const msg = (parsed['error'] as Record<string, string>)?.['message'] ?? raw;
+      if (msg.includes('credit balance is too low'))
+        return 'Anthropic krediniz yetersiz. console.anthropic.com → Billing sayfasından kredi yükleyin.';
+      if (msg.includes('API key'))
+        return 'API anahtarı geçersiz veya eksik. Ayarlar\'dan kontrol edin.';
+      if (msg.includes('rate limit') || msg.includes('429'))
+        return 'İstek limiti aşıldı. Lütfen birkaç saniye bekleyin.';
+      return msg;
+    } catch {
+      if (raw.includes('credit balance is too low'))
+        return 'Anthropic krediniz yetersiz. console.anthropic.com → Billing sayfasından kredi yükleyin.';
+      if (raw.includes('401'))
+        return 'API anahtarı geçersiz. Ayarlar\'dan kontrol edin.';
+      if (raw.includes('429'))
+        return 'İstek limiti aşıldı. Lütfen birkaç saniye bekleyin.';
+      return raw;
+    }
+  }, []);
+
   // ── send ──────────────────────────────────────────────────────────────────
-  const send = useCallback(async (message: string) => {
+  const send = useCallback(async (
+    message:  string,
+    provider: 'anthropic' | 'openai' | null = null,
+  ) => {
     if (state.status === 'streaming' || state.status === 'analyzing') return;
 
     // Önceki isteği iptal et
@@ -207,10 +233,11 @@ export function useAIOrchestrator({
     safeDispatch({ type: 'STREAM_START', assistantId, userMsg });
 
     const result = await orchestrator.run({
-      userMessage: message,
-      history:     messagesRef.current,
+      userMessage:       message,
+      history:           messagesRef.current,
       permission,
-      signal:      ctrl.signal,
+      preferredProvider: provider,
+      signal:            ctrl.signal,
       onChunk: (chunk) => {
         if (__DEV__) console.log('[Chat] onChunk:', JSON.stringify(chunk?.slice(0, 30)));
         safeDispatch({ type: 'STREAM_CHUNK', chunk, assistantId });
@@ -227,7 +254,7 @@ export function useAIOrchestrator({
 
     if (!result.ok) {
       if (__DEV__) console.error('[Chat] orchestrator error:', result.error.code, result.error.message);
-      safeDispatch({ type: 'ERROR', error: result.error.message });
+      safeDispatch({ type: 'ERROR', error: parseErrorMessage(result.error.message ?? result.error.code) });
       return;
     }
 
@@ -242,7 +269,7 @@ export function useAIOrchestrator({
     }
 
    
-  }, [state.status, orchestrator, permission, safeDispatch, onEvent]);
+  }, [state.status, orchestrator, permission, safeDispatch, onEvent, parseErrorMessage]);
 
   // ── cancel ────────────────────────────────────────────────────────────────
   const cancel = useCallback(() => {

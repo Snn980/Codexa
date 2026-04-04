@@ -63,7 +63,7 @@ export class AIOrchestrator {
     const intent = this._intent.analyze(req.userMessage);
 
     // ── 2. Routing kararı ─────────────────────────────────────────────────────
-    const decision = this._router.decide(intent, req.permission);
+    const decision = this._router.decide(intent, req.permission, req.preferredProvider ?? null);
     if (!decision) {
       return err('PERMISSION_DENIED', 'AI features are disabled. Enable in Settings.');
     }

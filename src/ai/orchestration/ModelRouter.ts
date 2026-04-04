@@ -28,14 +28,15 @@ const INTENT_TO_PROMPT_KIND: Record<IntentCategory, PromptKind> = {
 export class ModelRouter {
 
   decide(
-    intent:     Intent,
-    permission: AIPermissionStatus,
+    intent:            Intent,
+    permission:        AIPermissionStatus,
+    preferredProvider: 'anthropic' | 'openai' | null = null,
   ): RouteDecision | null {
     if (permission === 'DISABLED') return null;
-    if (permission === 'LOCAL_ONLY') return null; // offline kaldırıldı
+    if (permission === 'LOCAL_ONLY') return null;
 
     const promptKind = INTENT_TO_PROMPT_KIND[intent.category];
-    const cloudModel = this._bestCloudModel(promptKind);
+    const cloudModel = this._bestCloudModel(promptKind, preferredProvider);
     if (!cloudModel) return null;
 
     return {
@@ -46,12 +47,31 @@ export class ModelRouter {
     };
   }
 
-  private _bestCloudModel(promptKind: PromptKind): AIModelId | null {
+  private _bestCloudModel(
+    promptKind:        PromptKind,
+    preferredProvider: 'anthropic' | 'openai' | null,
+  ): AIModelId | null {
     const cloudModels = AI_MODELS.filter(
       (m) => m.variant === AIModelVariant.CLOUD && isModelAvailable(m.id, 'CLOUD_ENABLED'),
     );
     if (cloudModels.length === 0) return null;
 
+    // ── Kullanıcı OpenAI seçtiyse ─────────────────────────────────────
+    if (preferredProvider === 'openai') {
+      const openaiModels = cloudModels.filter(m =>
+        m.id === AIModelId.CLOUD_GPT41_MINI || m.id === AIModelId.CLOUD_GPT54,
+      );
+      if (openaiModels.length > 0) {
+        // code görevleri için GPT-5.4, geri kalanlar için Mini
+        const gpt54 = openaiModels.find(m => m.id === AIModelId.CLOUD_GPT54);
+        const mini  = openaiModels.find(m => m.id === AIModelId.CLOUD_GPT41_MINI);
+        if (promptKind === 'code' && gpt54) return gpt54.id as AIModelId;
+        return (mini ?? gpt54)!.id as AIModelId;
+      }
+      // OpenAI modeli yoksa Anthropic'e düş
+    }
+
+    // ── Anthropic (varsayılan veya tercih) ────────────────────────────
     if (promptKind === 'code') {
       const sonnet = cloudModels.find(m => m.id === AIModelId.CLOUD_CLAUDE_SONNET_46);
       if (sonnet) return sonnet.id as AIModelId;
