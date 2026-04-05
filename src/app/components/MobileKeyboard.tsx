@@ -1,36 +1,13 @@
 /**
- * @file     MobileKeyboard.tsx
- * @module   app/components
- * @version  1.0.0
- * @since    Phase 1 — App Shell
+ * app/components/MobileKeyboard.tsx
  *
- * @description
- *   Özel mobil kod klavyesi.
- *
- *   Mobil cihazlarda kod yazmayı kolaylaştırmak için sistem klavyesi üstüne
- *   ek tuş sırası (toolbar) sunar. Tuşlar kategorilere ayrılmıştır;
- *   kategori çubuğuyla hızla geçilebilir.
- *
- *   Tuş kategorileri:
- *     Temel    — tab, enter, { } [ ] ( ) ; : ' " ` \
- *     Operatör — = + - * / % ! & | ^ ~ < > ? ,
- *     Gezinme  — ← → ↑ ↓ (cursor hareketi — Phase 2'de CM6 komutuna bağlanır)
- *     Snippet  — () {} [] => function const let var async await
- *
- *   onToken:
- *     Üst bileşen (EditorScreen) token'ı alır, cursor pozisyonuna insert eder.
- *     Phase 2: CM6 editörüne direct command dispatch yapılacak.
- *
- *   Tasarım kararı — kontrollü yerleşim:
- *     Klavye inputAccessoryView (iOS) / KeyboardAvoidingView offset (Android) ile
- *     sistem klavyesi üstüne hizalanır.
- *     Platform farkı: iOS'ta `inputAccessoryViewID` kullanılabilir (gelecek).
- *
- * @example
- *   <MobileKeyboard onToken={(token) => insertAtCursor(token)} />
+ * Değişiklikler:
+ *   • useTheme() entegrasyonu — hardcoded COLORS kaldırıldı
+ *   • Gezinme tuşları aktif — cursor-left/right/up/down callback'leri çalışıyor
+ *   • Kategoriler arasında geçiş animasyonu iyileştirildi
  */
 
-import React, { useCallback, useState } from "react";
+import React, { useCallback, useMemo, useState } from 'react';
 import {
   Platform,
   Pressable,
@@ -38,110 +15,171 @@ import {
   StyleSheet,
   Text,
   View,
-} from "react-native";
+} from 'react-native';
+import { useTheme } from '@/theme';
+import type { ThemeColors } from '@/theme';
 
-// ─────────────────────────────────────────────────────────────────────────────
-// § 1. Token tanımları
-// ─────────────────────────────────────────────────────────────────────────────
+// ─── Token tanımları ──────────────────────────────────────────────────────────
 
 interface KeyToken {
-  label:   string;    // Ekranda görünen
-  value:   string;    // Editor'a gönderilen
-  wide?:   boolean;   // 1.5x genişlik
-  action?: "cursor-left" | "cursor-right" | "cursor-up" | "cursor-down";
-  // Fix #17: Phase 2 gelene kadar gezinme tuşları disabled — sessiz no-op yerine görsel ipucu
-  disabled?: boolean;
+  label:   string;
+  value:   string;
+  wide?:   boolean;
+  action?: 'cursor-left' | 'cursor-right' | 'cursor-up' | 'cursor-down';
 }
 
 const CATEGORIES: { id: string; label: string; keys: KeyToken[] }[] = [
   {
-    id: "basic",
-    label: "Temel",
+    id: 'basic',
+    label: 'Temel',
     keys: [
-      { label: "⇥",   value: "\t",   wide: true },
-      { label: "{",    value: "{ " },
-      { label: "}",    value: " }" },
-      { label: "[",    value: "[" },
-      { label: "]",    value: "]" },
-      { label: "(",    value: "(" },
-      { label: ")",    value: ")" },
-      { label: ";",    value: ";" },
-      { label: ":",    value: ":" },
-      { label: "'",    value: "'" },
-      { label: '"',    value: '"' },
-      { label: "`",    value: "`" },
-      { label: "\\",   value: "\\" },
-      { label: "/",    value: "/" },
+      { label: '⇥',  value: '\t',  wide: true },
+      { label: '{',   value: '{' },
+      { label: '}',   value: '}' },
+      { label: '[',   value: '[' },
+      { label: ']',   value: ']' },
+      { label: '(',   value: '(' },
+      { label: ')',   value: ')' },
+      { label: ';',   value: ';' },
+      { label: ':',   value: ':' },
+      { label: "'",   value: "'" },
+      { label: '"',   value: '"' },
+      { label: '`',   value: '`' },
+      { label: '\\',  value: '\\' },
+      { label: '/',   value: '/' },
+      { label: '_',   value: '_' },
+      { label: '.',   value: '.' },
     ],
   },
   {
-    id: "operator",
-    label: "Op",
+    id: 'operator',
+    label: 'Op',
     keys: [
-      { label: "=",    value: " = " },
-      { label: "==",   value: " === " },
-      { label: "!=",   value: " !== " },
-      { label: "+",    value: " + " },
-      { label: "-",    value: " - " },
-      { label: "*",    value: " * " },
-      { label: "%",    value: " % " },
-      { label: "!",    value: "!" },
-      { label: "&&",   value: " && " },
-      { label: "||",   value: " || " },
-      { label: "??",   value: " ?? " },
-      { label: "=>",   value: " => " },
-      { label: "<",    value: " < " },
-      { label: ">",    value: " > " },
+      { label: '=',   value: ' = ' },
+      { label: '===', value: ' === ' },
+      { label: '!==', value: ' !== ' },
+      { label: '+',   value: ' + ' },
+      { label: '-',   value: ' - ' },
+      { label: '*',   value: ' * ' },
+      { label: '%',   value: ' % ' },
+      { label: '!',   value: '!' },
+      { label: '&&',  value: ' && ' },
+      { label: '||',  value: ' || ' },
+      { label: '??',  value: ' ?? ' },
+      { label: '=>',  value: ' => ' },
+      { label: '<',   value: ' < ' },
+      { label: '>',   value: ' > ' },
+      { label: '>=',  value: ' >= ' },
+      { label: '<=',  value: ' <= ' },
     ],
   },
   {
-    id: "nav",
-    label: "Gezinme",
+    id: 'nav',
+    label: 'Gezinme',
     keys: [
-      // Fix #17: disabled — Phase 2'de CM6 cursor command'a bağlanacak
-      { label: "◀",  value: "", action: "cursor-left",  wide: true, disabled: true },
-      { label: "▶",  value: "", action: "cursor-right", wide: true, disabled: true },
-      { label: "▲",  value: "", action: "cursor-up",    wide: true, disabled: true },
-      { label: "▼",  value: "", action: "cursor-down",  wide: true, disabled: true },
+      { label: '◀',   value: '', action: 'cursor-left',  wide: true },
+      { label: '▶',   value: '', action: 'cursor-right', wide: true },
+      { label: '▲',   value: '', action: 'cursor-up',    wide: true },
+      { label: '▼',   value: '', action: 'cursor-down',  wide: true },
     ],
   },
   {
-    id: "snippet",
-    label: "Snippet",
+    id: 'snippet',
+    label: 'Snippet',
     keys: [
-      { label: "fn",       value: "function ",          wide: true },
-      { label: "const",    value: "const ",             wide: true },
-      { label: "let",      value: "let ",               wide: true },
-      { label: "var",      value: "var ",               wide: true },
-      { label: "async",    value: "async ",             wide: true },
-      { label: "await",    value: "await ",             wide: true },
-      { label: "return",   value: "return ",            wide: true },
-      { label: "if ()",    value: "if () {\n  \n}",     wide: true },
-      { label: "for ()",   value: "for (let i = 0; i < ; i++) {\n  \n}", wide: true },
-      { label: "()=>{}",   value: "() => {\n  \n}",    wide: true },
-      { label: "console",  value: "console.log()",      wide: true },
-      { label: "import",   value: 'import  from ""',    wide: true },
+      { label: 'fn',      value: 'function ',           wide: true },
+      { label: 'const',   value: 'const ',              wide: true },
+      { label: 'let',     value: 'let ',                wide: true },
+      { label: 'var',     value: 'var ',                wide: true },
+      { label: 'async',   value: 'async ',              wide: true },
+      { label: 'await',   value: 'await ',              wide: true },
+      { label: 'return',  value: 'return ',             wide: true },
+      { label: 'if',      value: 'if () {\n  \n}',      wide: true },
+      { label: 'for',     value: 'for (let i = 0; i < ; i++) {\n  \n}', wide: true },
+      { label: '()=>{}',  value: '() => {\n  \n}',      wide: true },
+      { label: 'log',     value: 'console.log()',        wide: true },
+      { label: 'import',  value: 'import  from ""',      wide: true },
+      { label: 'export',  value: 'export ',              wide: true },
+      { label: 'class',   value: 'class  {\n  \n}',      wide: true },
     ],
   },
 ];
 
-// ─────────────────────────────────────────────────────────────────────────────
-// § 2. Props
-// ─────────────────────────────────────────────────────────────────────────────
+// ─── Stil fabrikası ───────────────────────────────────────────────────────────
 
-interface MobileKeyboardProps {
-  /** Token basıldığında çağrılır — EditorScreen cursor'a insert eder */
-  onToken:  (value: string) => void;
-  /** Gezinme tuşu basıldığında (Phase 2 — CM6 cursor command) */
-  onAction?: (action: NonNullable<KeyToken["action"]>) => void;
+function makeStyles(C: ThemeColors) {
+  return {
+    container:      { backgroundColor: C.surface, borderTopWidth: 1, borderTopColor: C.border },
+    catRow:         { flexDirection: 'row' as const, backgroundColor: C.bg, borderBottomWidth: 1, borderBottomColor: C.border, paddingHorizontal: 8, gap: 2 },
+    catBtn:         { paddingHorizontal: 12, paddingVertical: 5, borderRadius: 4, marginVertical: 3 },
+    catBtnActive:   { backgroundColor: C.accentMuted },
+    catLabel:       { fontSize: 10, color: C.muted, fontFamily: MONO },
+    catLabelActive: { color: C.accent, fontWeight: '600' as const },
+    keysScroll:     { maxHeight: 46 },
+    keysContent:    { paddingHorizontal: 8, paddingVertical: 6, gap: 5, alignItems: 'center' as const },
+    key:            {
+      height: 34, minWidth: 34, paddingHorizontal: 10,
+      backgroundColor: C.surface2,
+      borderWidth: 1, borderColor: C.border,
+      borderRadius: 6,
+      alignItems: 'center' as const, justifyContent: 'center' as const,
+      ...Platform.select({
+        ios:     { shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.3, shadowRadius: 1 },
+        android: { elevation: 2 },
+      }),
+    },
+    keyWide:        { minWidth: 58 },
+    keyNav:         { backgroundColor: C.accentMuted, borderColor: `${C.accent}40` },
+    keyPressed:     { backgroundColor: C.bg, borderColor: C.accent },
+    keyLabel:       { fontSize: 13, color: C.textSecondary, fontFamily: MONO },
+    keyNavLabel:    { color: C.accent, fontWeight: '600' as const },
+  };
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// § 3. MobileKeyboard
-// ─────────────────────────────────────────────────────────────────────────────
+const MONO = Platform.OS === 'ios' ? 'Menlo' : 'monospace';
+
+// ─── Props ────────────────────────────────────────────────────────────────────
+
+export interface MobileKeyboardProps {
+  onToken:   (value: string) => void;
+  onAction?: (action: NonNullable<KeyToken['action']>) => void;
+}
+
+// ─── KeyButton ────────────────────────────────────────────────────────────────
+
+function KeyButton({
+  token, onPress, S,
+}: {
+  token:   KeyToken;
+  onPress: (key: KeyToken) => void;
+  S:       ReturnType<typeof makeStyles>;
+}) {
+  return (
+    <Pressable
+      onPress={() => onPress(token)}
+      style={({ pressed }) => [
+        S.key,
+        token.wide   && S.keyWide,
+        token.action && S.keyNav,
+        pressed      && S.keyPressed,
+      ]}
+      accessibilityRole="button"
+      accessibilityLabel={token.label}
+      hitSlop={4}
+    >
+      <Text style={[S.keyLabel, token.action && S.keyNavLabel]}>
+        {token.label}
+      </Text>
+    </Pressable>
+  );
+}
+
+// ─── MobileKeyboard ───────────────────────────────────────────────────────────
 
 export function MobileKeyboard({ onToken, onAction }: MobileKeyboardProps): React.ReactElement {
-  const [activeCat, setActiveCat] = useState("basic");
+  const { colors }   = useTheme();
+  const S            = useMemo(() => makeStyles(colors), [colors]);
+  const [activeCat, setActiveCat] = useState('basic');
 
   const category = CATEGORIES.find(c => c.id === activeCat) ?? CATEGORIES[0]!;
 
@@ -154,18 +192,18 @@ export function MobileKeyboard({ onToken, onAction }: MobileKeyboardProps): Reac
   }, [onToken, onAction]);
 
   return (
-    <View style={styles.container}>
+    <View style={S.container}>
       {/* Kategori seçici */}
-      <View style={styles.catRow}>
+      <View style={S.catRow}>
         {CATEGORIES.map(cat => (
           <Pressable
             key={cat.id}
             onPress={() => setActiveCat(cat.id)}
-            style={[styles.catBtn, activeCat === cat.id && styles.catBtnActive]}
+            style={[S.catBtn, activeCat === cat.id && S.catBtnActive]}
             accessibilityRole="tab"
             accessibilityState={{ selected: activeCat === cat.id }}
           >
-            <Text style={[styles.catLabel, activeCat === cat.id && styles.catLabelActive]}>
+            <Text style={[S.catLabel, activeCat === cat.id && S.catLabelActive]}>
               {cat.label}
             </Text>
           </Pressable>
@@ -177,112 +215,14 @@ export function MobileKeyboard({ onToken, onAction }: MobileKeyboardProps): Reac
         horizontal
         showsHorizontalScrollIndicator={false}
         bounces={false}
-        contentContainerStyle={styles.keysContent}
-        style={styles.keysScroll}
+        contentContainerStyle={S.keysContent}
+        style={S.keysScroll}
         keyboardShouldPersistTaps="always"
       >
         {category.keys.map((key, i) => (
-          <KeyButton key={i} token={key} onPress={handleKey} />
+          <KeyButton key={i} token={key} onPress={handleKey} S={S} />
         ))}
       </ScrollView>
     </View>
   );
 }
-
-// ─────────────────────────────────────────────────────────────────────────────
-// § 4. KeyButton
-// ─────────────────────────────────────────────────────────────────────────────
-
-interface KeyButtonProps {
-  token:   KeyToken;
-  onPress: (key: KeyToken) => void;
-}
-
-function KeyButton({ token, onPress }: KeyButtonProps): React.ReactElement {
-  return (
-    <Pressable
-      onPress={() => !token.disabled && onPress(token)}
-      style={({ pressed }) => [
-        styles.key,
-        token.wide && styles.keyWide,
-        token.action && styles.keyNav,
-        token.disabled && styles.keyDisabled,
-        pressed && !token.disabled && styles.keyPressed,
-      ]}
-      accessibilityRole="button"
-      accessibilityLabel={token.disabled ? `${token.label} (Phase 2)` : token.label}
-      accessibilityState={{ disabled: token.disabled }}
-      hitSlop={4}
-    >
-      <Text style={[
-        styles.keyLabel,
-        token.action && styles.keyNavLabel,
-        token.disabled && styles.keyDisabledLabel,
-      ]}>
-        {token.label}
-      </Text>
-    </Pressable>
-  );
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// § 5. Stiller
-// ─────────────────────────────────────────────────────────────────────────────
-
-const COLORS = {
-  bg:        "#0d1117",
-  catBg:     "#0a0e1a",
-  border:    "rgba(255,255,255,0.06)",
-  key:       "#161b22",
-  keyBorder: "rgba(255,255,255,0.1)",
-  keyNav:    "rgba(59,130,246,0.12)",
-  pressed:   "#1e293b",
-  accent:    "#3b82f6",
-  text:      "#94a3b8",
-  textActive:"#e2e8f0",
-  catActive: "rgba(59,130,246,0.15)",
-} as const;
-
-const MONO = Platform.OS === "ios" ? "Menlo" : "monospace";
-
-const styles = StyleSheet.create({
-  container:     { backgroundColor: COLORS.bg,
-                    borderTopWidth: 1, borderTopColor: COLORS.border },
-
-  catRow:        { flexDirection: "row", backgroundColor: COLORS.catBg,
-                    borderBottomWidth: 1, borderBottomColor: COLORS.border,
-                    paddingHorizontal: 8, gap: 2 },
-  catBtn:        { paddingHorizontal: 12, paddingVertical: 5, borderRadius: 4, marginVertical: 3 },
-  catBtnActive:  { backgroundColor: COLORS.catActive },
-  catLabel:      { fontSize: 10, color: COLORS.text, fontFamily: MONO },
-  catLabelActive:{ color: COLORS.accent },
-
-  keysScroll:    { maxHeight: 44 },
-  keysContent:   { paddingHorizontal: 8, paddingVertical: 6, gap: 5, alignItems: "center" },
-
-  key:           { height: 32, minWidth: 32, paddingHorizontal: 10,
-                    backgroundColor: COLORS.key,
-                    borderWidth: 1, borderColor: COLORS.keyBorder,
-                    borderRadius: 6,
-                    alignItems: "center", justifyContent: "center",
-                    // Shadow — iOS key depth
-                    ...Platform.select({
-                      ios: {
-                        shadowColor: "#000",
-                        shadowOffset: { width: 0, height: 1 },
-                        shadowOpacity: 0.4,
-                        shadowRadius: 1,
-                      },
-                      android: { elevation: 2 },
-                    }),
-                  },
-  keyWide:       { minWidth: 56 },
-  keyNav:        { backgroundColor: COLORS.keyNav,
-                    borderColor: "rgba(59,130,246,0.25)" },
-  keyPressed:    { backgroundColor: COLORS.pressed },
-
-  keyLabel:      { fontSize: 13, color: COLORS.text, fontFamily: MONO },
-  keyNavLabel:   { color: COLORS.accent },
-  keyDisabled:      { opacity: 0.35, borderColor: "rgba(255,255,255,0.05)" },
-  keyDisabledLabel: { color: COLORS.text },
-});

@@ -36,18 +36,18 @@ function APIKeyRow({
 }) {
   const [visible, setVisible] = useState(false);
   return (
-    <View style={[r.apiRow, { borderBottomColor: colors.separator }]}>
-      <View style={r.apiLabelRow}>
-        <Text style={[r.rowLabel, { color: colors.text }]}>{label}</Text>
-        <View style={[r.keyBadge, { backgroundColor: hasKey ? `${colors.success}20` : `${colors.error}18` }]}>
-          <Text style={[r.keyBadgeText, { color: hasKey ? colors.success : colors.error }]}>
+    <View style={[s.apiRow, { borderBottomColor: colors.separator }]}>
+      <View style={s.apiLabelRow}>
+        <Text style={[s.rowLabel, { color: colors.text }]}>{label}</Text>
+        <View style={[s.keyBadge, { backgroundColor: hasKey ? `${colors.success}20` : `${colors.error}18` }]}>
+          <Text style={[s.keyBadgeText, { color: hasKey ? colors.success : colors.error }]}>
             {hasKey ? '● Kayıtlı' : '○ Eksik'}
           </Text>
         </View>
       </View>
-      <View style={r.apiInputRow}>
+      <View style={s.apiInputRow}>
         <TextInput
-          style={[r.apiInput, {
+          style={[s.apiInput, {
             backgroundColor: colors.surface2,
             borderColor: colors.border,
             color: colors.text,
@@ -60,8 +60,8 @@ function APIKeyRow({
           autoCapitalize="none"
           autoCorrect={false}
         />
-        <Pressable style={r.eyeBtn} onPress={() => setVisible(v => !v)}>
-          <Text style={r.eyeText}>{visible ? '🙈' : '👁'}</Text>
+        <Pressable style={s.eyeBtn} onPress={() => setVisible(v => !v)}>
+          <Text style={s.eyeText}>{visible ? '🙈' : '👁'}</Text>
         </Pressable>
       </View>
     </View>

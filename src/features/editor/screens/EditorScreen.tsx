@@ -20,8 +20,9 @@ import React, { useRef, useEffect, useState, useCallback, useMemo } from 'react'
 import {
   View, Text, StyleSheet, Platform,
   TouchableOpacity, TextInput,
-  Modal, ScrollView, Pressable,
+  Modal, ScrollView, Pressable, KeyboardAvoidingView,
 } from 'react-native';
+import { MobileKeyboard }               from '@/app/components/MobileKeyboard';
 import { useSafeAreaInsets }        from 'react-native-safe-area-context';
 import { CodeEditor, CodeEditorRef }  from '../components/CodeEditor';
 import { useEditorController }       from '../hooks/useEditorController';
@@ -209,6 +210,93 @@ function FileModal({
 
 // ─── Sidebar ─────────────────────────────────────────────────────────────────
 
+
+// ─── Dosya ağacı yardımcıları ─────────────────────────────────────────────────
+
+interface FolderNode {
+  name:  string;
+  path:  string;
+  files: IFile[];
+}
+
+function buildFileTree(files: IFile[]): { rootFiles: IFile[]; folders: FolderNode[] } {
+  const rootFiles: IFile[]                 = [];
+  const folderMap: Map<string, FolderNode> = new Map();
+
+  for (const file of files) {
+    if (file.name === '.gitkeep') {
+      const folderPath = file.path.replace('/.gitkeep', '');
+      if (!folderMap.has(folderPath)) {
+        folderMap.set(folderPath, {
+          name:  folderPath.split('/').pop() ?? folderPath,
+          path:  folderPath,
+          files: [],
+        });
+      }
+      continue;
+    }
+    const segments = file.path.split('/');
+    if (segments.length === 1) {
+      rootFiles.push(file);
+    } else {
+      const folderPath = segments.slice(0, -1).join('/');
+      if (!folderMap.has(folderPath)) {
+        folderMap.set(folderPath, {
+          name:  segments[0] ?? folderPath,
+          path:  folderPath,
+          files: [],
+        });
+      }
+      folderMap.get(folderPath)!.files.push(file);
+    }
+  }
+
+  return {
+    rootFiles,
+    folders: Array.from(folderMap.values()).sort((a, b) => a.name.localeCompare(b.name)),
+  };
+}
+
+function FolderRow({
+  folder, activeTabId, onOpenFile, sb,
+}: {
+  folder:      FolderNode;
+  activeTabId: string | null;
+  onOpenFile:  (f: IFile) => void;
+  sb:          ReturnType<typeof makeStyles>['sb'];
+}) {
+  const [expanded, setExpanded] = useState(true);
+  return (
+    <>
+      <TouchableOpacity style={sb.sectionHeader} onPress={() => setExpanded(v => !v)}>
+        <Text style={sb.sectionArrow}>{expanded ? '▾' : '▸'}</Text>
+        <Text style={[sb.fileIcon, { marginRight: 2 }]}>📁</Text>
+        <Text style={[sb.sectionTitle, { letterSpacing: 0, textTransform: 'none' }]}
+          numberOfLines={1}>
+          {folder.name}
+        </Text>
+      </TouchableOpacity>
+      {expanded && folder.files.map(f => (
+        <TouchableOpacity
+          key={f.id}
+          style={[sb.fileRow, { paddingLeft: 32 }, f.id === activeTabId && sb.fileRowActive]}
+          onPress={() => onOpenFile(f)}
+        >
+          <Text style={sb.fileIcon}>{getFileIcon(f.name)}</Text>
+          <Text style={[sb.fileName, f.id === activeTabId && sb.fileNameActive]} numberOfLines={1}>
+            {f.name}
+          </Text>
+        </TouchableOpacity>
+      ))}
+      {expanded && folder.files.length === 0 && (
+        <View style={[sb.emptyHint, { paddingLeft: 32 }]}>
+          <Text style={sb.emptyHintSub}>Boş klasör</Text>
+        </View>
+      )}
+    </>
+  );
+}
+
 function Sidebar({
   projects, activeProject, projectFiles, activeTabId,
   onSelectProject, onOpenFile, onNewFile, onNewProject, onNewFolder, S,
@@ -226,6 +314,8 @@ function Sidebar({
 }) {
   const [projectsExpanded, setProjectsExpanded] = useState(true);
   const sb = S.sb;
+  const { rootFiles, folders } = buildFileTree(projectFiles);
+  const hasContent = rootFiles.length > 0 || folders.length > 0;
 
   return (
     <View style={sb.container}>
@@ -245,10 +335,7 @@ function Sidebar({
       </View>
 
       <ScrollView showsVerticalScrollIndicator={false} style={{ flex: 1 }}>
-        <TouchableOpacity
-          style={sb.sectionHeader}
-          onPress={() => setProjectsExpanded(v => !v)}
-        >
+        <TouchableOpacity style={sb.sectionHeader} onPress={() => setProjectsExpanded(v => !v)}>
           <Text style={sb.sectionArrow}>{projectsExpanded ? '▾' : '▸'}</Text>
           <Text style={sb.sectionTitle}>PROJELER</Text>
         </TouchableOpacity>
@@ -259,7 +346,7 @@ function Sidebar({
             style={[sb.projectRow, activeProject?.id === p.id && sb.projectRowActive]}
             onPress={() => onSelectProject(p)}
           >
-            <Text style={sb.projectIcon}>📁</Text>
+            <Text style={sb.projectIcon}>🗂️</Text>
             <Text style={sb.projectName} numberOfLines={1}>{p.name}</Text>
           </TouchableOpacity>
         ))}
@@ -267,7 +354,7 @@ function Sidebar({
         {projects.length === 0 && projectsExpanded && (
           <View style={sb.emptyHint}>
             <Text style={sb.emptyHintText}>Proje yok</Text>
-            <Text style={sb.emptyHintSub}>+📁 ile oluşturun</Text>
+            <Text style={sb.emptyHintSub}>+🗂️ ile oluşturun</Text>
           </View>
         )}
 
@@ -279,22 +366,31 @@ function Sidebar({
                 {activeProject.name.toUpperCase()}
               </Text>
             </View>
-            {projectFiles.map(f => (
+
+            {folders.map(folder => (
+              <FolderRow
+                key={folder.path}
+                folder={folder}
+                activeTabId={activeTabId}
+                onOpenFile={onOpenFile}
+                sb={sb}
+              />
+            ))}
+
+            {rootFiles.map(f => (
               <TouchableOpacity
                 key={f.id}
                 style={[sb.fileRow, f.id === activeTabId && sb.fileRowActive]}
                 onPress={() => onOpenFile(f)}
               >
                 <Text style={sb.fileIcon}>{getFileIcon(f.name)}</Text>
-                <Text
-                  style={[sb.fileName, f.id === activeTabId && sb.fileNameActive]}
-                  numberOfLines={1}
-                >
+                <Text style={[sb.fileName, f.id === activeTabId && sb.fileNameActive]} numberOfLines={1}>
                   {f.name}
                 </Text>
               </TouchableOpacity>
             ))}
-            {projectFiles.length === 0 && (
+
+            {!hasContent && (
               <View style={sb.emptyHint}>
                 <Text style={sb.emptyHintText}>Dosya yok</Text>
                 <Text style={sb.emptyHintSub}>+📄 ile ekleyin</Text>
@@ -483,6 +579,18 @@ export const EditorScreen: React.FC = () => {
   const [showNewFile,    setShowNewFile]    = useState(false);
   const [showNewProject, setShowNewProject] = useState(false);
   const [showNewFolder,  setShowNewFolder]  = useState(false);
+  const [editorFocused,  setEditorFocused]  = useState(false);
+
+  // ── MobileKeyboard handlers ───────────────────────────────────────────────
+
+  const handleToken = useCallback((token: string) => {
+    editorRef.current?.insertAtCursor(token);
+  }, []);
+
+  const handleAction = useCallback((action: string) => {
+    const dir = action.replace('cursor-', '') as 'left' | 'right' | 'up' | 'down';
+    editorRef.current?.moveCursor(dir);
+  }, []);
 
   useEffect(() => {
     if (!editor.activeTab) return;
@@ -512,6 +620,9 @@ export const EditorScreen: React.FC = () => {
   }, [editor]);
 
   const currentTab = editor.activeTab;
+  // Ref — handleAction closure'unda stale state sorununu önler
+  const currentTabRef = useRef(currentTab);
+  useEffect(() => { currentTabRef.current = currentTab; }, [currentTab]);
   const tabItems   = editor.tabs.map(t => ({
     id: t.id, title: getFileName(t.filePath),
     isModified: t.isModified, isActive: t.id === editor.activeTabId,
@@ -579,6 +690,8 @@ export const EditorScreen: React.FC = () => {
               onChange={c => editor.updateContent(currentTab.id, c)}
               readOnly={editor.mode === EditorMode.READONLY}
               autoFocus
+              onFocus={() => setEditorFocused(true)}
+              onBlur={() => setEditorFocused(false)}
             />
           ) : (
             <EmptyState
@@ -590,6 +703,14 @@ export const EditorScreen: React.FC = () => {
           )}
         </View>
       </View>
+
+      {/* MobileKeyboard — editör odaktayken göster */}
+      {currentTab && editor.mode !== EditorMode.READONLY && (
+        <MobileKeyboard
+          onToken={handleToken}
+          onAction={handleAction}
+        />
+      )}
 
       {/* StatusBar */}
       {currentTab && (
