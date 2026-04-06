@@ -72,9 +72,9 @@ export function getFileExtension(filePath: string): string {
 export function getLanguageFromExtension(extension: string): string {
   const languageMap: Record<string, string> = {
     js: 'javascript',
-    jsx: 'javascript',
+    jsx: 'jsx',           // CM6: JSX syntax highlighting
     ts: 'typescript',
-    tsx: 'typescript',
+    tsx: 'tsx',           // CM6: TSX syntax highlighting
     py: 'python',
     java: 'java',
     cpp: 'cpp',

@@ -292,6 +292,10 @@ export class LibSQLDriver implements IDatabaseDriver {
     }
   }
 
+  isConnected(): boolean {
+    return this.connected && this.db !== null;
+  }
+
   async close(): Promise<void> {
     if (!this.db) return;
     await this.stmtCache.clear();

@@ -466,7 +466,10 @@ export class Database {
 
   private async resolveDriver(injected?: IDatabaseDriver): AsyncResult<IDatabaseDriver> {
     if (injected) return ok(injected);
-    return tryResultAsync(
+    // TS2322 FIX: LibSQLDriver → IDatabaseDriver upcast için generic açıkça belirtilir.
+    // TypeScript, Result<LibSQLDriver> → Result<IDatabaseDriver> covariance'ını
+    // union type'larda her zaman otomatik çıkaramaz; <IDatabaseDriver> bunu garantiler.
+    return tryResultAsync<IDatabaseDriver>(
       async () => {
         const { LibSQLDriver } = await import("./drivers/LibSQLDriver");
         return new LibSQLDriver(this.config.path, this.config.timeoutMs);
