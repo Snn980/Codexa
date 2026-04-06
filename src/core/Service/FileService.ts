@@ -97,6 +97,18 @@ export interface IFileService {
   /** Bekleyen auto-save'i iptal eder ve dosyayı siler. */
   deleteFile(id: UUID):                                  AsyncResult<void>;
 
+  /** Dosyayı yeniden adlandırır (aynı klasörde, sadece name + path son segmenti değişir). */
+  renameFile(id: UUID, newName: string):                 AsyncResult<IFile>;
+
+  /**
+   * Dosyayı farklı bir klasöre taşır.
+   * newFolderPath: '' → proje kökü, 'utils' → utils/ klasörü.
+   */
+  moveFile(id: UUID, newFolderPath: string):             AsyncResult<IFile>;
+
+  /** Dosyayı aynı projede kopyalar. Yeni dosya adı copyName ile belirlenir. */
+  copyFile(id: UUID, copyName: string):                  AsyncResult<IFile>;
+
   /** Tüm bekleyen zamanlayıcıları iptal eder — servis kapatılmadan önce çağrılmalı. */
   dispose(): void;
 }
@@ -275,6 +287,79 @@ export class FileService implements IFileService {
 
     this.eventBus.emit("file:deleted", { fileId: id });
     return ok(undefined);
+  }
+
+  // ── Dosya Yönetimi İşlemleri ──────────────────────────────────
+
+  /**
+   * Dosyayı yeniden adlandırır.
+   * Klasör prefix korunur: "utils/old.ts" → "utils/new.ts"
+   */
+  async renameFile(id: UUID, newName: string): AsyncResult<IFile> {
+    const found = await this.fileRepo.findById(id);
+    if (!found.ok) return found;
+
+    const file    = found.data;
+    const trimmed = newName.trim();
+    if (!trimmed) return err('VALIDATION_ERROR' as any, 'Dosya adı boş olamaz');
+
+    // Klasör prefix'i koru
+    const segments = file.path.split('/');
+    segments[segments.length - 1] = trimmed;
+    const newPath = segments.join('/');
+
+    this.cancelPendingSave(id);
+    const result = await this.fileRepo.update(id, { name: trimmed, path: newPath });
+    if (!result.ok) return result;
+
+    this.eventBus.emit('file:renamed' as any, { fileId: id, oldName: file.name, newName: trimmed });
+    return result;
+  }
+
+  /**
+   * Dosyayı farklı bir klasöre taşır.
+   * newFolderPath = '' → proje kökü  |  'utils' → utils/ altı
+   */
+  async moveFile(id: UUID, newFolderPath: string): AsyncResult<IFile> {
+    const found = await this.fileRepo.findById(id);
+    if (!found.ok) return found;
+
+    const file    = found.data;
+    const folder  = newFolderPath.trim();
+    const newPath = folder ? `${folder}/${file.name}` : file.name;
+
+    this.cancelPendingSave(id);
+    const result = await this.fileRepo.update(id, { path: newPath });
+    if (!result.ok) return result;
+
+    this.eventBus.emit('file:moved' as any, { fileId: id, oldPath: file.path, newPath });
+    return result;
+  }
+
+  /**
+   * Dosyayı aynı projede kopyalar.
+   * Yeni dosya aynı klasöre, copyName adıyla oluşturulur.
+   */
+  async copyFile(id: UUID, copyName: string): AsyncResult<IFile> {
+    const found = await this.fileRepo.findById(id);
+    if (!found.ok) return found;
+
+    const file    = found.data;
+    const trimmed = copyName.trim();
+    if (!trimmed) return err('VALIDATION_ERROR' as any, 'Kopya adı boş olamaz');
+
+    // Aynı klasör prefix'i koru
+    const segments = file.path.split('/');
+    segments[segments.length - 1] = trimmed;
+    const copyPath = segments.join('/');
+
+    return this.createFile({
+      projectId: file.projectId,
+      name:      trimmed,
+      path:      copyPath,
+      content:   file.content ?? '',
+      type:      file.type as any,
+    });
   }
 
   // ── Kaynakları Serbest Bırakma ─────────────────────────────────

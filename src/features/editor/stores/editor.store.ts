@@ -34,6 +34,7 @@ export interface EditorStore {
   openTab: (file: OpenFileParams) => void;
   closeTab: (tabId: string) => void;
   setActive: (tabId: string) => void;
+  renameTab: (tabId: string, newPath: string) => void;
 
   // Content
   updateContent: (tabId: string, content: string) => void;
@@ -184,6 +185,13 @@ export const useEditorStore = create<EditorStore>((set, get) => ({
         },
       };
     }),
+
+  renameTab: (tabId, newPath) =>
+    set((s) => ({
+      tabs: s.tabs.map(t =>
+        t.id === tabId ? { ...t, filePath: newPath } : t
+      ),
+    })),
 
   // ─── UI ──────────────────────────────────────────────────────────────────
 

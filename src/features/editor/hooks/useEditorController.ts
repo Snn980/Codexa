@@ -267,6 +267,113 @@ export function useEditorController() {
   }, [store, saveTab]);
 
   // ── Return ────────────────────────────────────────────────────────────────
+  // ── Dosyayı sil ──────────────────────────────────────────────────────────
+  const deleteFile = useCallback(async (file: IFile) => {
+    // Açık sekmeyi kapat
+    store.closeTab(file.id);
+    const r = await fileService.deleteFile(asUUID(file.id));
+    if (!r.ok) { Alert.alert('Silinemedi', r.error.message); return; }
+    setProjectFiles(prev => prev.filter(f => f.id !== file.id));
+  }, [fileService, store]);
+
+  // ── Dosyayı yeniden adlandır ──────────────────────────────────────────────
+  const renameFile = useCallback(async (file: IFile, newName: string) => {
+    const r = await fileService.renameFile(asUUID(file.id), newName);
+    if (!r.ok) { Alert.alert('Yeniden Adlandırılamadı', r.error.message); return; }
+    setProjectFiles(prev => prev.map(f => f.id === file.id ? r.data : f));
+    // Açık sekmenin yolunu güncelle
+    store.renameTab?.(file.id, r.data.path || r.data.name);
+  }, [fileService, store]);
+
+  // ── Dosyayı taşı ─────────────────────────────────────────────────────────
+  const moveFile = useCallback(async (file: IFile, newFolderPath: string) => {
+    const r = await fileService.moveFile(asUUID(file.id), newFolderPath);
+    if (!r.ok) { Alert.alert('Taşınamadı', r.error.message); return; }
+    setProjectFiles(prev => prev.map(f => f.id === file.id ? r.data : f));
+    // Açık sekmenin yolunu güncelle — taşıma sonrası editör aktif kalır
+    store.renameTab?.(file.id, r.data.path || r.data.name);
+  }, [fileService, store]);
+
+  // ── Dosyayı kopyala ───────────────────────────────────────────────────────
+  const copyFile = useCallback(async (file: IFile, copyName: string) => {
+    const r = await fileService.copyFile(asUUID(file.id), copyName);
+    if (!r.ok) { Alert.alert('Kopyalanamadı', r.error.message); return; }
+    setProjectFiles(prev => [...prev, r.data]);
+  }, [fileService]);
+
+  // ── Projeyi yeniden adlandır ──────────────────────────────────────────────
+  const renameProject = useCallback(async (project: IProject, newName: string) => {
+    const r = await projectService.updateProject(asUUID(project.id), { name: newName.trim() } as any);
+    if (!r.ok) { Alert.alert('Yeniden Adlandırılamadı', r.error.message); return; }
+    setProjects(prev => prev.map(p => p.id === project.id ? r.data : p));
+    if (activeProject?.id === project.id) setActiveProject(r.data);
+  }, [projectService, activeProject]);
+
+  // ── Projeyi sil ───────────────────────────────────────────────────────────
+  const deleteProject = useCallback(async (project: IProject) => {
+    const r = await projectService.deleteProject(asUUID(project.id));
+    if (!r.ok) { Alert.alert('Silinemedi', r.error.message); return; }
+    // Projeye ait tüm sekmeleri kapat
+    projectFiles.forEach(f => store.closeTab(f.id));
+    setProjects(prev => prev.filter(p => p.id !== project.id));
+    if (activeProject?.id === project.id) {
+      setActiveProject(null);
+      setProjectFiles([]);
+    }
+  }, [projectService, activeProject, projectFiles, store]);
+
+  // ── Klasörü yeniden adlandır ─────────────────────────────────────────────
+  const renameFolder = useCallback(async (folderPath: string, newName: string) => {
+    const trimmed = newName.trim();
+    if (!trimmed) return;
+
+    // Klasör altındaki tüm dosyaların path'ini güncelle
+    const folderFiles = projectFiles.filter(f => {
+      const segs = f.path.split('/');
+      return segs.length > 1 && segs.slice(0, -1).join('/') === folderPath;
+    });
+
+    const results = await Promise.all(
+      folderFiles.map(f => {
+        const fileName = f.path.split('/').pop() ?? f.name;
+        return fileService.moveFile(asUUID(f.id), trimmed).then(r => ({ f, r, newPath: `${trimmed}/${fileName}` }));
+      })
+    );
+
+    const failed = results.filter(x => !x.r.ok);
+    if (failed.length > 0) {
+      Alert.alert('Kısmi Hata', `${failed.length} dosya taşınamadı.`);
+    }
+
+    // Store ve state güncelle
+    results.forEach(({ f, r, newPath }) => {
+      if (r.ok) {
+        store.renameTab?.(f.id, newPath);
+      }
+    });
+
+    setProjectFiles(prev => prev.map(f => {
+      const match = results.find(x => x.f.id === f.id && x.r.ok);
+      return match ? match.r.data : f;
+    }));
+  }, [projectFiles, fileService, store]);
+
+  // ── Klasörü sil (klasördeki tüm dosyalar silinir) ─────────────────────────
+  const deleteFolder = useCallback(async (folderPath: string) => {
+    const folderFiles = projectFiles.filter(f => {
+      const segs = f.path.split('/');
+      return segs.length > 1 && segs.slice(0, -1).join('/') === folderPath;
+    });
+    const results = await Promise.all(
+      folderFiles.map(f => fileService.deleteFile(asUUID(f.id)))
+    );
+    const failed = results.filter(r => !r.ok);
+    if (failed.length > 0) { Alert.alert('Kısmi Hata', `${failed.length} dosya silinemedi.`); }
+    const deletedIds = new Set(folderFiles.map(f => f.id));
+    folderFiles.forEach(f => store.closeTab(f.id));
+    setProjectFiles(prev => prev.filter(f => !deletedIds.has(f.id)));
+  }, [projectFiles, fileService, store]);
+
   return {
     // Editor state
     tabs:        store.tabs,
@@ -286,7 +393,15 @@ export function useEditorController() {
     openProject,
     newProject,
     newFile,
-    newFolder,    // ← YENİ
+    newFolder,
+    deleteFile,
+    renameFile,
+    moveFile,
+    copyFile,
+    renameProject,
+    deleteProject,
+    renameFolder,
+    deleteFolder,
     openFile,
     selectTab,
     closeTab,

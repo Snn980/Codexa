@@ -35,10 +35,19 @@ import React, {
 import { Platform, StyleSheet, View } from 'react-native';
 import WebView, { type WebViewMessageEvent } from 'react-native-webview';
 
-import { buildCm6Html }        from '../codemirror/cm6Html';
-import { toCm6LangId }         from '../codemirror/languageMap';
-import type { CodeEditorRef }  from './CodeEditor';
-import { useTheme }            from '@/theme';
+import { buildCm6Html }  from '../codemirror/cm6Html';
+import { toCm6LangId }   from '../codemirror/languageMap';
+import { useTheme }      from '@/theme';
+
+// ─── Ref API — buradan export edilir, CodeEditor.tsx buradan alır ─────────────
+
+export interface CodeEditorRef {
+  focus:          () => void;
+  blur:           () => void;
+  clear:          () => void;
+  insertAtCursor: (text: string) => void;
+  moveCursor:     (dir: 'left' | 'right' | 'up' | 'down') => void;
+}
 
 // ─── Props ───────────────────────────────────────────────────────────────────
 
@@ -241,8 +250,6 @@ export const CodeMirrorEditor = forwardRef<CodeEditorRef, CodeMirrorEditorProps>
           cacheMode="LOAD_CACHE_ELSE_NETWORK"
           // Ölçeklendirme yok (viewport meta ile zaten engellendi)
           scalesPageToFit={false}
-          // Android klavye düzeni
-          softwareKeyboardLayoutMode="resize"
           // ── Olaylar ──────────────────────────────────────────────────────────
           onMessage={handleMessage}
           // Yükleme hatası
