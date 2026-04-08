@@ -10,6 +10,9 @@
     "paths": {
       "@/*": [
         "src/*"
+      ],
+      "libtermexec": [
+        "libtermexec/src/index.ts"
       ]
     },
     "moduleResolution": "bundler",
@@ -40,7 +43,7 @@
     "src/**/*.test.ts",
     "src/**/*.test.tsx",
     "jest.setup.ts",
-    "src/core/Types.ts"
+    "src/core/Types.ts",
+    "libtermexec/nitrogen/generated"
   ]
 }
-

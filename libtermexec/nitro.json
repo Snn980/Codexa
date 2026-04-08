@@ -1,0 +1,13 @@
+{
+  "$schema": "https://nitro.margelo.com/nitro.schema.json",
+  "cxxNamespace": ["libtermexec"],
+  "ios": {
+    "iosModuleName": "LibTermExec"
+  },
+  "android": {
+    "androidNamespace": ["com", "libtermexec"],
+    "androidCxxLibName": "LibTermExec"
+  },
+  "autolinking": {},
+  "ignorePaths": ["**/node_modules", "**/build", "**/dist", "**/.git"]
+}

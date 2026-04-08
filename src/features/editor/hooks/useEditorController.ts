@@ -354,7 +354,7 @@ export function useEditorController() {
 
     setProjectFiles(prev => prev.map(f => {
       const match = results.find(x => x.f.id === f.id && x.r.ok);
-      return match ? match.r.data : f;
+      return (match && match.r.ok) ? match.r.data : f;
     }));
   }, [projectFiles, fileService, store]);
 

@@ -257,7 +257,7 @@ export const CodeMirrorEditor = forwardRef<CodeEditorRef, CodeMirrorEditorProps>
             if (__DEV__) console.error('[CodeMirrorEditor] WebView error:', e.nativeEvent);
           }}
           // Android arka plan — WebView'ın beyaz flash'ını önle
-          backgroundColor={colors.editor.bg}
+         
           // iOS performans
           allowsInlineMediaPlayback
           mediaPlaybackRequiresUserAction={false}

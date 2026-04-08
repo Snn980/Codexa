@@ -590,6 +590,7 @@ export interface AppEventMap {
   // Terminal  (TerminalScreen, § 62 / § 68)
   "terminal:run":            { entryFile?: string };
   "terminal:clear":          Record<string, never>;
+  "terminal:input":          { text: string };    
 
   // Editor extended events  (useAIPanel, EditorMainScreen)
   "editor:error":            { error: unknown };
