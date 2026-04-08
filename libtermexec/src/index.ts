@@ -1,23 +1,14 @@
 /**
- * @file     index.ts
- * @module   libtermexec
- * @version  1.0.0
+ * index.ts — libtermexec JS katmanı
  *
- * @description
- *   libtermexec JS katmanı — Native HybridObject wrapper + React hook.
+ * Expo Go uyumluluğu:
+ *   NitroModules.createHybridObject başarısız olursa (Expo Go'da olur)
+ *   → expoGoMock devreye girer, uyarı verir
+ *   → Gerçek terminal için expo-dev-client kullanılmalı
  *
- *   Kullanım:
- *     import { TermExecModule, useTermExec } from 'libtermexec';
- *
- *   TermExecModule → singleton, doğrudan native erişim
- *   useTermExec    → React hook, session lifecycle + EventBus entegrasyonu
- *
- *   Tasarım kararları:
- *   • Singleton: HybridObject her createHybridObject çağrısında yeni native instance
- *     oluşturur — tek callback kaydı yeterli, birden fazla oluşturmaya gerek yok.
- *   • Batching: onData çok sık gelir; 16ms (1 frame) batching ile RN re-render
- *     baskısı azaltılır.
- *   • Platform guard: iOS'ta createSession NotImplemented fırlatır — UI bunu yakalar.
+ * Termux desteği:
+ *   shellPath boş bırakılırsa → native taraf otomatik Termux tespit eder
+ *   config.shellPath = '' → /data/data/com.termux/files/usr/bin/bash
  */
 
 import { NitroModules } from 'react-native-nitro-modules';
@@ -26,66 +17,88 @@ import { Platform } from 'react-native';
 
 import type { TermExec, SessionConfig } from '../nitrogen/specs/TermExec.nitro';
 
+// ─── Expo Go mock ─────────────────────────────────────────────────────────────
+
+const EXPO_GO_WARNING = [
+  '⚠️  Expo Go native modülleri desteklemez.',
+  '   Terminal çalışmıyor — expo-dev-client kullanın:',
+  '   npx expo install expo-dev-client',
+  '   eas build --profile development',
+].join('\n');
+
+const expoGoMock: TermExec = {
+  createSession:   () => { console.warn(EXPO_GO_WARNING); return 'mock-session'; },
+  writeInput:      () => {},
+  resizeTerminal:  () => {},
+  killSession:     () => {},
+  closeSession:    () => {},
+  listSessions:    () => [],
+  onSessionData:   null,
+  onSessionExit:   null,
+  onSessionError:  null,
+} as unknown as TermExec;
+
 // ─── Singleton ────────────────────────────────────────────────────────────────
 
 let _instance: TermExec | null = null;
+let _isExpoGo = false;
 
 function getInstance(): TermExec {
   if (!_instance) {
-    _instance = NitroModules.createHybridObject<TermExec>('TermExec');
+    try {
+      _instance = NitroModules.createHybridObject<TermExec>('TermExec');
+    } catch {
+      console.warn(EXPO_GO_WARNING);
+      _instance = expoGoMock;
+      _isExpoGo = true;
+    }
   }
   return _instance;
 }
 
+export const isExpoGo = () => _isExpoGo;
+
 // ─── TermExecModule ───────────────────────────────────────────────────────────
 
 export const TermExecModule = {
-
   createSession(config: SessionConfig): string {
     return getInstance().createSession(config);
   },
-
   writeInput(sessionId: string, data: string): void {
     getInstance().writeInput(sessionId, data);
   },
-
   resizeTerminal(sessionId: string, cols: number, rows: number): void {
     getInstance().resizeTerminal(sessionId, cols, rows);
   },
-
   killSession(sessionId: string, signal = 9): void {
     getInstance().killSession(sessionId, signal);
   },
-
   closeSession(sessionId: string): void {
     getInstance().closeSession(sessionId);
   },
-
   listSessions(): string[] {
     return getInstance().listSessions();
   },
-
   onData(cb: (sessionId: string, data: string) => void): void {
     getInstance().onSessionData = cb;
   },
-
   onExit(cb: (sessionId: string, exitCode: number) => void): void {
     getInstance().onSessionExit = cb;
   },
-
   onError(cb: (sessionId: string, error: string) => void): void {
     getInstance().onSessionError = cb;
   },
 } as const;
 
 // ─── Default session config ───────────────────────────────────────────────────
+// shellPath boş → native Termux tespiti yapar
 
 function getDefaultConfig(overrides?: Partial<SessionConfig>): SessionConfig {
   return {
-    shellPath: '/system/bin/sh',
+    shellPath: '',          // → native: Termux bash veya /system/bin/sh
     args:      ['-l'],
     env:       {},
-    cwd:       '/data/data/com.codexa.app/files',
+    cwd:       '',          // → native: Termux HOME veya app files
     cols:      80,
     rows:      24,
     ...overrides,
@@ -97,14 +110,14 @@ function getDefaultConfig(overrides?: Partial<SessionConfig>): SessionConfig {
 export interface TerminalLine {
   id:        string;
   text:      string;
-  kind:      'stdout' | 'stderr' | 'info' | 'error';
+  kind:      'stdout' | 'stderr' | 'info' | 'error' | 'warn';
   timestamp: number;
 }
 
 interface UseTermExecOptions {
   config?:       Partial<SessionConfig>;
-  ringCapacity?: number;   // max satır — default 1000
-  batchMs?:      number;   // render batching — default 16ms
+  ringCapacity?: number;
+  batchMs?:      number;
 }
 
 interface UseTermExecResult {
@@ -112,6 +125,7 @@ interface UseTermExecResult {
   isRunning:   boolean;
   sessionId:   string | null;
   isSupported: boolean;
+  isExpoGo:    boolean;
   start:       () => void;
   stop:        () => void;
   sendInput:   (text: string) => void;
@@ -123,13 +137,12 @@ let _lineId = 0;
 const uid = () => `tl_${++_lineId}`;
 
 export function useTermExec(opts: UseTermExecOptions = {}): UseTermExecResult {
-  const {
-    config,
-    ringCapacity = 1000,
-    batchMs      = 16,
-  } = opts;
+  const { config, ringCapacity = 1000, batchMs = 16 } = opts;
 
-  const isSupported = Platform.OS === 'android'; // iOS Phase 2
+  // iOS → wasm3 Phase 2, Android → Termux/PTY
+  // Expo Go'da her ikisi de mock
+  const isSupported = Platform.OS === 'android' || Platform.OS === 'ios';
+  const isGo = isExpoGo();
 
   const [lines,     setLines]     = useState<TerminalLine[]>([]);
   const [isRunning, setRunning]   = useState(false);
@@ -140,7 +153,6 @@ export function useTermExec(opts: UseTermExecOptions = {}): UseTermExecResult {
   const timerRef   = useRef<ReturnType<typeof setTimeout> | null>(null);
   const sidRef     = useRef<string | null>(null);
 
-  // Batch flush
   const flush = useCallback(() => {
     if (pendingRef.current.length === 0) return;
     ringRef.current = [...ringRef.current, ...pendingRef.current];
@@ -159,7 +171,6 @@ export function useTermExec(opts: UseTermExecOptions = {}): UseTermExecResult {
     }
   }, [flush, batchMs]);
 
-  // Native callback'leri kaydet
   useEffect(() => {
     if (!isSupported) return;
 
@@ -167,60 +178,46 @@ export function useTermExec(opts: UseTermExecOptions = {}): UseTermExecResult {
       if (sid !== sidRef.current) return;
       pushLine(data, 'stdout');
     });
-
-    TermExecModule.onExit((sid, exitCode) => {
+    TermExecModule.onExit((sid, code) => {
       if (sid !== sidRef.current) return;
-      pushLine(`\r\n[Process exited with code ${exitCode}]`, 'info');
-      setRunning(false);
-      setSessionId(null);
-      sidRef.current = null;
+      pushLine(`\r\n[Process exited: ${code}]`, 'info');
+      setRunning(false); setSessionId(null); sidRef.current = null;
     });
-
-    TermExecModule.onError((sid, error) => {
+    TermExecModule.onError((sid, err) => {
       if (sid !== sidRef.current) return;
-      pushLine(`[Error: ${error}]`, 'error');
-      setRunning(false);
-      setSessionId(null);
-      sidRef.current = null;
+      pushLine(`[Error: ${err}]`, 'error');
+      setRunning(false); setSessionId(null); sidRef.current = null;
     });
 
     return () => {
-      // Cleanup: callback'leri temizle
       getInstance().onSessionData  = null;
       getInstance().onSessionExit  = null;
       getInstance().onSessionError = null;
     };
   }, [isSupported, pushLine]);
 
-  // Session cleanup on unmount
   useEffect(() => {
     return () => {
-      if (sidRef.current) {
-        TermExecModule.closeSession(sidRef.current);
-      }
+      if (sidRef.current) TermExecModule.closeSession(sidRef.current);
       if (timerRef.current) clearTimeout(timerRef.current);
     };
   }, []);
 
   const start = useCallback(() => {
-    if (!isSupported) {
-      pushLine('[Terminal: iOS desteği Phase 2\'de eklenecek]', 'info');
+    if (isGo) {
+      pushLine(EXPO_GO_WARNING, 'warn');
       return;
     }
-    if (sidRef.current) {
-      TermExecModule.closeSession(sidRef.current);
-    }
-
+    if (sidRef.current) TermExecModule.closeSession(sidRef.current);
     try {
       const sid = TermExecModule.createSession(getDefaultConfig(config));
       sidRef.current = sid;
-      setSessionId(sid);
-      setRunning(true);
-      pushLine('Session başlatıldı.', 'info');
+      setSessionId(sid); setRunning(true);
+      pushLine('● Session başlatıldı', 'info');
     } catch (e) {
       pushLine(`[Start error: ${e}]`, 'error');
     }
-  }, [isSupported, config, pushLine]);
+  }, [isGo, config, pushLine]);
 
   const stop = useCallback(() => {
     if (sidRef.current) {
@@ -229,26 +226,20 @@ export function useTermExec(opts: UseTermExecOptions = {}): UseTermExecResult {
     }
   }, [pushLine]);
 
-  const sendInput = useCallback((text: string) => {
-    if (sidRef.current) {
-      TermExecModule.writeInput(sidRef.current, text);
-    }
+  const sendInput  = useCallback((t: string) => {
+    if (sidRef.current) TermExecModule.writeInput(sidRef.current, t);
   }, []);
 
-  const resize = useCallback((cols: number, rows: number) => {
-    if (sidRef.current) {
-      TermExecModule.resizeTerminal(sidRef.current, cols, rows);
-    }
+  const resize = useCallback((c: number, r: number) => {
+    if (sidRef.current) TermExecModule.resizeTerminal(sidRef.current, c, r);
   }, []);
 
   const clear = useCallback(() => {
-    ringRef.current    = [];
-    pendingRef.current = [];
-    setLines([]);
+    ringRef.current = []; pendingRef.current = []; setLines([]);
   }, []);
 
-  return { lines, isRunning, sessionId, isSupported, start, stop, sendInput, resize, clear };
+  return { lines, isRunning, sessionId, isSupported, isExpoGo: isGo,
+           start, stop, sendInput, resize, clear };
 }
 
-// Re-export types
 export type { SessionConfig, TermExec };

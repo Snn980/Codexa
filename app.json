@@ -69,6 +69,12 @@
     },
     "plugins": [
       [
+        "./libtermexec/plugin",
+        {
+          "termuxSupport": true
+        }
+      ],
+      [
         "expo-build-properties",
         {
           "android": {
