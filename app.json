@@ -89,6 +89,12 @@
         }
       ],
       [
+        "./libtermexec/plugin",
+        {
+          "termuxSupport": false
+        }
+      ],
+      [
         "expo-task-manager"
       ],
       [

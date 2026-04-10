@@ -7,7 +7,7 @@ dist/
 web-build/
 expo-env.d.ts
 
-# Native build outputs
+# Native build outputs (expo prebuild tarafından yeniden üretilir)
 android/
 ios/
 
@@ -51,7 +51,14 @@ coverage/
 # TypeScript
 *.tsbuildinfo
 
+# Backup files
+*.bak
+backups/
+
+# libtermexec build artifacts (kaynak kod commit edilir, build çıktıları değil)
+libtermexec/android/build/
+libtermexec/android/.gradle/
+libtermexec/android/app/
+
 # Custom Keystore Files
 *.keystore
-*.jks
-*.p12

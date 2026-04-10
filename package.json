@@ -7,6 +7,7 @@
     "android": "expo run:android",
     "ios": "expo run:ios",
     "prebuild": "expo prebuild --clean",
+    "build:dev": "eas build --profile development --platform android",
     "build:android": "eas build --platform android",
     "build:ios": "eas build --platform ios",
     "build:all": "eas build --platform all",
@@ -15,7 +16,8 @@
     "test:e2e": "detox test --configuration ios.sim.debug",
     "lint": "eslint src --ext .ts,.tsx",
     "typecheck": "tsc --noEmit",
-    "doctor": "expo-doctor"
+    "doctor": "expo-doctor",
+    "nitrogen": "nitro-codegen"
   },
   "dependencies": {
     "@codemirror/autocomplete": "^6.20.1",
@@ -51,6 +53,7 @@
     "expo-system-ui": "~55.0.14",
     "expo-task-manager": "~55.0.13",
     "jest-expo": "~55.0.14",
+    "libtermexec": "file:./libtermexec",
     "react": "~19.2.0",
     "react-native": "0.83.4",
     "react-native-mmkv": "^4.0.0",
@@ -77,6 +80,7 @@
     "eslint-config-expo": "~55.0.0",
     "jest": "~29.7.0",
     "jest-expo": "~55.0.0",
+    "nitrogen": "^0.35.4",
     "react-test-renderer": "^19.2.4",
     "typescript": "~5.9.0",
     "vitest": "^3.0.0"
