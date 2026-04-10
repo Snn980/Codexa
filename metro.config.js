@@ -5,33 +5,7 @@ const config = getDefaultConfig(__dirname);
 
 config.resolver.sourceExts.push('mjs');
 
-// metro.config.js
-const { getDefaultConfig } = require('expo/metro-config');
-
-const config = getDefaultConfig(__dirname);
-
-// window.location polyfill — HMR için
-config.transformer = {
-  ...config.transformer,
-  getTransformOptions: async () => ({
-    transform: {
-      experimentalImportSupport: false,
-      inlineRequires: true,
-    },
-  }),
-
 // ─── Expo Go Native Module Mock'ları ─────────────────────────────────────────
-//
-// Bu modüller native binary gerektirir; Expo Go'da çalışmaz.
-// Mock'lar src/mocks/ altında tutulur.
-// Production APK build'de bu satırlar etkisiz (gerçek native modüller yüklenir).
-//
-// Eklenen mock'lar:
-//   react-native-mmkv          → in-memory Map implementasyonu
-//   react-native-nitro-modules → no-op stub
-//   @react-native-ai/mlc       → cloud-only uyarısı fırlatır
-//   react-native-permissions   → zaten vardı, korundu
-
 const MOCK_DIR = path.resolve(__dirname, 'src/mocks');
 
 config.resolver.extraNodeModules = {
