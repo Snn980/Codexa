@@ -5,6 +5,21 @@ const config = getDefaultConfig(__dirname);
 
 config.resolver.sourceExts.push('mjs');
 
+// metro.config.js
+const { getDefaultConfig } = require('expo/metro-config');
+
+const config = getDefaultConfig(__dirname);
+
+// window.location polyfill — HMR için
+config.transformer = {
+  ...config.transformer,
+  getTransformOptions: async () => ({
+    transform: {
+      experimentalImportSupport: false,
+      inlineRequires: true,
+    },
+  }),
+
 // ─── Expo Go Native Module Mock'ları ─────────────────────────────────────────
 //
 // Bu modüller native binary gerektirir; Expo Go'da çalışmaz.
