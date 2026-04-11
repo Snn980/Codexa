@@ -466,17 +466,21 @@ export class Database {
 
   private async resolveDriver(injected?: IDatabaseDriver): AsyncResult<IDatabaseDriver> {
     if (injected) return ok(injected);
-    // TS2322 FIX: LibSQLDriver → IDatabaseDriver upcast için generic açıkça belirtilir.
-    // TypeScript, Result<LibSQLDriver> → Result<IDatabaseDriver> covariance'ını
-    // union type'larda her zaman otomatik çıkaramaz; <IDatabaseDriver> bunu garantiler.
-    return tryResultAsync<IDatabaseDriver>(
-      async () => {
-        const { LibSQLDriver } = await import("./drivers/LibSQLDriver");
-        return new LibSQLDriver(this.config.path, this.config.timeoutMs);
-      },
-      ErrorCode.DB_CONNECTION_FAILED,
-      "Veritabanı sürücüsü yüklenemedi",
-    );
+
+    // LibSQLDriver (expo-sqlite) yüklemeyi dene
+    try {
+      const { LibSQLDriver } = await import("./drivers/LibSQLDriver");
+      const driver = new LibSQLDriver(this.config.path, this.config.timeoutMs);
+      console.log('[Database] LibSQLDriver yüklendi.');
+      return ok(driver as IDatabaseDriver);
+    } catch (e) {
+      // Native SQLite modülü bu ortamda yok — InMemory fallback kullan
+      console.warn('[Database] expo-sqlite yüklenemedi, InMemoryDriver kullanılıyor:', String(e));
+      const { InMemoryDriver } = await import("./drivers/InMemoryDriver");
+      const driver = new InMemoryDriver();
+      await driver.connect();
+      return ok(driver as IDatabaseDriver);
+    }
   }
 
   private async applyPragmas(): AsyncResult<void> {
